@@ -1,4 +1,12 @@
-import { ArrowUpRightIcon, SparklesIcon, StarIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  ArrowUpRightIcon,
+  Gamepad2Icon,
+  Grid2X2Icon,
+  HeadphonesIcon,
+  KeyboardIcon,
+  StarIcon,
+} from "lucide-react";
 
 import { SectionContainer } from "@/components/landing/section-container";
 import { SiteFooter } from "@/components/landing/site-footer";
@@ -24,7 +32,30 @@ type LandingPageProps = {
   data: LandingData;
 };
 
+const numberFormatter = new Intl.NumberFormat("id-ID");
+
+function getInitials(value: string) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase())
+    .join("");
+}
+
 export function LandingPage({ data }: LandingPageProps) {
+  const services = [...data.services].sort(
+    (first, second) =>
+      first.sortOrder - second.sortOrder ||
+      first.gameName.localeCompare(second.gameName),
+  );
+  const trustedStat = data.stats.find((stat) =>
+    stat.label.toLowerCase().includes("buyer"),
+  );
+  const trustedCount = trustedStat
+    ? `${numberFormatter.format(trustedStat.value)}${trustedStat.suffix}`
+    : "850+";
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-background">
       <a
@@ -37,86 +68,160 @@ export function LandingPage({ data }: LandingPageProps) {
 
       <div className="relative" id="main-content">
         <div className="pointer-events-none absolute inset-0 -z-0 overflow-hidden">
-          <div className="absolute top-[-12rem] left-1/2 size-[34rem] -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
-          <div className="absolute top-[22rem] right-[-12rem] size-[30rem] rounded-full bg-secondary/40 blur-3xl" />
-          <div className="absolute bottom-[18rem] left-[-12rem] size-[28rem] rounded-full bg-accent/15 blur-3xl" />
+          <div className="absolute top-[-18rem] left-1/2 size-[44rem] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
+          <div className="absolute top-[18rem] left-[-16rem] size-[34rem] rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute right-[-14rem] bottom-[30rem] size-[36rem] rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute inset-x-0 top-0 h-[42rem] bg-gradient-to-b from-primary/10 via-background to-background" />
         </div>
 
-        <section className="relative px-4 pt-20 pb-16 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="flex flex-col gap-7">
-              <Badge variant="secondary" className="w-fit">
-                <SparklesIcon data-icon="inline-start" aria-hidden="true" />
-                {data.hero.eyebrow}
-              </Badge>
-              <div className="flex flex-col gap-5">
-                <h1 className="max-w-4xl text-5xl leading-[0.95] font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
-                  {data.hero.headline}
-                </h1>
-                <p className="max-w-2xl text-lg leading-8 text-muted-foreground text-pretty">
-                  {data.hero.subheadline}
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg">
-                  <a href={data.hero.primaryCtaHref} target="_blank" rel="noreferrer">
-                    Order Now
-                    <ArrowUpRightIcon data-icon="inline-end" aria-hidden="true" />
-                  </a>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <a href="#services">Explore Services</a>
-                </Button>
-              </div>
+        <section className="relative px-4 pt-36 pb-24 text-center sm:px-6 sm:pt-40 lg:px-8 lg:pt-48 lg:pb-32">
+          <div
+            className="absolute top-1/2 left-0 hidden -translate-y-1/2 lg:block"
+            aria-hidden="true"
+          >
+            <div className="relative flex size-56 items-center justify-center overflow-hidden rounded-[2rem] border border-border/70 bg-card/35 opacity-60 shadow-2xl shadow-primary/10 backdrop-blur-sm">
+              <div className="absolute inset-0 bg-primary/5" />
+              <HeadphonesIcon className="relative text-muted-foreground/50" aria-hidden="true" />
+            </div>
+          </div>
+          <div
+            className="absolute top-1/2 right-0 hidden -translate-y-1/2 lg:block"
+            aria-hidden="true"
+          >
+            <div className="relative flex size-56 items-center justify-center overflow-hidden rounded-[2rem] border border-border/70 bg-card/35 opacity-60 shadow-2xl shadow-primary/10 backdrop-blur-sm">
+              <div className="absolute inset-0 bg-primary/5" />
+              <KeyboardIcon className="relative text-muted-foreground/50" aria-hidden="true" />
+            </div>
+          </div>
+
+          <div className="mx-auto flex max-w-4xl flex-col items-center gap-8">
+            <Badge
+              variant="outline"
+              className="border-border/80 bg-card/70 px-2.5 py-1 shadow-lg shadow-primary/5 backdrop-blur-sm"
+            >
+              <span className="flex items-center -space-x-1" aria-hidden="true">
+                <span className="flex size-5 items-center justify-center rounded-full border border-background bg-primary text-[0.6rem] text-primary-foreground">
+                  K
+                </span>
+                <span className="size-5 rounded-full border border-background bg-secondary" />
+                <span className="size-5 rounded-full border border-background bg-card" />
+              </span>
+              <span className="text-muted-foreground">
+                Trusted by{" "}
+                <strong className="font-semibold text-foreground">{trustedCount}</strong>{" "}
+                gamers
+              </span>
+            </Badge>
+
+            <div className="flex flex-col gap-5">
+              <h1 className="text-5xl leading-[0.98] font-extrabold tracking-tight text-balance sm:text-6xl lg:text-8xl">
+                Level Up Your Game,
+                <br />
+                <span className="text-primary italic">We Handle The Rest</span>
+              </h1>
+              <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground text-pretty sm:text-lg">
+                Fast, safe, and reliable boosting services for Mobile Legends, Valorant,
+                Genshin Impact, and more. Dominate the leaderboards with professional
+                players at your side.
+              </p>
             </div>
 
-            <Card className="relative border-border/70 bg-card/70 shadow-2xl shadow-black/30">
-              <CardHeader>
-                <CardTitle>Landing Foundation</CardTitle>
-                <CardDescription>
-                  A polished shell for the public Kireiku experience, ready for richer
-                  Release 1 section detail.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3">
-                  {data.stats.map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/50 px-4 py-3"
-                    >
-                      <span className="text-sm text-muted-foreground">{stat.label}</span>
-                      <span className="font-mono text-2xl font-semibold tabular-nums">
-                        {new Intl.NumberFormat("id-ID").format(stat.value)}
-                        {stat.suffix}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="h-12 rounded-full px-8 shadow-xl shadow-primary/20"
+              >
+                <a href={data.hero.primaryCtaHref} target="_blank" rel="noreferrer">
+                  Order Now
+                  <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
+                </a>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="h-12 rounded-full border-border/80 bg-card/40 px-8 backdrop-blur-sm"
+              >
+                <a href="#services">Explore Services</a>
+              </Button>
+            </div>
           </div>
         </section>
 
-        <SectionContainer
-          id="services"
-          eyebrow="Services"
-          title="Boosting services, shaped into a calmer buying flow."
-          description="This shell validates active service rendering, ordering, and empty states before the full visual treatment lands in R1-07."
-        >
-          {data.services.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {data.services.map((service) => (
-                <Card key={service.id} className="bg-card/75">
-                  <CardHeader>
-                    <Badge variant="outline" className="w-fit">
-                      {service.serviceType}
-                    </Badge>
-                    <CardTitle>{service.gameName}</CardTitle>
-                    <CardDescription>{service.description}</CardDescription>
-                  </CardHeader>
-                </Card>
-              ))}
+        <SectionContainer id="services" className="py-24 lg:py-32">
+          <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
+            <h2 className="text-4xl leading-tight font-extrabold tracking-tight text-balance sm:text-5xl">
+              Our Services
+            </h2>
+            <p className="text-base leading-7 text-muted-foreground text-pretty sm:text-lg">
+              Everything you need to reach the top. Tailored progression for your
+              favorite titles by verified professionals.
+            </p>
+          </div>
+
+          {services.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {services.map((service, index) => {
+                const initials = getInitials(service.gameName);
+
+                return (
+                  <Card
+                    key={service.id}
+                    className="group bg-card/70 py-0 shadow-xl shadow-primary/5 transition-transform duration-300 hover:-translate-y-1"
+                  >
+                    <div className="relative min-h-56 overflow-hidden rounded-t-xl border-b border-border/70 bg-background">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/60 to-background" />
+                      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-card to-transparent" />
+                      <div
+                        className="absolute top-8 left-8 size-24 rounded-full border border-border/60 bg-card/30"
+                        aria-hidden="true"
+                      />
+                      <div
+                        className="absolute right-8 bottom-10 size-32 rounded-full bg-primary/15 blur-2xl"
+                        aria-hidden="true"
+                      />
+                      <div className="relative flex min-h-56 flex-col justify-between p-6">
+                        <div className="flex items-center justify-between gap-3">
+                          <Badge variant="secondary">{service.serviceType}</Badge>
+                          <span className="font-mono text-xs text-muted-foreground tabular-nums">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+                        </div>
+                        <div className="flex items-end justify-between gap-5">
+                          <span
+                            className="text-6xl leading-none font-extrabold tracking-tight text-primary"
+                            aria-hidden="true"
+                          >
+                            {initials || "K"}
+                          </span>
+                          <Gamepad2Icon className="text-muted-foreground/70" aria-hidden="true" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <CardHeader className="gap-3 px-6 pt-6">
+                      <CardTitle className="text-2xl font-bold tracking-tight">
+                        {service.gameName}
+                      </CardTitle>
+                      <CardDescription className="line-clamp-3 leading-6">
+                        {service.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="px-6 pb-6">
+                      <a
+                        href={data.hero.primaryCtaHref}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                      >
+                        View More
+                        <ArrowUpRightIcon aria-hidden="true" />
+                      </a>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <Card>
@@ -125,6 +230,19 @@ export function LandingPage({ data }: LandingPageProps) {
               </CardContent>
             </Card>
           )}
+
+          <div className="flex justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="h-12 rounded-full px-8 shadow-xl shadow-primary/20"
+            >
+              <a href={data.hero.primaryCtaHref} target="_blank" rel="noreferrer">
+                Other Games
+                <Grid2X2Icon data-icon="inline-end" aria-hidden="true" />
+              </a>
+            </Button>
+          </div>
         </SectionContainer>
 
         <SectionContainer
@@ -156,7 +274,10 @@ export function LandingPage({ data }: LandingPageProps) {
               {data.testimonials.map((testimonial) => (
                 <Card key={testimonial.id} className="bg-card/75">
                   <CardHeader>
-                    <div className="flex gap-1 text-primary" aria-label={`${testimonial.rating} stars`}>
+                    <div
+                      className="flex gap-1 text-primary"
+                      aria-label={`${testimonial.rating} stars`}
+                    >
                       {Array.from({ length: testimonial.rating }).map((_, index) => (
                         <StarIcon key={index} aria-hidden="true" />
                       ))}
