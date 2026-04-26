@@ -19,13 +19,23 @@ const footerLinks = [
   { label: "Help Desk", href: "#help-desk" },
 ];
 
-export default async function AdminLoginPage() {
+type AdminLoginPageProps = {
+  searchParams: Promise<{
+    error?: string | string[];
+  }>;
+};
+
+export default async function AdminLoginPage({
+  searchParams,
+}: AdminLoginPageProps) {
   const staff = await getCurrentStaffUser();
 
   if (staff) {
     redirect(getStaffRedirectPath(staff.profile.tier));
   }
 
+  const params = await searchParams;
+  const hasAuthError = params.error === "auth";
   const currentYear = new Date().getFullYear();
 
   return (
@@ -65,7 +75,13 @@ export default async function AdminLoginPage() {
 
             <Card className="mt-10 w-full rounded-[2rem] border border-border/70 bg-card/70 p-4 text-left shadow-2xl backdrop-blur-xl sm:p-6">
               <CardContent className="p-0">
-                <LoginForm />
+                <LoginForm
+                  initialState={
+                    hasAuthError
+                      ? { message: "Please sign in with a staff account." }
+                      : undefined
+                  }
+                />
               </CardContent>
             </Card>
 

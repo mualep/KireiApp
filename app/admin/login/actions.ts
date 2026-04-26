@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getStaffRedirectPath } from "@/lib/auth/redirects";
-import { staffTierSchema } from "@/lib/auth/staff";
+import { parseStaffTier } from "@/lib/auth/tiers";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginFormState = {
@@ -74,9 +74,9 @@ export async function signInStaff(
     .eq("id", user.id)
     .maybeSingle();
 
-  const parsedTier = staffTierSchema.safeParse(profile?.tier);
+  const tier = parseStaffTier(profile?.tier);
 
-  if (profileError || !profile || profile.is_deleted || !parsedTier.success) {
+  if (profileError || !profile || profile.is_deleted || !tier) {
     await supabase.auth.signOut();
 
     return {
@@ -85,5 +85,5 @@ export async function signInStaff(
     };
   }
 
-  redirect(getStaffRedirectPath(parsedTier.data));
+  redirect(getStaffRedirectPath(tier));
 }

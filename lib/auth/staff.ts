@@ -1,13 +1,9 @@
 import "server-only";
 
 import type { User } from "@supabase/supabase-js";
-import { z } from "zod";
 
+import { parseStaffTier, type StaffTier } from "@/lib/auth/tiers";
 import { createClient } from "@/lib/supabase/server";
-
-export const staffTierSchema = z.enum(["owner", "admin", "member"]);
-
-export type StaffTier = z.infer<typeof staffTierSchema>;
 
 type StaffProfile = {
   id: string;
@@ -36,9 +32,9 @@ export async function getCurrentStaffUser(): Promise<StaffUser | null> {
     .eq("id", user.id)
     .maybeSingle();
 
-  const parsedTier = staffTierSchema.safeParse(profile?.tier);
+  const tier = parseStaffTier(profile?.tier);
 
-  if (profileError || !profile || profile.is_deleted || !parsedTier.success) {
+  if (profileError || !profile || profile.is_deleted || !tier) {
     return null;
   }
 
@@ -46,7 +42,7 @@ export async function getCurrentStaffUser(): Promise<StaffUser | null> {
     authUser: user,
     profile: {
       id: profile.id,
-      tier: parsedTier.data,
+      tier,
     },
   };
 }

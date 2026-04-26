@@ -24,9 +24,11 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 
-const initialState: LoginFormState = {};
+type LoginFormProps = {
+  initialState?: LoginFormState;
+};
 
-export function LoginForm() {
+export function LoginForm({ initialState = {} }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [state, formAction, isPending] = useActionState(
     signInStaff,
