@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import {
+  canAccessAdminContent,
   canAccessAdminDashboard,
   getStaffRedirectPath,
 } from "@/lib/auth/redirects";
@@ -10,6 +11,7 @@ import { copyProxyCookies, createProxyClient } from "@/lib/supabase/proxy";
 const ADMIN_ROOT_PATH = "/admin";
 const LOGIN_PATH = "/admin/login";
 const DASHBOARD_PATH = "/admin/dashboard";
+const CONTENT_PATH = "/admin/content";
 const PROFILE_PATH = "/admin/profile";
 const GENERIC_AUTH_ERROR = "auth";
 
@@ -58,7 +60,14 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  if (pathname === DASHBOARD_PATH && !canAccessAdminDashboard(tier)) {
+  if (isPathOrChild(pathname, DASHBOARD_PATH) && !canAccessAdminDashboard(tier)) {
+    return copyProxyCookies(
+      getResponse(),
+      NextResponse.redirect(new URL(PROFILE_PATH, request.url)),
+    );
+  }
+
+  if (isPathOrChild(pathname, CONTENT_PATH) && !canAccessAdminContent(tier)) {
     return copyProxyCookies(
       getResponse(),
       NextResponse.redirect(new URL(PROFILE_PATH, request.url)),
@@ -66,6 +75,10 @@ export async function proxy(request: NextRequest) {
   }
 
   return getResponse();
+}
+
+function isPathOrChild(pathname: string, path: string): boolean {
+  return pathname === path || pathname.startsWith(`${path}/`);
 }
 
 function getLoginUrl(

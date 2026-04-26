@@ -13,3 +13,7 @@ export function getStaffRedirectPath(tier: StaffTier): string {
 export function canAccessAdminDashboard(tier: StaffTier): boolean {
   return tier === "owner" || tier === "admin";
 }
+
+export function canAccessAdminContent(tier: StaffTier): boolean {
+  return tier === "owner" || tier === "admin";
+}

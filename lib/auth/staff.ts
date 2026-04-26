@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 
 type StaffProfile = {
   id: string;
+  name: string;
+  email: string;
   tier: StaffTier;
 };
 
@@ -28,7 +30,7 @@ export async function getCurrentStaffUser(): Promise<StaffUser | null> {
 
   const { data: profile, error: profileError } = await supabase
     .from("users")
-    .select("id, tier, is_deleted")
+    .select("id, name, email, tier, is_deleted")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -42,6 +44,8 @@ export async function getCurrentStaffUser(): Promise<StaffUser | null> {
     authUser: user,
     profile: {
       id: profile.id,
+      name: profile.name,
+      email: profile.email,
       tier,
     },
   };
