@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "validate:bulk-users": "tsx scripts/validate-bulk-users.ts"
+    "validate:bulk-users": "tsx scripts/validate-bulk-users.ts",
+    "import:bulk-users:dry-run": "tsx scripts/import-bulk-users.ts",
+    "import:bulk-users:execute": "tsx scripts/import-bulk-users.ts --execute"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
