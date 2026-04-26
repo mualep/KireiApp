@@ -5,7 +5,13 @@ import {
   Grid2X2Icon,
   HeadphonesIcon,
   KeyboardIcon,
+  LifeBuoyIcon,
+  QuoteIcon,
+  ShieldCheckIcon,
   StarIcon,
+  TagIcon,
+  UsersRoundIcon,
+  ZapIcon,
 } from "lucide-react";
 
 import { SectionContainer } from "@/components/landing/section-container";
@@ -33,6 +39,7 @@ type LandingPageProps = {
 };
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
+const featureIcons = [ShieldCheckIcon, ZapIcon, LifeBuoyIcon, TagIcon];
 
 function getInitials(value: string) {
   return value
@@ -55,6 +62,7 @@ export function LandingPage({ data }: LandingPageProps) {
   const trustedCount = trustedStat
     ? `${numberFormatter.format(trustedStat.value)}${trustedStat.suffix}`
     : "850+";
+  const featureCards = [...data.why, ...data.howItWorks].slice(0, 4);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-background">
@@ -81,7 +89,10 @@ export function LandingPage({ data }: LandingPageProps) {
           >
             <div className="relative flex size-56 items-center justify-center overflow-hidden rounded-[2rem] border border-border/70 bg-card/35 opacity-60 shadow-2xl shadow-primary/10 backdrop-blur-sm">
               <div className="absolute inset-0 bg-primary/5" />
-              <HeadphonesIcon className="relative text-muted-foreground/50" aria-hidden="true" />
+              <HeadphonesIcon
+                className="relative text-muted-foreground/50"
+                aria-hidden="true"
+              />
             </div>
           </div>
           <div
@@ -90,7 +101,10 @@ export function LandingPage({ data }: LandingPageProps) {
           >
             <div className="relative flex size-56 items-center justify-center overflow-hidden rounded-[2rem] border border-border/70 bg-card/35 opacity-60 shadow-2xl shadow-primary/10 backdrop-blur-sm">
               <div className="absolute inset-0 bg-primary/5" />
-              <KeyboardIcon className="relative text-muted-foreground/50" aria-hidden="true" />
+              <KeyboardIcon
+                className="relative text-muted-foreground/50"
+                aria-hidden="true"
+              />
             </div>
           </div>
 
@@ -108,7 +122,9 @@ export function LandingPage({ data }: LandingPageProps) {
               </span>
               <span className="text-muted-foreground">
                 Trusted by{" "}
-                <strong className="font-semibold text-foreground">{trustedCount}</strong>{" "}
+                <strong className="font-semibold text-foreground">
+                  {trustedCount}
+                </strong>{" "}
                 gamers
               </span>
             </Badge>
@@ -120,9 +136,9 @@ export function LandingPage({ data }: LandingPageProps) {
                 <span className="text-primary italic">We Handle The Rest</span>
               </h1>
               <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground text-pretty sm:text-lg">
-                Fast, safe, and reliable boosting services for Mobile Legends, Valorant,
-                Genshin Impact, and more. Dominate the leaderboards with professional
-                players at your side.
+                Fast, safe, and reliable boosting services for Mobile Legends,
+                Valorant, Genshin Impact, and more. Dominate the leaderboards
+                with professional players at your side.
               </p>
             </div>
 
@@ -132,7 +148,11 @@ export function LandingPage({ data }: LandingPageProps) {
                 size="lg"
                 className="h-12 rounded-full px-8 shadow-xl shadow-primary/20"
               >
-                <a href={data.hero.primaryCtaHref} target="_blank" rel="noreferrer">
+                <a
+                  href={data.hero.primaryCtaHref}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Order Now
                   <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
                 </a>
@@ -155,8 +175,8 @@ export function LandingPage({ data }: LandingPageProps) {
               Our Services
             </h2>
             <p className="text-base leading-7 text-muted-foreground text-pretty sm:text-lg">
-              Everything you need to reach the top. Tailored progression for your
-              favorite titles by verified professionals.
+              Everything you need to reach the top. Tailored progression for
+              your favorite titles by verified professionals.
             </p>
           </div>
 
@@ -183,7 +203,9 @@ export function LandingPage({ data }: LandingPageProps) {
                       />
                       <div className="relative flex min-h-56 flex-col justify-between p-6">
                         <div className="flex items-center justify-between gap-3">
-                          <Badge variant="secondary">{service.serviceType}</Badge>
+                          <Badge variant="secondary">
+                            {service.serviceType}
+                          </Badge>
                           <span className="font-mono text-xs text-muted-foreground tabular-nums">
                             {String(index + 1).padStart(2, "0")}
                           </span>
@@ -195,7 +217,10 @@ export function LandingPage({ data }: LandingPageProps) {
                           >
                             {initials || "K"}
                           </span>
-                          <Gamepad2Icon className="text-muted-foreground/70" aria-hidden="true" />
+                          <Gamepad2Icon
+                            className="text-muted-foreground/70"
+                            aria-hidden="true"
+                          />
                         </div>
                       </div>
                     </div>
@@ -237,7 +262,11 @@ export function LandingPage({ data }: LandingPageProps) {
               size="lg"
               className="h-12 rounded-full px-8 shadow-xl shadow-primary/20"
             >
-              <a href={data.hero.primaryCtaHref} target="_blank" rel="noreferrer">
+              <a
+                href={data.hero.primaryCtaHref}
+                target="_blank"
+                rel="noreferrer"
+              >
                 Other Games
                 <Grid2X2Icon data-icon="inline-end" aria-hidden="true" />
               </a>
@@ -245,56 +274,129 @@ export function LandingPage({ data }: LandingPageProps) {
           </div>
         </SectionContainer>
 
-        <SectionContainer
+        <section
           id="why-kireiku"
-          eyebrow="Why Kireiku"
-          title="A tighter operation behind every order."
-          description="Stats and differentiators are rendered from landing content with safe fallback copy."
+          className="relative scroll-mt-24 border-y border-border/60 bg-card/25 px-4 py-24 sm:px-6 lg:px-8 lg:py-32"
         >
-          <div className="grid gap-4 md:grid-cols-3">
-            {data.why.map((item) => (
-              <Card key={item.title} className="bg-card/75">
-                <CardHeader>
-                  <CardTitle>{item.title}</CardTitle>
-                  <CardDescription>{item.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-primary/5 to-transparent"
+            aria-hidden="true"
+          />
+          <div className="relative mx-auto flex max-w-6xl flex-col gap-16">
+            <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+              {data.stats.map((stat) => (
+                <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
+                  <p className="font-mono text-4xl leading-none font-extrabold tracking-tighter text-foreground tabular-nums sm:text-5xl lg:text-6xl">
+                    {numberFormatter.format(stat.value)}
+                    <span className="text-primary">{stat.suffix}</span>
+                  </p>
+                  <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {featureCards.map((item, index) => {
+                const FeatureIcon = featureIcons[index % featureIcons.length];
+
+                return (
+                  <Card
+                    key={`${item.title}-${index}`}
+                    className="bg-card/70 shadow-xl shadow-primary/5 transition-transform duration-300 hover:-translate-y-1"
+                  >
+                    <CardHeader className="gap-4">
+                      <span className="flex size-11 items-center justify-center rounded-full border border-border/70 bg-background/70 text-primary">
+                        <FeatureIcon aria-hidden="true" />
+                      </span>
+                      <div className="flex flex-col gap-2">
+                        <CardTitle>{item.title}</CardTitle>
+                        <CardDescription className="leading-6">
+                          {item.description}
+                        </CardDescription>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        </SectionContainer>
+        </section>
 
         <SectionContainer
           id="testimonials"
-          eyebrow="Testimonials"
-          title="Buyer proof will sit here once verified."
-          description="Only visible testimonials render publicly. Placeholder testimonials stay hidden by default."
+          className="py-24 lg:py-32"
         >
+          <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
+            <h2 className="text-4xl leading-tight font-extrabold tracking-tight text-balance sm:text-5xl">
+              Customer Reviews
+            </h2>
+            <p className="text-base leading-7 text-muted-foreground text-pretty">
+              Do not just take our word for it. Hear from buyers who reached their
+              goals with us.
+            </p>
+          </div>
+
           {data.testimonials.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-3">
               {data.testimonials.map((testimonial) => (
-                <Card key={testimonial.id} className="bg-card/75">
-                  <CardHeader>
+                <Card
+                  key={testimonial.id}
+                  className="relative bg-card/70 shadow-xl shadow-primary/5"
+                >
+                  <CardHeader className="gap-4">
                     <div
                       className="flex gap-1 text-primary"
                       aria-label={`${testimonial.rating} stars`}
                     >
-                      {Array.from({ length: testimonial.rating }).map((_, index) => (
-                        <StarIcon key={index} aria-hidden="true" />
-                      ))}
+                      {Array.from({ length: testimonial.rating }).map(
+                        (_, index) => (
+                          <StarIcon
+                            key={index}
+                            className="fill-current"
+                            aria-hidden="true"
+                          />
+                        ),
+                      )}
                     </div>
-                    <CardTitle>{testimonial.buyerName}</CardTitle>
-                    <CardDescription>{testimonial.game}</CardDescription>
+                    <CardDescription className="text-pretty">
+                      “{testimonial.comment}”
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="text-sm leading-6 text-muted-foreground">
-                    “{testimonial.comment}”
+                  <CardContent className="flex items-center gap-3">
+                    <span
+                      className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground"
+                      aria-hidden="true"
+                    >
+                      <UsersRoundIcon />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{testimonial.buyerName}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {testimonial.game}
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <Card>
-              <CardContent className="py-6 text-sm text-muted-foreground">
-                Verified buyer stories will appear here soon.
+            <Card className="mx-auto max-w-2xl bg-card/70 shadow-xl shadow-primary/5">
+              <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+                <span
+                  className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-background/70 text-primary"
+                  aria-hidden="true"
+                >
+                  <QuoteIcon />
+                </span>
+                <div className="flex flex-col gap-2">
+                  <p className="font-semibold">Verified Reviews Coming Soon</p>
+                  <p className="max-w-md text-sm leading-6 text-muted-foreground text-pretty">
+                    Public testimonials stay hidden until they are verified, approved,
+                    and ready to publish.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -302,19 +404,33 @@ export function LandingPage({ data }: LandingPageProps) {
 
         <SectionContainer
           id="how-it-works"
-          eyebrow="How It Works"
-          title="A simple path from request to completed progress."
-          description="The current shell keeps the sequence readable while the detailed motion and artwork wait for R1-07."
+          className="py-20 lg:py-28"
         >
+          <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
+            <p className="font-mono text-xs font-medium tracking-[0.28em] text-primary uppercase">
+              How It Works
+            </p>
+            <h2 className="text-3xl leading-tight font-extrabold tracking-tight text-balance sm:text-4xl">
+              A simple path from request to completed progress.
+            </h2>
+            <p className="text-sm leading-6 text-muted-foreground text-pretty">
+              The order flow stays lightweight, predictable, and easy to follow.
+            </p>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-3">
             {data.howItWorks.map((step, index) => (
-              <Card key={step.title} className="bg-card/75">
-                <CardHeader>
+              <Card key={step.title} className="bg-card/70 shadow-xl shadow-primary/5">
+                <CardHeader className="gap-4">
                   <Badge variant="secondary" className="w-fit font-mono">
                     {String(index + 1).padStart(2, "0")}
                   </Badge>
-                  <CardTitle>{step.title}</CardTitle>
-                  <CardDescription>{step.description}</CardDescription>
+                  <div className="flex flex-col gap-2">
+                    <CardTitle>{step.title}</CardTitle>
+                    <CardDescription className="leading-6">
+                      {step.description}
+                    </CardDescription>
+                  </div>
                 </CardHeader>
               </Card>
             ))}
@@ -323,24 +439,39 @@ export function LandingPage({ data }: LandingPageProps) {
 
         <SectionContainer
           id="faq"
-          eyebrow="FAQ"
-          title="Answers before the full FAQ treatment."
-          description="FAQ content comes from dedicated FAQ rows, with all items collapsed by default."
+          className="relative py-24 lg:py-32"
         >
-          <Card className="bg-card/75">
-            <CardContent>
-              <Accordion type="single" collapsible>
-                {data.faqs.map((faq) => (
-                  <AccordionItem key={faq.id} value={faq.id}>
-                    <AccordionTrigger>{faq.question}</AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </CardContent>
-          </Card>
+          <div
+            className="pointer-events-none absolute right-0 bottom-0 size-80 rounded-full bg-primary/10 blur-3xl"
+            aria-hidden="true"
+          />
+          <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-8">
+            <div className="flex max-w-2xl flex-col items-center gap-4 text-center">
+              <h2 className="text-3xl leading-tight font-extrabold tracking-tight text-balance sm:text-4xl">
+                Frequently Asked Questions
+              </h2>
+              <p className="text-sm leading-6 text-muted-foreground text-pretty">
+                Everything you need to know about our services.
+              </p>
+            </div>
+
+            <Card className="w-full bg-card/70 shadow-xl shadow-primary/5">
+              <CardContent className="p-2 sm:p-3">
+                <Accordion type="single" collapsible>
+                  {data.faqs.map((faq) => (
+                    <AccordionItem key={faq.id} value={faq.id}>
+                      <AccordionTrigger className="rounded-lg px-3">
+                        {faq.question}
+                      </AccordionTrigger>
+                      <AccordionContent className="px-3 text-muted-foreground">
+                        {faq.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </CardContent>
+            </Card>
+          </div>
         </SectionContainer>
 
         <SiteFooter footer={data.footer} />
