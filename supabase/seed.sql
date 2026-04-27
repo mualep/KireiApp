@@ -65,18 +65,24 @@ set
 insert into public.landing_content (section, content_key, content_value)
 values
   ('hero', 'eyebrow', '"Kireiku Game Boosting"'::jsonb),
-  ('hero', 'headline', '"Naik rank lebih tenang bersama booster yang terarah."'::jsonb),
-  ('hero', 'subheadline', '"Kireiku membantu buyer menyelesaikan rank, quest, dan progres akun dengan proses yang jelas, rapi, dan mudah dipantau."'::jsonb),
-  ('hero', 'primary_cta_label', '"Lihat Layanan"'::jsonb),
-  ('hero', 'primary_cta_href', '"#services"'::jsonb),
-  ('hero', 'secondary_cta_label', '"Cek FAQ"'::jsonb),
-  ('hero', 'secondary_cta_href', '"#faq"'::jsonb),
+  ('hero', 'headline', '"Level Up Your Game,\nWe Handle The Rest"'::jsonb),
+  ('hero', 'subheadline', '"Fast, safe, and reliable boosting services for Mobile Legends, Valorant, Genshin Impact, and more. Dominate the leaderboards with professional players at your side."'::jsonb),
+  ('hero', 'primary_cta_label', '"Order Now"'::jsonb),
+  ('hero', 'primary_cta_href', '"https://www.g2g.com/KireiBoost"'::jsonb),
+  ('hero', 'secondary_cta_label', '"Explore Services"'::jsonb),
+  ('hero', 'secondary_cta_href', '"#services"'::jsonb),
+  ('hero', 'services_heading', '"Our Services"'::jsonb),
+  ('hero', 'services_subheadline', '"Everything you need to reach the top. Tailored progression for your favorite titles by verified professionals."'::jsonb),
+  ('hero', 'testimonials_heading', '"Customer Reviews"'::jsonb),
+  ('hero', 'testimonials_subheadline', '"Do not just take our word for it. Hear from buyers who reached their goals with us."'::jsonb),
 
   ('stats', 'orders_completed', '{"label": "Order selesai", "value": 1200, "suffix": "+"}'::jsonb),
   ('stats', 'happy_buyers', '{"label": "Buyer terbantu", "value": 850, "suffix": "+"}'::jsonb),
   ('stats', 'supported_games', '{"label": "Game populer", "value": 8, "suffix": "+"}'::jsonb),
   ('stats', 'service_years', '{"label": "Tahun pengalaman", "value": 3, "suffix": "+"}'::jsonb),
 
+  ('why', 'heading', '"Why Kireiku"'::jsonb),
+  ('why', 'subheadline', '"A safer boost lobby built around clear communication, focused execution, and consistent support."'::jsonb),
   ('why', 'cards', '[
     {
       "title": "Proses jelas",
@@ -89,9 +95,16 @@ values
     {
       "title": "Fokus keamanan",
       "description": "Instruksi akun dan progres ditangani secara hati-hati sesuai kebutuhan tiap game."
+    },
+    {
+      "title": "Support responsif",
+      "description": "Tim Kireiku menjaga komunikasi tetap rapi agar buyer tahu progres dan langkah berikutnya."
     }
   ]'::jsonb),
 
+  ('how_it_works', 'eyebrow', '"How It Works"'::jsonb),
+  ('how_it_works', 'heading', '"A simple path from request to completed progress."'::jsonb),
+  ('how_it_works', 'subheadline', '"The order flow stays lightweight, predictable, and easy to follow."'::jsonb),
   ('how_it_works', 'steps', '[
     {
       "title": "Pilih layanan",
@@ -108,7 +121,7 @@ values
   ]'::jsonb),
 
   ('footer', 'brand_summary', '"Kireiku adalah layanan game boosting yang mengutamakan proses rapi, komunikasi jelas, dan pengalaman buyer yang nyaman."'::jsonb),
-  ('footer', 'g2g_url', '"https://www.g2g.com/"'::jsonb),
+  ('footer', 'g2g_url', '"https://www.g2g.com/KireiBoost"'::jsonb),
   ('footer', 'social_links', '[
     {
       "label": "Instagram",

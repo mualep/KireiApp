@@ -54,6 +54,12 @@ export type LandingStep = {
   description: string;
 };
 
+export type LandingSectionCopy = {
+  eyebrow?: string;
+  title: string;
+  description: string;
+};
+
 export type LandingService = {
   id: string;
   gameName: string;
@@ -88,6 +94,14 @@ export type LandingData = {
     subheadline: string;
     primaryCtaLabel: string;
     primaryCtaHref: string;
+    secondaryCtaLabel: string;
+    secondaryCtaHref: string;
+  };
+  sections: {
+    services: LandingSectionCopy;
+    why: LandingSectionCopy;
+    testimonials: LandingSectionCopy;
+    howItWorks: LandingSectionCopy;
   };
   stats: LandingStat[];
   why: LandingCard[];
@@ -106,11 +120,36 @@ export type LandingData = {
 const fallbackLandingData: LandingData = {
   hero: {
     eyebrow: "Kireiku Game Boosting",
-    headline: "Naik rank lebih tenang bersama booster yang terarah.",
+    headline: "Level Up Your Game,\nWe Handle The Rest",
     subheadline:
-      "Kireiku membantu buyer menyelesaikan rank, quest, dan progres akun dengan proses yang jelas, rapi, dan mudah dipantau.",
+      "Fast, safe, and reliable boosting services for Mobile Legends, Valorant, Genshin Impact, and more. Dominate the leaderboards with professional players at your side.",
     primaryCtaLabel: "Order Now",
     primaryCtaHref: "https://www.g2g.com/KireiBoost",
+    secondaryCtaLabel: "Explore Services",
+    secondaryCtaHref: "#services",
+  },
+  sections: {
+    services: {
+      title: "Our Services",
+      description:
+        "Everything you need to reach the top. Tailored progression for your favorite titles by verified professionals.",
+    },
+    why: {
+      title: "Why Kireiku",
+      description:
+        "A safer boost lobby built around clear communication, focused execution, and consistent support.",
+    },
+    testimonials: {
+      title: "Customer Reviews",
+      description:
+        "Do not just take our word for it. Hear from buyers who reached their goals with us.",
+    },
+    howItWorks: {
+      eyebrow: "How It Works",
+      title: "A simple path from request to completed progress.",
+      description:
+        "The order flow stays lightweight, predictable, and easy to follow.",
+    },
   },
   stats: [
     { label: "Order selesai", value: 1200, suffix: "+" },
@@ -133,6 +172,11 @@ const fallbackLandingData: LandingData = {
       title: "Fokus keamanan",
       description:
         "Instruksi akun dan progres ditangani secara hati-hati sesuai kebutuhan tiap game.",
+    },
+    {
+      title: "Support responsif",
+      description:
+        "Tim Kireiku menjaga komunikasi tetap rapi agar buyer tahu progres dan langkah berikutnya.",
     },
   ],
   howItWorks: [
@@ -260,6 +304,19 @@ function stepListValue(value: JsonValue | undefined, fallback: LandingStep[]) {
   return cardListValue(value, fallback);
 }
 
+function filledCardListValue(
+  value: JsonValue | undefined,
+  fallback: LandingCard[],
+) {
+  const cards = cardListValue(value, fallback);
+
+  if (cards.length >= fallback.length) {
+    return cards;
+  }
+
+  return [...cards, ...fallback.slice(cards.length)];
+}
+
 function socialLinksValue(
   value: JsonValue | undefined,
   fallback: Array<{ label: string; href: string }>,
@@ -290,6 +347,7 @@ function contentMap(rows: LandingContentRow[]) {
 function landingDataFromContent(rows: LandingContentRow[]): LandingData {
   const content = contentMap(rows);
   const fallback = fallbackLandingData;
+  const g2gUrl = stringValue(content.footer?.g2g_url, fallback.footer.g2gUrl);
 
   return {
     ...fallback,
@@ -300,8 +358,62 @@ function landingDataFromContent(rows: LandingContentRow[]): LandingData {
         content.hero?.subheadline,
         fallback.hero.subheadline,
       ),
-      primaryCtaLabel: "Order Now",
-      primaryCtaHref: "https://www.g2g.com/KireiBoost",
+      primaryCtaLabel: stringValue(
+        content.hero?.primary_cta_label,
+        fallback.hero.primaryCtaLabel,
+      ),
+      primaryCtaHref: g2gUrl,
+      secondaryCtaLabel: stringValue(
+        content.hero?.secondary_cta_label,
+        fallback.hero.secondaryCtaLabel,
+      ),
+      secondaryCtaHref: stringValue(
+        content.hero?.secondary_cta_href,
+        fallback.hero.secondaryCtaHref,
+      ),
+    },
+    sections: {
+      services: {
+        title: stringValue(
+          content.hero?.services_heading,
+          fallback.sections.services.title,
+        ),
+        description: stringValue(
+          content.hero?.services_subheadline,
+          fallback.sections.services.description,
+        ),
+      },
+      why: {
+        title: stringValue(content.why?.heading, fallback.sections.why.title),
+        description: stringValue(
+          content.why?.subheadline,
+          fallback.sections.why.description,
+        ),
+      },
+      testimonials: {
+        title: stringValue(
+          content.hero?.testimonials_heading,
+          fallback.sections.testimonials.title,
+        ),
+        description: stringValue(
+          content.hero?.testimonials_subheadline,
+          fallback.sections.testimonials.description,
+        ),
+      },
+      howItWorks: {
+        eyebrow: stringValue(
+          content.how_it_works?.eyebrow,
+          fallback.sections.howItWorks.eyebrow ?? "",
+        ),
+        title: stringValue(
+          content.how_it_works?.heading,
+          fallback.sections.howItWorks.title,
+        ),
+        description: stringValue(
+          content.how_it_works?.subheadline,
+          fallback.sections.howItWorks.description,
+        ),
+      },
     },
     stats: [
       statValue(content.stats?.orders_completed, fallback.stats[0]),
@@ -309,14 +421,14 @@ function landingDataFromContent(rows: LandingContentRow[]): LandingData {
       statValue(content.stats?.supported_games, fallback.stats[2]),
       statValue(content.stats?.service_years, fallback.stats[3]),
     ],
-    why: cardListValue(content.why?.cards, fallback.why),
+    why: filledCardListValue(content.why?.cards, fallback.why),
     howItWorks: stepListValue(content.how_it_works?.steps, fallback.howItWorks),
     footer: {
       brandSummary: stringValue(
         content.footer?.brand_summary,
         fallback.footer.brandSummary,
       ),
-      g2gUrl: "https://www.g2g.com/KireiBoost",
+      g2gUrl,
       socialLinks: socialLinksValue(
         content.footer?.social_links,
         fallback.footer.socialLinks,

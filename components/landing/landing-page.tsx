@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- CMS image hosts are not approved for Next remotePatterns yet. */
 import {
   ArrowRightIcon,
   ArrowUpRightIcon,
@@ -41,13 +42,100 @@ type LandingPageProps = {
 const numberFormatter = new Intl.NumberFormat("id-ID");
 const featureIcons = [ShieldCheckIcon, ZapIcon, LifeBuoyIcon, TagIcon];
 
-function getInitials(value: string) {
-  return value
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase())
-    .join("");
+function isExternalHref(href: string) {
+  return /^https?:\/\//i.test(href);
+}
+
+function getHeroHeadlineParts(value: string) {
+  const lineParts = value
+    .split(/\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (lineParts.length > 1) {
+    return {
+      emphasis: lineParts.slice(1).join(" "),
+      lead: lineParts[0],
+    };
+  }
+
+  const commaIndex = value.indexOf(",");
+
+  if (commaIndex > -1) {
+    return {
+      emphasis: value.slice(commaIndex + 1).trim(),
+      lead: value.slice(0, commaIndex + 1).trim(),
+    };
+  }
+
+  return {
+    emphasis: "",
+    lead: value,
+  };
+}
+
+function ServiceVisual({
+  index,
+  service,
+}: {
+  index: number;
+  service: LandingData["services"][number];
+}) {
+  const mediaUrl = service.imageUrl || service.iconUrl;
+
+  return (
+    <div className="relative min-h-56 overflow-hidden rounded-t-xl border-b border-border/70 bg-background">
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/60 to-background"
+        aria-hidden="true"
+      />
+      {mediaUrl ? (
+        <img
+          src={mediaUrl}
+          alt={`${service.gameName} service visual`}
+          width={640}
+          height={420}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 size-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105"
+        />
+      ) : (
+        <>
+          <div
+            className="absolute top-8 left-8 size-24 rounded-full border border-border/60 bg-card/30"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute right-8 bottom-10 size-32 rounded-full bg-primary/15 blur-2xl"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute inset-0 flex items-center justify-center text-muted-foreground/70"
+            aria-hidden="true"
+          >
+            <Gamepad2Icon />
+          </div>
+        </>
+      )}
+      <div
+        className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-card to-transparent"
+        aria-hidden="true"
+      />
+      <div className="relative flex min-h-56 flex-col justify-between p-6">
+        <div className="flex items-center justify-between gap-3">
+          <Badge variant="secondary">{service.serviceType}</Badge>
+          <span className="font-mono text-xs text-muted-foreground tabular-nums">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+        </div>
+        <div className="flex justify-end">
+          <span className="rounded-full border border-border/70 bg-card/70 px-3 py-1 text-xs font-semibold text-muted-foreground shadow-lg backdrop-blur-sm">
+            Boost Ready
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function LandingPage({ data }: LandingPageProps) {
@@ -56,13 +144,17 @@ export function LandingPage({ data }: LandingPageProps) {
       first.sortOrder - second.sortOrder ||
       first.gameName.localeCompare(second.gameName),
   );
+  const displayServices = services;
+  const heroHeadline = getHeroHeadlineParts(data.hero.headline);
+  const primaryCtaIsExternal = isExternalHref(data.hero.primaryCtaHref);
+  const secondaryCtaIsExternal = isExternalHref(data.hero.secondaryCtaHref);
   const trustedStat = data.stats.find((stat) =>
     stat.label.toLowerCase().includes("buyer"),
   );
   const trustedCount = trustedStat
     ? `${numberFormatter.format(trustedStat.value)}${trustedStat.suffix}`
     : "850+";
-  const featureCards = [...data.why, ...data.howItWorks].slice(0, 4);
+  const featureCards = data.why.slice(0, 4);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-background">
@@ -72,7 +164,10 @@ export function LandingPage({ data }: LandingPageProps) {
       >
         Skip To Content
       </a>
-      <SiteHeader />
+      <SiteHeader
+        orderHref={data.footer.g2gUrl}
+        orderLabel={data.hero.primaryCtaLabel}
+      />
 
       <div className="relative" id="main-content">
         <div className="pointer-events-none absolute inset-0 -z-0 overflow-hidden">
@@ -130,15 +225,19 @@ export function LandingPage({ data }: LandingPageProps) {
             </Badge>
 
             <div className="flex flex-col gap-5">
-              <h1 className="text-5xl leading-[0.98] font-extrabold tracking-tight text-balance sm:text-6xl lg:text-8xl">
-                Level Up Your Game,
-                <br />
-                <span className="text-primary italic">We Handle The Rest</span>
+              <h1 className="text-4xl leading-[0.98] font-extrabold tracking-tight text-balance sm:text-6xl lg:text-8xl">
+                {heroHeadline.lead}
+                {heroHeadline.emphasis ? (
+                  <>
+                    <br />
+                    <span className="text-primary italic">
+                      {heroHeadline.emphasis}
+                    </span>
+                  </>
+                ) : null}
               </h1>
               <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground text-pretty sm:text-lg">
-                Fast, safe, and reliable boosting services for Mobile Legends,
-                Valorant, Genshin Impact, and more. Dominate the leaderboards
-                with professional players at your side.
+                {data.hero.subheadline}
               </p>
             </div>
 
@@ -150,10 +249,10 @@ export function LandingPage({ data }: LandingPageProps) {
               >
                 <a
                   href={data.hero.primaryCtaHref}
-                  target="_blank"
-                  rel="noreferrer"
+                  target={primaryCtaIsExternal ? "_blank" : undefined}
+                  rel={primaryCtaIsExternal ? "noreferrer" : undefined}
                 >
-                  Order Now
+                  {data.hero.primaryCtaLabel}
                   <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
                 </a>
               </Button>
@@ -163,7 +262,13 @@ export function LandingPage({ data }: LandingPageProps) {
                 size="lg"
                 className="h-12 rounded-full border-border/80 bg-card/40 px-8 backdrop-blur-sm"
               >
-                <a href="#services">Explore Services</a>
+                <a
+                  href={data.hero.secondaryCtaHref}
+                  target={secondaryCtaIsExternal ? "_blank" : undefined}
+                  rel={secondaryCtaIsExternal ? "noreferrer" : undefined}
+                >
+                  {data.hero.secondaryCtaLabel}
+                </a>
               </Button>
             </div>
           </div>
@@ -172,81 +277,42 @@ export function LandingPage({ data }: LandingPageProps) {
         <SectionContainer id="services" className="py-24 lg:py-32">
           <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
             <h2 className="text-4xl leading-tight font-extrabold tracking-tight text-balance sm:text-5xl">
-              Our Services
+              {data.sections.services.title}
             </h2>
             <p className="text-base leading-7 text-muted-foreground text-pretty sm:text-lg">
-              Everything you need to reach the top. Tailored progression for
-              your favorite titles by verified professionals.
+              {data.sections.services.description}
             </p>
           </div>
 
-          {services.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {services.map((service, index) => {
-                const initials = getInitials(service.gameName);
-
-                return (
-                  <Card
-                    key={service.id}
-                    className="group bg-card/70 py-0 shadow-xl shadow-primary/5 transition-transform duration-300 hover:-translate-y-1"
-                  >
-                    <div className="relative min-h-56 overflow-hidden rounded-t-xl border-b border-border/70 bg-background">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/60 to-background" />
-                      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-card to-transparent" />
-                      <div
-                        className="absolute top-8 left-8 size-24 rounded-full border border-border/60 bg-card/30"
-                        aria-hidden="true"
-                      />
-                      <div
-                        className="absolute right-8 bottom-10 size-32 rounded-full bg-primary/15 blur-2xl"
-                        aria-hidden="true"
-                      />
-                      <div className="relative flex min-h-56 flex-col justify-between p-6">
-                        <div className="flex items-center justify-between gap-3">
-                          <Badge variant="secondary">
-                            {service.serviceType}
-                          </Badge>
-                          <span className="font-mono text-xs text-muted-foreground tabular-nums">
-                            {String(index + 1).padStart(2, "0")}
-                          </span>
-                        </div>
-                        <div className="flex items-end justify-between gap-5">
-                          <span
-                            className="text-6xl leading-none font-extrabold tracking-tight text-primary"
-                            aria-hidden="true"
-                          >
-                            {initials || "K"}
-                          </span>
-                          <Gamepad2Icon
-                            className="text-muted-foreground/70"
-                            aria-hidden="true"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <CardHeader className="gap-3 px-6 pt-6">
-                      <CardTitle className="text-2xl font-bold tracking-tight">
-                        {service.gameName}
-                      </CardTitle>
-                      <CardDescription className="line-clamp-3 leading-6">
-                        {service.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="px-6 pb-6">
-                      <a
-                        href={data.hero.primaryCtaHref}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                      >
-                        View More
-                        <ArrowUpRightIcon aria-hidden="true" />
-                      </a>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+          {displayServices.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {displayServices.map((service, index) => (
+                <Card
+                  key={service.id}
+                  className="group bg-card/70 py-0 shadow-xl shadow-primary/5 transition-transform duration-300 hover:-translate-y-1"
+                >
+                  <ServiceVisual index={index} service={service} />
+                  <CardHeader className="gap-3 px-6 pt-6">
+                    <CardTitle className="text-2xl font-bold tracking-tight">
+                      {service.gameName}
+                    </CardTitle>
+                    <CardDescription className="line-clamp-3 leading-6">
+                      {service.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="px-6 pb-6">
+                    <a
+                      href={data.hero.primaryCtaHref}
+                      target={primaryCtaIsExternal ? "_blank" : undefined}
+                      rel={primaryCtaIsExternal ? "noreferrer" : undefined}
+                      className="inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    >
+                      View More
+                      <ArrowUpRightIcon aria-hidden="true" />
+                    </a>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : (
             <Card>
@@ -264,8 +330,8 @@ export function LandingPage({ data }: LandingPageProps) {
             >
               <a
                 href={data.hero.primaryCtaHref}
-                target="_blank"
-                rel="noreferrer"
+                target={primaryCtaIsExternal ? "_blank" : undefined}
+                rel={primaryCtaIsExternal ? "noreferrer" : undefined}
               >
                 Other Games
                 <Grid2X2Icon data-icon="inline-end" aria-hidden="true" />
@@ -276,6 +342,7 @@ export function LandingPage({ data }: LandingPageProps) {
 
         <section
           id="why-kireiku"
+          aria-labelledby="why-kireiku-title"
           className="relative scroll-mt-24 border-y border-border/60 bg-card/25 px-4 py-24 sm:px-6 lg:px-8 lg:py-32"
         >
           <div
@@ -283,9 +350,24 @@ export function LandingPage({ data }: LandingPageProps) {
             aria-hidden="true"
           />
           <div className="relative mx-auto flex max-w-6xl flex-col gap-16">
+            <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
+              <h2
+                id="why-kireiku-title"
+                className="text-4xl leading-tight font-extrabold tracking-tight text-balance sm:text-5xl"
+              >
+                {data.sections.why.title}
+              </h2>
+              <p className="text-base leading-7 text-muted-foreground text-pretty">
+                {data.sections.why.description}
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
               {data.stats.map((stat) => (
-                <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
+                <div
+                  key={stat.label}
+                  className="flex min-w-0 flex-col items-center gap-2 text-center"
+                >
                   <p className="font-mono text-4xl leading-none font-extrabold tracking-tighter text-foreground tabular-nums sm:text-5xl lg:text-6xl">
                     {numberFormatter.format(stat.value)}
                     <span className="text-primary">{stat.suffix}</span>
@@ -311,7 +393,9 @@ export function LandingPage({ data }: LandingPageProps) {
                         <FeatureIcon aria-hidden="true" />
                       </span>
                       <div className="flex flex-col gap-2">
-                        <CardTitle>{item.title}</CardTitle>
+                        <CardTitle className="break-words">
+                          {item.title}
+                        </CardTitle>
                         <CardDescription className="leading-6">
                           {item.description}
                         </CardDescription>
@@ -330,11 +414,10 @@ export function LandingPage({ data }: LandingPageProps) {
         >
           <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
             <h2 className="text-4xl leading-tight font-extrabold tracking-tight text-balance sm:text-5xl">
-              Customer Reviews
+              {data.sections.testimonials.title}
             </h2>
             <p className="text-base leading-7 text-muted-foreground text-pretty">
-              Do not just take our word for it. Hear from buyers who reached their
-              goals with us.
+              {data.sections.testimonials.description}
             </p>
           </div>
 
@@ -360,7 +443,7 @@ export function LandingPage({ data }: LandingPageProps) {
                         ),
                       )}
                     </div>
-                    <CardDescription className="text-pretty">
+                    <CardDescription className="break-words text-pretty">
                       “{testimonial.comment}”
                     </CardDescription>
                   </CardHeader>
@@ -408,13 +491,13 @@ export function LandingPage({ data }: LandingPageProps) {
         >
           <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
             <p className="font-mono text-xs font-medium tracking-[0.28em] text-primary uppercase">
-              How It Works
+              {data.sections.howItWorks.eyebrow}
             </p>
             <h2 className="text-3xl leading-tight font-extrabold tracking-tight text-balance sm:text-4xl">
-              A simple path from request to completed progress.
+              {data.sections.howItWorks.title}
             </h2>
             <p className="text-sm leading-6 text-muted-foreground text-pretty">
-              The order flow stays lightweight, predictable, and easy to follow.
+              {data.sections.howItWorks.description}
             </p>
           </div>
 

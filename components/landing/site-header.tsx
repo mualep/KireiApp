@@ -9,9 +9,20 @@ const navItems = [
   { label: "FAQ", href: "#faq" },
 ];
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  orderHref: string;
+  orderLabel: string;
+};
+
+function isExternalHref(href: string) {
+  return /^https?:\/\//i.test(href);
+}
+
+export function SiteHeader({ orderHref, orderLabel }: SiteHeaderProps) {
+  const isExternalOrderHref = isExternalHref(orderHref);
+
   return (
-    <header className="fixed inset-x-0 top-4 z-40 px-4 sm:top-6 sm:px-6 lg:px-8">
+    <header className="fixed inset-x-0 top-4 z-40 px-4 pt-[env(safe-area-inset-top)] sm:top-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex h-12 max-w-5xl items-center justify-between gap-4 rounded-full border border-border/70 bg-card/70 px-4 shadow-2xl shadow-primary/10 backdrop-blur-xl sm:h-14 sm:px-5">
         <Link
           href="/"
@@ -43,8 +54,12 @@ export function SiteHeader() {
           size="sm"
           className="rounded-full px-4 shadow-lg shadow-primary/20"
         >
-          <a href="https://www.g2g.com/KireiBoost" target="_blank" rel="noreferrer">
-            Order Now
+          <a
+            href={orderHref}
+            target={isExternalOrderHref ? "_blank" : undefined}
+            rel={isExternalOrderHref ? "noreferrer" : undefined}
+          >
+            {orderLabel}
           </a>
         </Button>
       </div>
