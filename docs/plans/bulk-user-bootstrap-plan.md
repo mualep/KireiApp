@@ -92,7 +92,7 @@ Column handling:
 
 Worker initial passwords follow this rule:
 
-- Start with the fixed prefix and suffix pattern `!K1re1ku.<NameTransformed>!`.
+- Start with an exclamation mark, then `K1re1ku`, then a dot, then `<NameTransformed>`, and end with an exclamation mark.
 - Convert the approved worker name to Title Case for `<NameTransformed>`.
 - Preserve the first character of `<NameTransformed>`.
 - After the first character only, replace `a` or `A` with `4`.
