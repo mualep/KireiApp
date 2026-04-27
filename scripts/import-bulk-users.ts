@@ -5,10 +5,17 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import {
   type BulkUserRow,
+  type BulkUserValidationResult,
   hasValidationIssues,
   loadAndValidateBulkUsers,
   printRedactedValidationSummary,
 } from "./bulk-users/shared";
+import {
+  buildBulkImportAuditPayload,
+  bulkImportAuditJwtEnvKey,
+  createEmptyBulkImportExecutionResult,
+  type BulkImportExecutionResult,
+} from "./bulk-users/audit";
 import { parseShiftTime, validateWorkerProfileInput } from "../lib/workers";
 
 const executeFlag = "--execute";
@@ -17,6 +24,9 @@ const args = process.argv.slice(2);
 const unknownFlags = args.filter((arg) => arg.startsWith("-") && !allowedFlags.has(arg));
 const shouldExecute = args.includes(executeFlag);
 const localExecuteConfirmation = "CREATE_77_LOCAL_USERS";
+const auditDomain = "worker_import";
+const ownerAdminAuditActorRequiredMessage =
+  "Bulk import execute requires an authenticated owner/admin audit actor before writes.";
 type BootstrapTable<Row extends Record<string, unknown>, Insert extends Record<string, unknown> = Row> = {
   Insert: Insert;
   Relationships: [];
@@ -116,7 +126,12 @@ async function main() {
     process.exit(1);
   }
 
-  const missingEnvVars = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"].filter((key) => !process.env[key]);
+  const missingEnvVars = [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    bulkImportAuditJwtEnvKey,
+  ].filter((key) => !process.env[key]?.trim());
 
   if (missingEnvVars.length > 0) {
     console.error(`Execution blocked: missing required environment variable(s): ${missingEnvVars.join(", ")}`);
@@ -135,6 +150,9 @@ async function main() {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  const auditJwt = process.env[bulkImportAuditJwtEnvKey] ?? "";
 
   if (!isLocalSupabaseUrl(supabaseUrl)) {
     console.error("Execution blocked: NEXT_PUBLIC_SUPABASE_URL must point to a local Supabase instance.");
@@ -144,17 +162,27 @@ async function main() {
     process.exit(1);
   }
 
-  const adminClient: SupabaseAdminClient = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY ?? "", {
+  const adminClient: SupabaseAdminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       detectSessionInUrl: false,
       persistSession: false,
     },
   });
+  const auditClient = createAuditClient(supabaseUrl, supabaseAnonKey, auditJwt);
+  const result = createEmptyBulkImportExecutionResult();
+  let auditStarted = false;
+  let writesBegan = false;
 
   try {
     await assertDatabaseEntitiesExist(adminClient);
-    const result = await executeBulkImport(adminClient, loaded.result.rows);
+    await assertOwnerAdminAuditActor(auditClient, auditJwt);
+    await writeImportAudit(auditClient, "worker_import.bulk_users.started", loaded.result, result);
+    auditStarted = true;
+    await executeBulkImport(adminClient, loaded.result.rows, result, () => {
+      writesBegan = true;
+    });
+    await writeImportAudit(auditClient, "worker_import.bulk_users.completed", loaded.result, result);
 
     console.log("");
     console.log("Execution completed.");
@@ -165,6 +193,14 @@ async function main() {
     console.log(`- worker statuses created: ${result.createdWorkerStatuses}`);
     console.log(`- worker statuses reused: ${result.reusedWorkerStatuses}`);
   } catch (error) {
+    if (auditStarted && writesBegan) {
+      try {
+        await writeImportAudit(auditClient, "worker_import.bulk_users.failed", loaded.result, result);
+      } catch {
+        console.error("Audit failure event could not be recorded.");
+      }
+    }
+
     console.error("");
     console.error(error instanceof Error ? error.message : "Execution failed.");
     console.error("Passwords: [REDACTED; values are never printed]");
@@ -246,6 +282,21 @@ function isLocalSupabaseUrl(value: string) {
   }
 }
 
+function createAuditClient(supabaseUrl: string, anonKey: string, auditJwt: string): SupabaseAdminClient {
+  return createClient(supabaseUrl, anonKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false,
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${auditJwt}`,
+      },
+    },
+  });
+}
+
 async function assertDatabaseEntitiesExist(adminClient: SupabaseAdminClient) {
   for (const table of ["users", "worker_profiles", "worker_status", "audit_logs"]) {
     const { error } = await adminClient.from(table).select("*", { count: "exact", head: true });
@@ -254,42 +305,64 @@ async function assertDatabaseEntitiesExist(adminClient: SupabaseAdminClient) {
       throw new Error(`Execution blocked: database table public.${table} is not accessible.`);
     }
   }
+}
 
-  const { error: rpcError } = await adminClient.rpc("write_audit_log", {
-    p_action: "bulk_users.preflight",
-    p_domain: "worker_import",
-    p_payload: {
-      mode: "preflight",
-    },
+async function assertOwnerAdminAuditActor(auditClient: SupabaseAdminClient, auditJwt: string) {
+  const { data: authData, error: authError } = await auditClient.auth.getUser(auditJwt);
+  const auditUserId = authData.user?.id;
+
+  if (authError || !auditUserId) {
+    throw new Error(ownerAdminAuditActorRequiredMessage);
+  }
+
+  const { data: appUser, error: appUserError } = await auditClient
+    .from("users")
+    .select("id, tier, is_deleted")
+    .eq("id", auditUserId)
+    .maybeSingle();
+
+  if (appUserError || !appUser || appUser.is_deleted || !["owner", "admin"].includes(appUser.tier)) {
+    throw new Error(ownerAdminAuditActorRequiredMessage);
+  }
+}
+
+async function writeImportAudit(
+  auditClient: SupabaseAdminClient,
+  action: "worker_import.bulk_users.completed" | "worker_import.bulk_users.failed" | "worker_import.bulk_users.started",
+  validationResult: BulkUserValidationResult,
+  result: BulkImportExecutionResult,
+) {
+  const { error } = await auditClient.rpc("write_audit_log", {
+    p_action: action,
+    p_domain: auditDomain,
+    p_payload: buildBulkImportAuditPayload(validationResult, result),
     p_target_id: null,
     p_target_table: null,
     p_target_user_id: null,
   });
 
-  if (!rpcError) {
-    return;
-  }
-
-  if (!String(rpcError.message).toLowerCase().includes("unauthenticated")) {
-    throw new Error("Execution blocked: public.write_audit_log RPC is not available.");
+  if (error) {
+    throw new Error(`Execution blocked: could not write ${action} audit log.`);
   }
 }
 
-async function executeBulkImport(adminClient: SupabaseAdminClient, rows: BulkUserRow[]) {
+async function executeBulkImport(
+  adminClient: SupabaseAdminClient,
+  rows: BulkUserRow[],
+  result: BulkImportExecutionResult,
+  markWriteBegan: () => void,
+) {
   const existingAuthUsers = await listAuthUsersByEmail(adminClient);
   const authUserIdsByEmail = new Map<string, string>();
-  const result = {
-    createdAuthUsers: 0,
-    createdWorkerStatuses: 0,
-    reusedAuthUsers: 0,
-    reusedWorkerStatuses: 0,
-    upsertedAppUsers: 0,
-    upsertedWorkerProfiles: 0,
-  };
 
   for (const row of rows) {
     const existingUser = existingAuthUsers.get(row.email);
-    const authUserId = existingUser?.id ?? (await createAuthUser(adminClient, row));
+    let authUserId = existingUser?.id;
+
+    if (!authUserId) {
+      markWriteBegan();
+      authUserId = await createAuthUser(adminClient, row);
+    }
 
     if (existingUser) {
       result.reusedAuthUsers += 1;
@@ -299,7 +372,7 @@ async function executeBulkImport(adminClient: SupabaseAdminClient, rows: BulkUse
     }
 
     authUserIdsByEmail.set(row.email, authUserId);
-    await upsertAppUser(adminClient, row, authUserId);
+    await upsertAppUser(adminClient, row, authUserId, markWriteBegan);
     result.upsertedAppUsers += 1;
   }
 
@@ -310,10 +383,10 @@ async function executeBulkImport(adminClient: SupabaseAdminClient, rows: BulkUse
       throw new Error(`Execution failed: missing auth user for ${row.email}.`);
     }
 
-    await upsertWorkerProfile(adminClient, row, authUserId);
+    await upsertWorkerProfile(adminClient, row, authUserId, markWriteBegan);
     result.upsertedWorkerProfiles += 1;
 
-    const createdStatus = await insertMissingWorkerStatus(adminClient, authUserId);
+    const createdStatus = await insertMissingWorkerStatus(adminClient, authUserId, markWriteBegan);
 
     if (createdStatus) {
       result.createdWorkerStatuses += 1;
@@ -321,8 +394,6 @@ async function executeBulkImport(adminClient: SupabaseAdminClient, rows: BulkUse
       result.reusedWorkerStatuses += 1;
     }
   }
-
-  return result;
 }
 
 async function listAuthUsersByEmail(adminClient: SupabaseAdminClient) {
@@ -376,6 +447,7 @@ async function upsertAppUser(
   adminClient: SupabaseAdminClient,
   row: BulkUserRow,
   authUserId: string,
+  markWriteBegan: () => void,
 ) {
   const { data: existingByEmail, error: readError } = await adminClient
     .from("users")
@@ -391,6 +463,7 @@ async function upsertAppUser(
     throw new Error(`Execution blocked: app user email ${row.email} belongs to a different auth id.`);
   }
 
+  markWriteBegan();
   const { error } = await adminClient.from("users").upsert(
     {
       email: row.email,
@@ -413,6 +486,7 @@ async function upsertWorkerProfile(
   adminClient: SupabaseAdminClient,
   row: BulkUserRow,
   authUserId: string,
+  markWriteBegan: () => void,
 ) {
   const { data: existingGidOwner, error: gidReadError } = await adminClient
     .from("worker_profiles")
@@ -429,6 +503,7 @@ async function upsertWorkerProfile(
   }
 
   const profile = buildWorkerProfileRow(row, authUserId);
+  markWriteBegan();
   const { error } = await adminClient.from("worker_profiles").upsert(profile, {
     onConflict: "user_id",
   });
@@ -438,7 +513,11 @@ async function upsertWorkerProfile(
   }
 }
 
-async function insertMissingWorkerStatus(adminClient: SupabaseAdminClient, authUserId: string) {
+async function insertMissingWorkerStatus(
+  adminClient: SupabaseAdminClient,
+  authUserId: string,
+  markWriteBegan: () => void,
+) {
   const { data: existingStatus, error: readError } = await adminClient
     .from("worker_status")
     .select("user_id")
@@ -453,6 +532,7 @@ async function insertMissingWorkerStatus(adminClient: SupabaseAdminClient, authU
     return false;
   }
 
+  markWriteBegan();
   const { error } = await adminClient.from("worker_status").insert({
     current_status: "off",
     user_id: authUserId,

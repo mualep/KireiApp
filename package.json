@@ -11,6 +11,7 @@
     "validate:bulk-users": "tsx scripts/validate-bulk-users.ts",
     "import:bulk-users:dry-run": "tsx scripts/import-bulk-users.ts",
     "import:bulk-users:execute": "tsx scripts/import-bulk-users.ts --execute",
+    "test:bulk-import-audit": "tsx scripts/test-bulk-import-audit.ts",
     "test:worker-helpers": "tsx scripts/test-worker-helpers.ts"
   },
   "dependencies": {
