@@ -22,13 +22,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  CreateQuestionForm,
+  CreateServiceForm,
+  CreateTestimonialForm,
+  DeleteQuestionForm,
+  LandingContentForm,
+  QuestionForm,
+  ServiceForm,
+  TestimonialForm,
+} from "@/components/admin/content-cms/content-forms";
 import { canAccessAdminContent } from "@/lib/auth/redirects";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Content CMS | Kireiku",
-  description: "Release 1 read-only content CMS baseline.",
+  description: "Release 1 content CMS mutation baseline.",
 };
 
 type JsonValue =
@@ -60,6 +70,8 @@ type ServiceRow = {
   game_name: string;
   service_type: string;
   description: string | null;
+  icon_url: string | null;
+  image_url: string | null;
   is_active: boolean;
   sort_order: number;
   updated_at: string;
@@ -71,6 +83,7 @@ type TestimonialRow = {
   game: string;
   rating: number;
   comment: string;
+  avatar_url: string | null;
   is_visible: boolean;
   sort_order: number;
   updated_at: string;
@@ -114,6 +127,7 @@ export default async function AdminContentPage() {
   const visibleTestimonials = data.testimonials.filter(
     (testimonial) => testimonial.is_visible,
   );
+  const canEditFooterRows = staff.profile.tier === "owner";
 
   return (
     <div className="flex flex-col gap-6">
@@ -131,7 +145,7 @@ export default async function AdminContentPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="bg-primary text-primary-foreground">
                 <ShieldCheckIcon data-icon="inline-start" aria-hidden="true" />
-                Read-only baseline
+                Mutation baseline
               </Badge>
               <Badge
                 variant="secondary"
@@ -144,9 +158,9 @@ export default async function AdminContentPage() {
               Content CMS
             </h1>
             <p className="mt-4 max-w-2xl text-pretty text-muted-foreground">
-              Review the current landing content, services, questions, and
-              testimonials that power the public experience. Editing actions
-              are deferred to R1-10C.
+              Review and safely update the Release 1 landing content,
+              services, questions, and testimonials that power the public
+              experience.
             </p>
           </div>
           <div className="rounded-3xl border border-border bg-background/50 p-4 text-sm text-muted-foreground">
@@ -154,8 +168,8 @@ export default async function AdminContentPage() {
               Owner/Admin Surface
             </p>
             <p className="mt-1 max-w-xs">
-              This page uses authenticated, RLS-safe server reads only. No
-              mutation forms are rendered.
+              Server Actions validate every mutation, recheck staff tier, and
+              write audit logs through the approved RPC path.
             </p>
           </div>
         </div>
@@ -203,7 +217,7 @@ export default async function AdminContentPage() {
         <SectionHeading
           eyebrow="Landing Data"
           title="Landing Content"
-          description="Grouped by CMS section and key for quick review."
+          description="Grouped by CMS section and key. Footer rows are owner-only."
           icon={ClipboardListIcon}
         />
         <Separator className="my-5" />
@@ -227,26 +241,48 @@ export default async function AdminContentPage() {
                     Last updated {formatDate(group.lastUpdated)}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {group.rows.map((row) => (
-                    <div
-                      key={row.id}
-                      className="rounded-2xl border border-border bg-card/70 p-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p
-                          className="text-sm font-semibold text-foreground"
-                          translate="no"
-                        >
-                          {row.content_key}
-                        </p>
-                        <p className="text-xs tabular-nums text-muted-foreground">
-                          {formatDate(row.updated_at)}
-                        </p>
+                <CardContent className="flex flex-col gap-4">
+                  {group.rows.map((row) => {
+                    const isFooterRow = row.section === "footer";
+                    const canEditRow = !isFooterRow || canEditFooterRows;
+
+                    return (
+                      <div
+                        key={row.id}
+                        className="flex flex-col gap-4 rounded-2xl border border-border bg-card/70 p-4"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <p
+                              className="text-sm font-semibold text-foreground"
+                              translate="no"
+                            >
+                              {row.content_key}
+                            </p>
+                            {isFooterRow ? (
+                              <Badge
+                                variant="outline"
+                                className={
+                                  canEditFooterRows
+                                    ? "border-primary/20 bg-primary/10 text-primary"
+                                    : "text-muted-foreground"
+                                }
+                              >
+                                {canEditFooterRows
+                                  ? "Owner Editable"
+                                  : "Owner Only"}
+                              </Badge>
+                            ) : null}
+                          </div>
+                          <p className="text-xs tabular-nums text-muted-foreground">
+                            {formatDate(row.updated_at)}
+                          </p>
+                        </div>
+                        <JsonPreview value={row.content_value} />
+                        <LandingContentForm canEdit={canEditRow} row={row} />
                       </div>
-                      <JsonPreview value={row.content_value} />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
             ))}
@@ -263,9 +299,11 @@ export default async function AdminContentPage() {
         <SectionHeading
           eyebrow="Catalog"
           title="Services"
-          description="Read-only service cards from the current services table."
+          description="Create or edit landing service cards. Image URLs are stored only until image policy is decided."
           icon={TagsIcon}
         />
+        <Separator className="my-5" />
+        <CreateServiceForm />
         <Separator className="my-5" />
         {data.services.length > 0 ? (
           <div className="grid gap-4 lg:grid-cols-2">
@@ -297,6 +335,7 @@ export default async function AdminContentPage() {
                   <p className="text-xs text-muted-foreground">
                     Updated {formatDate(service.updated_at)}
                   </p>
+                  <ServiceForm service={service} />
                 </CardContent>
               </Card>
             ))}
@@ -313,12 +352,14 @@ export default async function AdminContentPage() {
         <SectionHeading
           eyebrow="Help Content"
           title="FAQ Items"
-          description="Questions come from the dedicated FAQ table."
+          description="Questions come from dedicated FAQ rows, never landing content."
           icon={BookOpenTextIcon}
         />
         <Separator className="my-5" />
+        <CreateQuestionForm />
+        <Separator className="my-5" />
         {data.questions.length > 0 ? (
-          <div className="space-y-3">
+          <div className="flex flex-col gap-4">
             {data.questions.map((item) => (
               <Card
                 key={item.id}
@@ -341,6 +382,16 @@ export default async function AdminContentPage() {
                   <p className="break-words text-muted-foreground">
                     {item.answer}
                   </p>
+                  <div className="mt-5 flex flex-col gap-4">
+                    <QuestionForm item={item} />
+                    <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4">
+                      <p className="mb-3 text-sm font-medium text-destructive">
+                        Delete this FAQ row. This button is intentionally
+                        scoped to this item only.
+                      </p>
+                      <DeleteQuestionForm id={item.id} />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -360,6 +411,8 @@ export default async function AdminContentPage() {
           description="Visible and hidden testimonials are shown for staff review."
           icon={MessageSquareQuoteIcon}
         />
+        <Separator className="my-5" />
+        <CreateTestimonialForm />
         <Separator className="my-5" />
         {data.testimonials.length > 0 ? (
           <div className="grid gap-4 lg:grid-cols-2">
@@ -395,6 +448,7 @@ export default async function AdminContentPage() {
                   <blockquote className="break-words text-muted-foreground">
                     “{testimonial.comment}”
                   </blockquote>
+                  <TestimonialForm testimonial={testimonial} />
                 </CardContent>
               </Card>
             ))}
@@ -426,7 +480,7 @@ async function getContentCmsData(): Promise<ContentCmsData> {
   const serviceQuery = supabase
     .from("services")
     .select(
-      "id, game_name, service_type, description, is_active, sort_order, updated_at",
+      "id, game_name, service_type, description, icon_url, image_url, is_active, sort_order, updated_at",
     )
     .order("sort_order", { ascending: true })
     .order("game_name", { ascending: true });
@@ -434,7 +488,7 @@ async function getContentCmsData(): Promise<ContentCmsData> {
   const testimonialQuery = supabase
     .from("testimonials")
     .select(
-      "id, buyer_name, game, rating, comment, is_visible, sort_order, updated_at",
+      "id, buyer_name, game, rating, comment, avatar_url, is_visible, sort_order, updated_at",
     )
     .order("sort_order", { ascending: true })
     .order("buyer_name", { ascending: true });
@@ -476,7 +530,7 @@ function getRows<T>(
   if (result.error) {
     issues.push({
       source,
-      message: result.error.message,
+      message: "This content group could not be loaded. Please try again.",
     });
 
     return [];
