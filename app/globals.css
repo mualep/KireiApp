@@ -20,6 +20,15 @@
     --color-chart-3: var(--chart-3);
     --color-chart-2: var(--chart-2);
     --color-chart-1: var(--chart-1);
+    --color-status-alpha: var(--status-alpha);
+    --color-status-break: var(--status-break);
+    --color-status-cuti: var(--status-cuti);
+    --color-status-late: var(--status-late);
+    --color-status-lembur: var(--status-lembur);
+    --color-status-off: var(--status-off);
+    --color-status-on: var(--status-on);
+    --color-status-pending: var(--status-pending);
+    --color-status-sakit: var(--status-sakit);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -97,6 +106,15 @@
     --chart-3: oklch(0.8342 0.0950 7.8239);
     --chart-4: oklch(0.8948 0.0509 64.2066);
     --chart-5: oklch(0.7118 0.0129 286.0665);
+    --status-alpha: #ef4444;
+    --status-break: #eab308;
+    --status-cuti: #3b82f6;
+    --status-late: #ea580c;
+    --status-lembur: #f59e0b;
+    --status-off: #6b7280;
+    --status-on: #22c55e;
+    --status-pending: #a855f7;
+    --status-sakit: #f97316;
     --radius: 0.75rem;
     --sidebar: oklch(1.0000 0 0);
     --sidebar-foreground: oklch(0.3703 0.0119 285.8054);
@@ -153,6 +171,15 @@
     --chart-3: oklch(0.7570 0.1485 11.9623);
     --chart-4: oklch(0.7824 0.0829 60.0948);
     --chart-5: oklch(0.4419 0.0146 285.7864);
+    --status-alpha: #ef4444;
+    --status-break: #eab308;
+    --status-cuti: #3b82f6;
+    --status-late: #ea580c;
+    --status-lembur: #f59e0b;
+    --status-off: #6b7280;
+    --status-on: #22c55e;
+    --status-pending: #a855f7;
+    --status-sakit: #f97316;
     --sidebar: oklch(0.1645 0.0086 274.3354);
     --sidebar-foreground: oklch(0.7118 0.0129 286.0665);
     --sidebar-primary: oklch(0.6453 0.2404 27.3106);
@@ -194,6 +221,161 @@
     }
   html {
     @apply font-sans;
+    color-scheme: light;
+    }
+  html.dark {
     color-scheme: dark;
+    }
+}
+
+@layer components {
+  .tracker-glass-panel {
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in oklch, var(--card) 88%, transparent),
+        color-mix(in oklch, var(--muted) 36%, transparent)
+      );
+    border-color: color-mix(in oklch, var(--border) 82%, transparent);
+    box-shadow:
+      0 18px 60px color-mix(in oklch, var(--background) 72%, black 28%),
+      inset 0 1px 0 color-mix(in oklch, var(--foreground) 10%, transparent);
+    backdrop-filter: blur(18px);
+    }
+
+  .dark .tracker-glass-panel {
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in oklch, var(--card) 72%, transparent),
+        color-mix(in oklch, var(--background) 58%, transparent)
+      );
+    box-shadow:
+      0 22px 70px color-mix(in oklch, var(--background) 38%, black 62%),
+      inset 0 1px 0 color-mix(in oklch, var(--foreground) 8%, transparent);
+    }
+
+  .tracker-card-grid {
+    display: grid;
+    width: 100%;
+    align-items: stretch;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+
+  @media (min-width: 768px) {
+    .tracker-card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+  @media (min-width: 1280px) {
+    .tracker-card-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+  @media (min-width: 1440px) {
+    .tracker-card-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+    [data-admin-route="tracker"][data-sidebar-state="collapsed"] .tracker-card-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+    }
+
+  .tracker-worker-card {
+    width: 100%;
+    min-width: 0;
+    }
+
+  .tracker-card-grid > * {
+    content-visibility: auto;
+    contain-intrinsic-size: 15rem;
+    }
+
+  .tracker-worker-card::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    content: "";
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklch, var(--tracker-status-color) 38%, transparent) 50%,
+      transparent
+    );
+    pointer-events: none;
+    }
+
+  .tracker-worker-card::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: radial-gradient(
+      ellipse 90% 54% at 50% 0%,
+      color-mix(in oklch, var(--tracker-status-color) 3.5%, transparent),
+      transparent 72%
+    );
+    pointer-events: none;
+    }
+
+  .tracker-status-badge {
+    box-shadow: none;
+    border-color: color-mix(in oklch, var(--tracker-status-color) 36%, transparent);
+    background: color-mix(in oklch, var(--tracker-status-color) 11%, var(--card));
+    color: var(--tracker-status-color);
+    text-shadow: none;
+    }
+
+  .tracker-card-tone {
+    border-color: color-mix(in oklch, var(--tracker-status-color) 20%, var(--border));
+    box-shadow:
+      0 12px 34px color-mix(in oklch, var(--background) 78%, black 22%),
+      0 0 12px color-mix(in oklch, var(--tracker-status-color) 4%, transparent),
+      inset 0 1px 0 color-mix(in oklch, var(--foreground) 7%, transparent);
+    }
+
+  .dark .tracker-card-tone {
+    box-shadow:
+      0 14px 38px color-mix(in oklch, var(--background) 48%, black 52%),
+      0 0 14px color-mix(in oklch, var(--tracker-status-color) 6%, transparent),
+      inset 0 1px 0 color-mix(in oklch, var(--foreground) 6%, transparent);
+    }
+
+  .tracker-status-alpha {
+    --tracker-status-color: var(--status-alpha);
+    }
+
+  .tracker-status-break {
+    --tracker-status-color: var(--status-break);
+    }
+
+  .tracker-status-cuti {
+    --tracker-status-color: var(--status-cuti);
+    }
+
+  .tracker-status-late {
+    --tracker-status-color: var(--status-late);
+    }
+
+  .tracker-status-lembur {
+    --tracker-status-color: var(--status-lembur);
+    }
+
+  .tracker-status-off {
+    --tracker-status-color: var(--status-off);
+    }
+
+  .tracker-status-on {
+    --tracker-status-color: var(--status-on);
+    }
+
+  .tracker-status-pending {
+    --tracker-status-color: var(--status-pending);
+    }
+
+  .tracker-status-sakit {
+    --tracker-status-color: var(--status-sakit);
     }
 }

@@ -4,11 +4,12 @@ import { usePathname } from "next/navigation";
 
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminTopbar } from "@/components/admin/admin-topbar";
+import { cn } from "@/lib/utils";
 import type { StaffTier } from "@/lib/auth/tiers";
 
 export type AdminShellNavItem = {
   href: string;
-  icon: "content" | "dashboard" | "profile";
+  icon: "content" | "dashboard" | "profile" | "tracker";
   label: string;
 };
 
@@ -34,9 +35,15 @@ export function AdminShell({
   const pathname = usePathname();
   const activeItem =
     navItems.find((item) => pathname === item.href) ?? navItems[0];
+  const isTrackerRoute =
+    pathname === "/admin/tracker" || pathname.startsWith("/admin/tracker/");
 
   return (
-    <div className="relative min-h-svh overflow-x-hidden bg-background text-foreground">
+    <div
+      className="relative min-h-svh overflow-x-hidden bg-background text-foreground"
+      data-admin-route={isTrackerRoute ? "tracker" : undefined}
+      data-sidebar-state="expanded"
+    >
       <a
         href="#admin-main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-6 focus:top-6 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground focus:shadow-lg"
@@ -70,7 +77,10 @@ export function AdminShell({
         />
         <main
           id="admin-main"
-          className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 py-6 outline-none"
+          className={cn(
+            "mx-auto flex w-full flex-1 flex-col outline-none",
+            isTrackerRoute ? "max-w-[112rem] gap-3 py-4" : "max-w-6xl gap-6 py-6",
+          )}
           tabIndex={-1}
         >
           {children}

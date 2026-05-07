@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  ActivityIcon,
   LayoutDashboardIcon,
   LogOutIcon,
   NewspaperIcon,
@@ -138,6 +139,7 @@ const adminNavIcons: Record<AdminShellNavItem["icon"], LucideIcon> = {
   content: NewspaperIcon,
   dashboard: LayoutDashboardIcon,
   profile: UserRoundIcon,
+  tracker: ActivityIcon,
 };
 
 function getInitials(name: string, email: string): string {
