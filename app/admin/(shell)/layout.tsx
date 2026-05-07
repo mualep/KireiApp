@@ -23,6 +23,11 @@ const ownerAdminNavItems: AdminShellNavItem[] = [
     label: "Content",
     icon: "content",
   },
+  {
+    href: "/admin/tracker",
+    label: "Tracker",
+    icon: "tracker",
+  },
 ];
 
 const memberNavItems: AdminShellNavItem[] = [
@@ -30,6 +35,11 @@ const memberNavItems: AdminShellNavItem[] = [
     href: "/admin/profile",
     label: "Profile",
     icon: "profile",
+  },
+  {
+    href: "/admin/tracker",
+    label: "Tracker",
+    icon: "tracker",
   },
 ];
 
