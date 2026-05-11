@@ -69,8 +69,56 @@ assert.equal(
   "R2C-B-02E must not write break_late_seconds.",
 );
 assertNoForbiddenPattern(
-  /\bwrite_audit_log\s*\(/i,
-  "R2C-B-02E must not write audit logs yet.",
+  /\b(password|passphrase|secret|service_role|credential|api_key|token)\b/i,
+  "R2C-B-02F tracker audit payload must avoid sanitizer-restricted words.",
+);
+assertNoForbiddenPattern(
+  /\bexception\s+when\b/i,
+  "R2C-B-02F must not catch or suppress audit failures.",
+);
+assert.match(
+  privateFunctionSql,
+  /\bapp_private\.write_audit_log\s*\(/i,
+  "R2C-B-02F must write audit logs from the private implementation.",
+);
+assert.equal(
+  /\bwrite_audit_log\s*\(/i.test(publicFunctionSql),
+  false,
+  "R2C-B-02F must not write audit logs from the public wrapper.",
+);
+assertOrderedFragments(
+  privateFunctionSql,
+  "if v_to_version is distinct from v_from_version + 1",
+  "v_audit_id := app_private.write_audit_log(",
+  "return pg_catalog.jsonb_build_object(",
+);
+assertSqlIncludes("'tracker'");
+assertSqlIncludes("'worker_status'");
+assertSqlIncludes("'tracker.break_start'");
+assertSqlIncludes("'tracker.break_end'");
+assertSqlIncludes("'tracker.finish'");
+assertSqlIncludes("'action', v_audit_action");
+assertSqlIncludes("'target_user_id', p_target_user_id");
+assertSqlIncludes("'gid', v_gid");
+assertSqlIncludes("'attendance_date', v_attendance_date");
+assertSqlIncludes("'period_month', v_period_month");
+assertSqlIncludes("'from_status', v_from_status");
+assertSqlIncludes("'to_status', v_to_status");
+assertSqlIncludes("'display_status_before', v_display_status_before");
+assertSqlIncludes("'from_version', v_from_version");
+assertSqlIncludes("'to_version', v_to_version");
+assertSqlIncludes("'attendance_status', v_attendance_status");
+assertSqlIncludes("'record_deltas', v_record_deltas");
+assertSqlIncludes("'cuti_stock_delta', v_cuti_stock_delta");
+assertSqlIncludes("'cuti_stock_after', v_cuti_stock_after");
+assertSqlIncludes("'cuti_stock_snapshot_after', v_record_cuti_stock_snapshot");
+assertSqlIncludes("v_record_deltas := pg_catalog.jsonb_build_object('work_late_seconds', v_record_work_late_seconds)");
+assertSqlIncludes("v_record_deltas := pg_catalog.jsonb_build_object('pending_days', v_record_pending_days)");
+assertSqlIncludes("v_record_deltas := pg_catalog.jsonb_build_object('sakit_days', v_record_sakit_days)");
+assertSqlIncludes("'audit_id', v_audit_id");
+assertNoForbiddenPattern(
+  /\bcuti_stock_snapshot\b\s*,\s*v_record_deltas\b/i,
+  "CUTI stock snapshots must not be reported as record_deltas.",
 );
 
 assertSqlIncludes("auth.uid()");
@@ -223,6 +271,23 @@ function assertSqlIncludes(fragment: string) {
 
 function assertNoForbiddenPattern(pattern: RegExp, message: string) {
   assert.equal(pattern.test(migrationSql), false, message);
+}
+
+function assertOrderedFragments(functionSql: string, ...fragments: string[]) {
+  const normalizedFunction = normalizeSql(functionSql).toLowerCase();
+  let cursor = -1;
+
+  for (const fragment of fragments) {
+    const next = normalizedFunction.indexOf(normalizeSql(fragment).toLowerCase(), cursor + 1);
+
+    assert.notEqual(next, -1, `Missing ordered SQL fragment: ${fragment}`);
+    assert.ok(
+      next > cursor,
+      `SQL fragment is out of order: ${fragment}`,
+    );
+
+    cursor = next;
+  }
 }
 
 function normalizeSql(sql: string) {

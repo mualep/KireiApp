@@ -1,5 +1,4 @@
--- R2C-B-02E tracker action RPC side effects.
--- Audit fail-closed behavior remains deferred.
+-- R2C-B-02F tracker action RPC audit.
 
 create or replace function app_private.apply_tracker_action_impl(
   p_actor_user_id uuid,
@@ -27,6 +26,7 @@ declare
   v_break_timer_running boolean;
   v_break_accumulated_secs integer;
   v_shift_label text;
+  v_gid text;
   v_shift_start_hour smallint;
   v_shift_start_min smallint;
   v_shift_end_hour smallint;
@@ -54,6 +54,10 @@ declare
   v_record_pending_days integer := 0;
   v_record_sakit_days integer := 0;
   v_record_cuti_stock_snapshot smallint;
+  v_audit_action text;
+  v_audit_id uuid;
+  v_record_deltas jsonb := '{}'::jsonb;
+  v_cuti_stock_delta integer := 0;
 begin
   select u.tier
     into v_actor_tier
@@ -123,6 +127,7 @@ begin
   end if;
 
   select
+    wp.gid,
     wp.shift,
     wp.shift_start_hour,
     wp.shift_start_min,
@@ -130,6 +135,7 @@ begin
     wp.shift_end_min,
     wp.is_flexible
     into
+      v_gid,
       v_shift_label,
       v_shift_start_hour,
       v_shift_start_min,
@@ -232,6 +238,17 @@ begin
     raise exception 'tracker.alpha_rejected' using errcode = '22023';
   end if;
 
+  v_audit_action := case
+    when v_action = 'START' and v_display_status_before = 'LATE' then 'tracker.start_late'
+    when v_action = 'START' then 'tracker.start'
+    when v_action = 'ISTIRAHAT' then 'tracker.break_start'
+    when v_action = 'LANJUT' then 'tracker.break_end'
+    when v_action = 'SELESAI' then 'tracker.finish'
+    when v_action = 'CUTI' then 'tracker.cuti'
+    when v_action = 'IZIN' then 'tracker.izin'
+    when v_action = 'SAKIT' then 'tracker.sakit'
+  end;
+
   if v_action in ('START', 'CUTI', 'IZIN', 'SAKIT') then
     if not (v_from_status = 'off' and v_display_status_before in ('OFF', 'LATE')) then
       raise exception 'tracker.invalid_transition' using errcode = '22023';
@@ -243,13 +260,7 @@ begin
       when 'IZIN' then 'pending'
       when 'SAKIT' then 'sakit'
     end;
-    v_source_action := case
-      when v_action = 'START' and v_display_status_before = 'LATE' then 'tracker.start_late'
-      when v_action = 'START' then 'tracker.start'
-      when v_action = 'CUTI' then 'tracker.cuti'
-      when v_action = 'IZIN' then 'tracker.izin'
-      when v_action = 'SAKIT' then 'tracker.sakit'
-    end;
+    v_source_action := v_audit_action;
 
     perform 1
     from public.worker_attendance as wa
@@ -292,6 +303,10 @@ begin
 
     if v_display_status_before = 'LATE' then
       v_record_work_late_seconds := v_work_late_seconds_delta;
+      v_record_deltas := pg_catalog.jsonb_build_object(
+        'work_late_seconds',
+        v_record_work_late_seconds
+      );
 
       insert into public.worker_records (
         user_id,
@@ -469,6 +484,7 @@ begin
     end if;
 
     v_record_cuti_stock_snapshot := v_cuti_stock_after;
+    v_cuti_stock_delta := -1;
 
     insert into public.worker_records (
       user_id,
@@ -532,6 +548,7 @@ begin
   elsif v_action = 'IZIN' then
     v_attendance_id := null;
     v_record_pending_days := 1;
+    v_record_deltas := pg_catalog.jsonb_build_object('pending_days', v_record_pending_days);
 
     insert into public.worker_attendance (
       user_id,
@@ -620,6 +637,7 @@ begin
   elsif v_action = 'SAKIT' then
     v_attendance_id := null;
     v_record_sakit_days := 1;
+    v_record_deltas := pg_catalog.jsonb_build_object('sakit_days', v_record_sakit_days);
 
     insert into public.worker_attendance (
       user_id,
@@ -711,9 +729,37 @@ begin
     raise exception 'tracker.version_conflict' using errcode = '40001';
   end if;
 
+  v_audit_id := app_private.write_audit_log(
+    'tracker',
+    v_audit_action,
+    'worker_status',
+    p_target_user_id::text,
+    pg_catalog.jsonb_strip_nulls(
+      pg_catalog.jsonb_build_object(
+        'action', v_audit_action,
+        'target_user_id', p_target_user_id,
+        'gid', v_gid,
+        'attendance_date', v_attendance_date,
+        'period_month', v_period_month,
+        'from_status', v_from_status,
+        'to_status', v_to_status,
+        'display_status_before', v_display_status_before,
+        'from_version', v_from_version,
+        'to_version', v_to_version,
+        'attendance_status', v_attendance_status,
+        'record_deltas', v_record_deltas,
+        'cuti_stock_delta', v_cuti_stock_delta,
+        'cuti_stock_after', v_cuti_stock_after,
+        'cuti_stock_snapshot_after', v_record_cuti_stock_snapshot
+      )
+    ),
+    p_target_user_id
+  );
+
   return pg_catalog.jsonb_build_object(
     'ok', true,
     'action', v_action,
+    'audit_id', v_audit_id,
     'target_user_id', p_target_user_id,
     'from_status', v_from_status,
     'to_status', v_to_status,
@@ -731,7 +777,7 @@ end;
 $$;
 
 comment on function app_private.apply_tracker_action_impl(uuid, uuid, text, bigint, timestamptz)
-is 'Private SECURITY DEFINER tracker action implementation. R2C-B-02E updates tracker status and writes attendance/records side effects without audit.';
+is 'Private SECURITY DEFINER tracker action implementation. R2C-B-02F updates tracker state, writes side effects, and records audit in one transaction.';
 
 revoke execute on function app_private.apply_tracker_action_impl(uuid, uuid, text, bigint, timestamptz) from public;
 revoke execute on function app_private.apply_tracker_action_impl(uuid, uuid, text, bigint, timestamptz) from anon;
