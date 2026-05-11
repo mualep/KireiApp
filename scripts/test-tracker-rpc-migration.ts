@@ -6,16 +6,6 @@ const expectedPublicSignature =
   "public.apply_tracker_action(p_target_user_id uuid, p_action text, p_expected_version bigint)";
 const expectedPrivateSignature =
   "app_private.apply_tracker_action_impl(p_actor_user_id uuid, p_target_user_id uuid, p_action text, p_expected_version bigint, p_now timestamptz)";
-const expectedAuditActions = [
-  "tracker.start",
-  "tracker.start_late",
-  "tracker.break_start",
-  "tracker.break_end",
-  "tracker.finish",
-  "tracker.cuti",
-  "tracker.izin",
-  "tracker.sakit",
-] as const;
 
 const migrationSql = readR2CBMigration();
 const normalizedSql = normalizeSql(migrationSql);
@@ -70,27 +60,29 @@ assertNoForbiddenPattern(
 );
 assertNoForbiddenPattern(/\b(cron|reset|cancel|lembur)\b/i, "R2C-B-02 baseline excludes cron/reset/cancel/lembur automation.");
 
-const breakActionSql = extractActionCaseSql(privateFunctionSql, [
-  "ISTIRAHAT",
-  "LANJUT",
-]);
 assert.equal(
-  /\bbreak_late_seconds\b/i.test(breakActionSql),
+  /\bbreak_late_seconds\b/i.test(migrationSql),
   false,
-  "ISTIRAHAT/LANJUT must not write break_late_seconds in R2C-B-02.",
+  "R2C-B-02C skeleton must not write break_late_seconds.",
 );
 
-assertSqlIncludes("'tracker'");
-for (const actionName of expectedAuditActions) {
-  assertSqlIncludes(`'${actionName}'`);
-}
-
-assertSqlIncludes("for update");
-assertSqlIncludes("cuti_stock > 0");
-assertSqlIncludes("cuti_stock = cuti_stock - 1");
-assertSqlIncludes("cuti_stock_snapshot");
-assertSqlIncludes("p_action = 'IZIN'");
-assertSqlIncludes("'pending'");
+assertSqlIncludes("auth.uid()");
+assertSqlIncludes("tracker.unauthenticated");
+assertSqlIncludes("tracker.unauthorized");
+assertSqlIncludes("tracker.invalid_action");
+assertSqlIncludes("tracker.invalid_target");
+assertSqlIncludes("u.is_deleted = false");
+assertSqlIncludes("u.tier in ('owner', 'admin')");
+assertSqlIncludes("'START'");
+assertSqlIncludes("'ISTIRAHAT'");
+assertSqlIncludes("'LANJUT'");
+assertSqlIncludes("'SELESAI'");
+assertSqlIncludes("'CUTI'");
+assertSqlIncludes("'IZIN'");
+assertSqlIncludes("'SAKIT'");
+assertSqlIncludes("p_expected_version is null or p_expected_version < 0");
+assertSqlIncludes("skeleton_only");
+assertSqlIncludes("app_private.apply_tracker_action_impl");
 assert.equal(
   /\b(current_status|status)\s*=\s*'izin'\b/i.test(migrationSql),
   false,
@@ -149,18 +141,6 @@ function extractFunctionSql(functionName: string) {
   return match[0];
 }
 
-function extractActionCaseSql(functionSql: string, actions: readonly string[]) {
-  const actionAlternation = actions.map(escapeRegExp).join("|");
-  const pattern = new RegExp(
-    `(?:p_action|v_action)\\s*(?:=|in)\\s*(?:'(${actionAlternation})'|\\([^)]*(?:${actionAlternation})[^)]*\\))[\\s\\S]*?(?:(?:p_action|v_action)\\s*(?:=|in)\\s*|end\\s+if|case\\s+|\\$\\$)`,
-    "i",
-  );
-  const match = functionSql.match(pattern);
-
-  assert.ok(match, `Missing action block for ${actions.join("/")}.`);
-  return match[0];
-}
-
 function assertSqlIncludes(fragment: string) {
   assert.ok(normalizedSql.includes(normalizeSql(fragment)), `Missing SQL fragment: ${fragment}`);
 }
@@ -170,7 +150,11 @@ function assertNoForbiddenPattern(pattern: RegExp, message: string) {
 }
 
 function normalizeSql(sql: string) {
-  return sql.replace(/\s+/g, " ").trim();
+  return sql
+    .replace(/\s+/g, " ")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
+    .trim();
 }
 
 function escapeRegExp(value: string) {
