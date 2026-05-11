@@ -18,6 +18,10 @@ import {
   type ApplyTrackerActionResult,
 } from "@/app/admin/(shell)/tracker/actions";
 import { Button } from "@/components/ui/button";
+import {
+  formatBreakRemainingSeconds,
+  getBreakRemainingSeconds,
+} from "@/lib/tracker/break-timer";
 import { cn } from "@/lib/utils";
 import type { TrackerAction } from "@/lib/workers/tracker-actions";
 import type { TrackerCardDTO } from "@/lib/workers";
@@ -57,11 +61,16 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       return;
     }
 
+    const initialTimer = window.setTimeout(() => {
+      setNowMs(Date.now());
+    }, 0);
+
     const timer = window.setInterval(() => {
       setNowMs(Date.now());
     }, 1000);
 
     return () => {
+      window.clearTimeout(initialTimer);
       window.clearInterval(timer);
     };
   }, [card.breakStartedAt, card.breakTimerRunning, isBreakCard]);
@@ -110,10 +119,17 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           <div className="flex min-w-0 items-center justify-between gap-2">
             <span className="inline-flex min-w-0 items-center gap-1 font-medium text-muted-foreground">
               <TimerIcon data-icon="inline-start" aria-hidden="true" />
-              <span className="truncate">Break Timer</span>
+              <span className="truncate">Break Remaining</span>
             </span>
             <span className="shrink-0 font-mono font-black text-status-break">
-              {formatBreakDuration(getBreakDurationSeconds(card, nowMs))}
+              {formatBreakRemainingSeconds(
+                getBreakRemainingSeconds({
+                  accumulatedSeconds: card.breakAccumulatedSecs,
+                  nowMs,
+                  startedAt: card.breakStartedAt,
+                  timerRunning: card.breakTimerRunning,
+                }),
+              )}
             </span>
           </div>
           <p className="mt-1 text-[0.65rem] text-muted-foreground">
@@ -256,31 +272,4 @@ function getActiveControlGroups(card: TrackerCardDTO): ActionControlConfig[][] {
   }
 
   return [];
-}
-
-function getBreakDurationSeconds(card: TrackerCardDTO, nowMs: number | null): number {
-  if (!card.breakTimerRunning || !card.breakStartedAt || nowMs === null) {
-    return card.breakAccumulatedSecs;
-  }
-
-  const startedAtMs = new Date(card.breakStartedAt).getTime();
-
-  if (!Number.isFinite(startedAtMs)) {
-    return card.breakAccumulatedSecs;
-  }
-
-  const liveSeconds = Math.max(0, Math.floor((nowMs - startedAtMs) / 1000));
-
-  return card.breakAccumulatedSecs + liveSeconds;
-}
-
-function formatBreakDuration(totalSeconds: number): string {
-  const normalizedSeconds = Math.max(0, Math.floor(totalSeconds));
-  const hours = Math.floor(normalizedSeconds / 3600);
-  const minutes = Math.floor((normalizedSeconds % 3600) / 60);
-  const seconds = normalizedSeconds % 60;
-
-  return [hours, minutes, seconds]
-    .map((part) => String(part).padStart(2, "0"))
-    .join(":");
 }

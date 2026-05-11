@@ -22,6 +22,11 @@ import {
   scopeTrackerCards,
   sortTrackerCards,
 } from "../lib/tracker/helpers";
+import {
+  TRACKER_BREAK_LIMIT_SECONDS,
+  formatBreakRemainingSeconds,
+  getBreakRemainingSeconds,
+} from "../lib/tracker/break-timer";
 
 const projectRoot = process.cwd();
 const trackerPagePath = resolve(projectRoot, "app/admin/(shell)/tracker/page.tsx");
@@ -87,7 +92,9 @@ assertIncludes(trackerActionControlsSource, 'label: "BREAK"');
 assertIncludes(trackerActionControlsSource, 'label: "STOP ISTIRAHAT"');
 assertIncludes(trackerActionControlsSource, 'action: "LANJUT"');
 assertIncludes(trackerActionControlsSource, "Ends break and returns to active work.");
-assertIncludes(trackerActionControlsSource, "formatBreakDuration");
+assertIncludes(trackerActionControlsSource, "Break Remaining");
+assertIncludes(trackerActionControlsSource, "formatBreakRemainingSeconds");
+assertIncludes(trackerActionControlsSource, "getBreakRemainingSeconds");
 assertIncludes(trackerActionControlsSource, "breakAccumulatedSecs");
 assertIncludes(trackerActionControlsSource, "breakStartedAt");
 assertIncludes(trackerActionControlsSource, "breakTimerRunning");
@@ -134,6 +141,61 @@ assertNoPattern(
   trackerActionControlsSource,
   /\b(service_role|from\(\s*["']worker_(status|attendance|records|profiles)["']\s*\)|\.(insert|update|upsert|delete)\s*\()/i,
   "Tracker action controls must not use service role or write tracker tables directly.",
+);
+
+assert.equal(TRACKER_BREAK_LIMIT_SECONDS, 3600);
+assert.equal(
+  formatBreakRemainingSeconds(
+    getBreakRemainingSeconds({
+      accumulatedSeconds: 0,
+      nowMs: null,
+      startedAt: null,
+      timerRunning: false,
+    }),
+  ),
+  "01:00:00",
+);
+assert.equal(
+  formatBreakRemainingSeconds(
+    getBreakRemainingSeconds({
+      accumulatedSeconds: 30 * 60,
+      nowMs: null,
+      startedAt: null,
+      timerRunning: false,
+    }),
+  ),
+  "00:30:00",
+);
+assert.equal(
+  formatBreakRemainingSeconds(
+    getBreakRemainingSeconds({
+      accumulatedSeconds: 60 * 60,
+      nowMs: null,
+      startedAt: null,
+      timerRunning: false,
+    }),
+  ),
+  "00:00:00",
+);
+assert.equal(
+  formatBreakRemainingSeconds(
+    getBreakRemainingSeconds({
+      accumulatedSeconds: 63 * 60 + 12,
+      nowMs: null,
+      startedAt: null,
+      timerRunning: false,
+    }),
+  ),
+  "-00:03:12",
+);
+assert.equal(
+  getBreakRemainingSeconds({
+    accumulatedSeconds: 60,
+    nowMs: Date.parse("2026-05-11T00:02:00.000Z"),
+    startedAt: "2026-05-11T00:00:00.000Z",
+    timerRunning: true,
+  }),
+  TRACKER_BREAK_LIMIT_SECONDS - 180,
 );
 
 assertIncludes(trackerPageSource, "canStaffTierPerformTrackerAction");
