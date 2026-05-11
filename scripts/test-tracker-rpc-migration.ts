@@ -66,23 +66,11 @@ assertNoForbiddenPattern(
 assert.equal(
   /\bbreak_late_seconds\b/i.test(migrationSql),
   false,
-  "R2C-B-02D must not write break_late_seconds.",
-);
-assertNoForbiddenPattern(
-  /\binsert\s+into\s+public\.worker_attendance\b/i,
-  "R2C-B-02D must not insert attendance rows yet.",
-);
-assertNoForbiddenPattern(
-  /\binsert\s+into\s+public\.worker_records\b|\bupdate\s+public\.worker_records\b/i,
-  "R2C-B-02D must not write worker_records yet.",
-);
-assertNoForbiddenPattern(
-  /\bcuti_stock\s*=\s*cuti_stock\s*-\s*1\b/i,
-  "R2C-B-02D must not decrement cuti_stock yet.",
+  "R2C-B-02E must not write break_late_seconds.",
 );
 assertNoForbiddenPattern(
   /\bwrite_audit_log\s*\(/i,
-  "R2C-B-02D must not write audit logs yet.",
+  "R2C-B-02E must not write audit logs yet.",
 );
 
 assertSqlIncludes("auth.uid()");
@@ -93,6 +81,9 @@ assertSqlIncludes("tracker.invalid_target");
 assertSqlIncludes("tracker.version_conflict");
 assertSqlIncludes("tracker.invalid_transition");
 assertSqlIncludes("tracker.alpha_rejected");
+assertSqlIncludes("tracker.attendance_conflict");
+assertSqlIncludes("tracker.cuti_stock_exhausted");
+assertSqlIncludes("using errcode = '23514'");
 assertSqlIncludes("u.is_deleted = false");
 assertSqlIncludes("u.tier in ('owner', 'admin')");
 assertSqlIncludes("'START'");
@@ -134,6 +125,40 @@ assertSqlIncludes("break_accumulated_secs = v_break_accumulated_secs");
 assertSqlIncludes("break_started_at = null");
 assertSqlIncludes("break_timer_running = false");
 assertSqlIncludes("shift_active_date = null");
+assertSqlIncludes("from public.worker_attendance as wa");
+assertSqlIncludes("insert into public.worker_attendance");
+assertSqlIncludes("on conflict on constraint worker_attendance_user_date_key do nothing");
+assertSqlIncludes("status, source, source_action, created_at, updated_at");
+assertSqlIncludes("'hadir'");
+assertSqlIncludes("'cuti'");
+assertSqlIncludes("'pending'");
+assertSqlIncludes("'sakit'");
+assertSqlIncludes("'tracker'");
+assertSqlIncludes("'tracker.start'");
+assertSqlIncludes("'tracker.start_late'");
+assertSqlIncludes("'tracker.cuti'");
+assertSqlIncludes("'tracker.izin'");
+assertSqlIncludes("'tracker.sakit'");
+assertSqlIncludes("insert into public.worker_records");
+assertSqlIncludes("on conflict (user_id, period_month) do update");
+assertSqlIncludes("work_late_seconds = public.worker_records.work_late_seconds + excluded.work_late_seconds");
+assertSqlIncludes("pending_days = public.worker_records.pending_days + excluded.pending_days");
+assertSqlIncludes("sakit_days = public.worker_records.sakit_days + excluded.sakit_days");
+assertSqlIncludes("cuti_stock_snapshot = coalesce(excluded.cuti_stock_snapshot, public.worker_records.cuti_stock_snapshot)");
+assertSqlIncludes("last_source = excluded.last_source");
+assertSqlIncludes("last_source_action = excluded.last_source_action");
+assertSqlIncludes("from public.worker_profiles as cp");
+assertSqlIncludes("for update");
+assertSqlIncludes("v_cuti_stock_before <= 0");
+assertSqlIncludes("cuti_stock = cuti_stock - 1");
+assertSqlIncludes("returning wp.cuti_stock into v_cuti_stock_after");
+assertSqlIncludes("v_record_cuti_stock_snapshot := v_cuti_stock_after");
+assertSqlIncludes("current_status = 'cuti'");
+assertSqlIncludes("current_status = 'pending'");
+assertSqlIncludes("current_status = 'sakit'");
+assertSqlIncludes("cuti_set_date = v_attendance_date");
+assertSqlIncludes("pending_started_at = p_now");
+assertSqlIncludes("sakit_started_at = p_now");
 assert.equal(
   /\b(current_status|status)\s*=\s*'izin'\b/i.test(migrationSql),
   false,

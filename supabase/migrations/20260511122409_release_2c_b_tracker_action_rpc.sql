@@ -1,5 +1,5 @@
--- R2C-B-02D tracker action RPC status transition layer.
--- Daily outcome, monthly aggregate, leave stock, and audit side effects remain deferred.
+-- R2C-B-02E tracker action RPC side effects.
+-- Audit fail-closed behavior remains deferred.
 
 create or replace function app_private.apply_tracker_action_impl(
   p_actor_user_id uuid,
@@ -45,6 +45,15 @@ declare
   v_grace_at timestamptz;
   v_display_status_before text;
   v_work_late_seconds_delta integer := 0;
+  v_attendance_status text;
+  v_source_action text;
+  v_attendance_id uuid;
+  v_cuti_stock_before smallint;
+  v_cuti_stock_after smallint;
+  v_record_work_late_seconds integer := 0;
+  v_record_pending_days integer := 0;
+  v_record_sakit_days integer := 0;
+  v_record_cuti_stock_snapshot smallint;
 begin
   select u.tier
     into v_actor_tier
@@ -223,9 +232,103 @@ begin
     raise exception 'tracker.alpha_rejected' using errcode = '22023';
   end if;
 
-  if v_action = 'START' then
+  if v_action in ('START', 'CUTI', 'IZIN', 'SAKIT') then
     if not (v_from_status = 'off' and v_display_status_before in ('OFF', 'LATE')) then
       raise exception 'tracker.invalid_transition' using errcode = '22023';
+    end if;
+
+    v_attendance_status := case v_action
+      when 'START' then 'hadir'
+      when 'CUTI' then 'cuti'
+      when 'IZIN' then 'pending'
+      when 'SAKIT' then 'sakit'
+    end;
+    v_source_action := case
+      when v_action = 'START' and v_display_status_before = 'LATE' then 'tracker.start_late'
+      when v_action = 'START' then 'tracker.start'
+      when v_action = 'CUTI' then 'tracker.cuti'
+      when v_action = 'IZIN' then 'tracker.izin'
+      when v_action = 'SAKIT' then 'tracker.sakit'
+    end;
+
+    perform 1
+    from public.worker_attendance as wa
+    where wa.user_id = p_target_user_id
+      and wa.attendance_date = v_attendance_date
+    limit 1;
+
+    if found then
+      raise exception 'tracker.attendance_conflict' using errcode = '23505';
+    end if;
+  end if;
+
+  if v_action = 'START' then
+    v_attendance_id := null;
+
+    insert into public.worker_attendance (
+      user_id,
+      attendance_date,
+      status,
+      source,
+      source_action,
+      created_at,
+      updated_at
+    )
+    values (
+      p_target_user_id,
+      v_attendance_date,
+      v_attendance_status,
+      'tracker',
+      v_source_action,
+      p_now,
+      p_now
+    )
+    on conflict on constraint worker_attendance_user_date_key do nothing
+    returning id into v_attendance_id;
+
+    if v_attendance_id is null then
+      raise exception 'tracker.attendance_conflict' using errcode = '23505';
+    end if;
+
+    if v_display_status_before = 'LATE' then
+      v_record_work_late_seconds := v_work_late_seconds_delta;
+
+      insert into public.worker_records (
+        user_id,
+        period_month,
+        work_late_seconds,
+        pending_days,
+        sakit_days,
+        cuti_stock_snapshot,
+        last_source,
+        last_source_action,
+        created_at,
+        updated_at
+      )
+      values (
+        p_target_user_id,
+        v_period_month,
+        v_record_work_late_seconds,
+        v_record_pending_days,
+        v_record_sakit_days,
+        v_record_cuti_stock_snapshot,
+        'tracker',
+        v_source_action,
+        p_now,
+        p_now
+      )
+      on conflict (user_id, period_month) do update
+      set
+        work_late_seconds = public.worker_records.work_late_seconds + excluded.work_late_seconds,
+        pending_days = public.worker_records.pending_days + excluded.pending_days,
+        sakit_days = public.worker_records.sakit_days + excluded.sakit_days,
+        cuti_stock_snapshot = coalesce(
+          excluded.cuti_stock_snapshot,
+          public.worker_records.cuti_stock_snapshot
+        ),
+        last_source = excluded.last_source,
+        last_source_action = excluded.last_source_action,
+        updated_at = excluded.updated_at;
     end if;
 
     update public.worker_status as ws
@@ -313,12 +416,295 @@ begin
     where ws.user_id = p_target_user_id
     returning ws.current_status, ws.version
       into v_to_status, v_to_version;
-  else
-    if not (v_from_status = 'off' and v_display_status_before in ('OFF', 'LATE')) then
-      raise exception 'tracker.invalid_transition' using errcode = '22023';
+  elsif v_action = 'CUTI' then
+    select cp.cuti_stock
+      into v_cuti_stock_before
+    from public.worker_profiles as cp
+    where cp.user_id = p_target_user_id
+    for update;
+
+    if not found then
+      raise exception 'tracker.invalid_target' using errcode = '22023';
     end if;
 
-    raise exception 'tracker.action_deferred' using errcode = '0A000';
+    if v_cuti_stock_before <= 0 then
+      raise exception 'tracker.cuti_stock_exhausted' using errcode = '23514';
+    end if;
+
+    v_attendance_id := null;
+
+    insert into public.worker_attendance (
+      user_id,
+      attendance_date,
+      status,
+      source,
+      source_action,
+      created_at,
+      updated_at
+    )
+    values (
+      p_target_user_id,
+      v_attendance_date,
+      v_attendance_status,
+      'tracker',
+      v_source_action,
+      p_now,
+      p_now
+    )
+    on conflict on constraint worker_attendance_user_date_key do nothing
+    returning id into v_attendance_id;
+
+    if v_attendance_id is null then
+      raise exception 'tracker.attendance_conflict' using errcode = '23505';
+    end if;
+
+    update public.worker_profiles as wp
+    set cuti_stock = cuti_stock - 1
+    where wp.user_id = p_target_user_id
+      and wp.cuti_stock > 0
+    returning wp.cuti_stock into v_cuti_stock_after;
+
+    if not found then
+      raise exception 'tracker.cuti_stock_exhausted' using errcode = '23514';
+    end if;
+
+    v_record_cuti_stock_snapshot := v_cuti_stock_after;
+
+    insert into public.worker_records (
+      user_id,
+      period_month,
+      work_late_seconds,
+      pending_days,
+      sakit_days,
+      cuti_stock_snapshot,
+      last_source,
+      last_source_action,
+      created_at,
+      updated_at
+    )
+    values (
+      p_target_user_id,
+      v_period_month,
+      v_record_work_late_seconds,
+      v_record_pending_days,
+      v_record_sakit_days,
+      v_record_cuti_stock_snapshot,
+      'tracker',
+      v_source_action,
+      p_now,
+      p_now
+    )
+    on conflict (user_id, period_month) do update
+    set
+      work_late_seconds = public.worker_records.work_late_seconds + excluded.work_late_seconds,
+      pending_days = public.worker_records.pending_days + excluded.pending_days,
+      sakit_days = public.worker_records.sakit_days + excluded.sakit_days,
+      cuti_stock_snapshot = coalesce(
+        excluded.cuti_stock_snapshot,
+        public.worker_records.cuti_stock_snapshot
+      ),
+      last_source = excluded.last_source,
+      last_source_action = excluded.last_source_action,
+      updated_at = excluded.updated_at;
+
+    update public.worker_status as ws
+    set
+      current_status = 'cuti',
+      version = v_from_version + 1,
+      shift_active_date = null,
+      shift_active_started_at = null,
+      shift_active_label = null,
+      shift_active_start_hour = null,
+      shift_active_start_min = null,
+      shift_active_end_hour = null,
+      shift_active_end_min = null,
+      break_started_at = null,
+      break_timer_running = false,
+      break_accumulated_secs = 0,
+      break_late_recorded = false,
+      sakit_started_at = null,
+      pending_started_at = null,
+      cuti_set_date = v_attendance_date,
+      lembur_started_at = null
+    where ws.user_id = p_target_user_id
+    returning ws.current_status, ws.version
+      into v_to_status, v_to_version;
+  elsif v_action = 'IZIN' then
+    v_attendance_id := null;
+    v_record_pending_days := 1;
+
+    insert into public.worker_attendance (
+      user_id,
+      attendance_date,
+      status,
+      source,
+      source_action,
+      created_at,
+      updated_at
+    )
+    values (
+      p_target_user_id,
+      v_attendance_date,
+      v_attendance_status,
+      'tracker',
+      v_source_action,
+      p_now,
+      p_now
+    )
+    on conflict on constraint worker_attendance_user_date_key do nothing
+    returning id into v_attendance_id;
+
+    if v_attendance_id is null then
+      raise exception 'tracker.attendance_conflict' using errcode = '23505';
+    end if;
+
+    insert into public.worker_records (
+      user_id,
+      period_month,
+      work_late_seconds,
+      pending_days,
+      sakit_days,
+      cuti_stock_snapshot,
+      last_source,
+      last_source_action,
+      created_at,
+      updated_at
+    )
+    values (
+      p_target_user_id,
+      v_period_month,
+      v_record_work_late_seconds,
+      v_record_pending_days,
+      v_record_sakit_days,
+      v_record_cuti_stock_snapshot,
+      'tracker',
+      v_source_action,
+      p_now,
+      p_now
+    )
+    on conflict (user_id, period_month) do update
+    set
+      work_late_seconds = public.worker_records.work_late_seconds + excluded.work_late_seconds,
+      pending_days = public.worker_records.pending_days + excluded.pending_days,
+      sakit_days = public.worker_records.sakit_days + excluded.sakit_days,
+      cuti_stock_snapshot = coalesce(
+        excluded.cuti_stock_snapshot,
+        public.worker_records.cuti_stock_snapshot
+      ),
+      last_source = excluded.last_source,
+      last_source_action = excluded.last_source_action,
+      updated_at = excluded.updated_at;
+
+    update public.worker_status as ws
+    set
+      current_status = 'pending',
+      version = v_from_version + 1,
+      shift_active_date = null,
+      shift_active_started_at = null,
+      shift_active_label = null,
+      shift_active_start_hour = null,
+      shift_active_start_min = null,
+      shift_active_end_hour = null,
+      shift_active_end_min = null,
+      break_started_at = null,
+      break_timer_running = false,
+      break_accumulated_secs = 0,
+      break_late_recorded = false,
+      sakit_started_at = null,
+      pending_started_at = p_now,
+      cuti_set_date = null,
+      lembur_started_at = null
+    where ws.user_id = p_target_user_id
+    returning ws.current_status, ws.version
+      into v_to_status, v_to_version;
+  elsif v_action = 'SAKIT' then
+    v_attendance_id := null;
+    v_record_sakit_days := 1;
+
+    insert into public.worker_attendance (
+      user_id,
+      attendance_date,
+      status,
+      source,
+      source_action,
+      created_at,
+      updated_at
+    )
+    values (
+      p_target_user_id,
+      v_attendance_date,
+      v_attendance_status,
+      'tracker',
+      v_source_action,
+      p_now,
+      p_now
+    )
+    on conflict on constraint worker_attendance_user_date_key do nothing
+    returning id into v_attendance_id;
+
+    if v_attendance_id is null then
+      raise exception 'tracker.attendance_conflict' using errcode = '23505';
+    end if;
+
+    insert into public.worker_records (
+      user_id,
+      period_month,
+      work_late_seconds,
+      pending_days,
+      sakit_days,
+      cuti_stock_snapshot,
+      last_source,
+      last_source_action,
+      created_at,
+      updated_at
+    )
+    values (
+      p_target_user_id,
+      v_period_month,
+      v_record_work_late_seconds,
+      v_record_pending_days,
+      v_record_sakit_days,
+      v_record_cuti_stock_snapshot,
+      'tracker',
+      v_source_action,
+      p_now,
+      p_now
+    )
+    on conflict (user_id, period_month) do update
+    set
+      work_late_seconds = public.worker_records.work_late_seconds + excluded.work_late_seconds,
+      pending_days = public.worker_records.pending_days + excluded.pending_days,
+      sakit_days = public.worker_records.sakit_days + excluded.sakit_days,
+      cuti_stock_snapshot = coalesce(
+        excluded.cuti_stock_snapshot,
+        public.worker_records.cuti_stock_snapshot
+      ),
+      last_source = excluded.last_source,
+      last_source_action = excluded.last_source_action,
+      updated_at = excluded.updated_at;
+
+    update public.worker_status as ws
+    set
+      current_status = 'sakit',
+      version = v_from_version + 1,
+      shift_active_date = null,
+      shift_active_started_at = null,
+      shift_active_label = null,
+      shift_active_start_hour = null,
+      shift_active_start_min = null,
+      shift_active_end_hour = null,
+      shift_active_end_min = null,
+      break_started_at = null,
+      break_timer_running = false,
+      break_accumulated_secs = 0,
+      break_late_recorded = false,
+      sakit_started_at = p_now,
+      pending_started_at = null,
+      cuti_set_date = null,
+      lembur_started_at = null
+    where ws.user_id = p_target_user_id
+    returning ws.current_status, ws.version
+      into v_to_status, v_to_version;
   end if;
 
   if v_to_version is distinct from v_from_version + 1 then
@@ -336,13 +722,16 @@ begin
     'attendance_date', v_attendance_date,
     'period_month', v_period_month,
     'display_status_before', v_display_status_before,
-    'work_late_seconds_delta', v_work_late_seconds_delta
+    'work_late_seconds_delta', v_work_late_seconds_delta,
+    'attendance_status', v_attendance_status,
+    'source_action', v_source_action,
+    'cuti_stock_after', v_cuti_stock_after
   );
 end;
 $$;
 
 comment on function app_private.apply_tracker_action_impl(uuid, uuid, text, bigint, timestamptz)
-is 'Private SECURITY DEFINER tracker action implementation. R2C-B-02D updates status-only actions and defers daily outcome side effects.';
+is 'Private SECURITY DEFINER tracker action implementation. R2C-B-02E updates tracker status and writes attendance/records side effects without audit.';
 
 revoke execute on function app_private.apply_tracker_action_impl(uuid, uuid, text, bigint, timestamptz) from public;
 revoke execute on function app_private.apply_tracker_action_impl(uuid, uuid, text, bigint, timestamptz) from anon;
@@ -389,7 +778,7 @@ end;
 $$;
 
 comment on function public.apply_tracker_action(uuid, text, bigint)
-is 'Authenticated RPC entrypoint for tracker action status transitions. Delegates to the private implementation after actor authorization.';
+is 'Authenticated RPC entrypoint for tracker action mutations. Delegates to the private implementation after actor authorization.';
 
 revoke execute on function public.apply_tracker_action(uuid, text, bigint) from public;
 revoke execute on function public.apply_tracker_action(uuid, text, bigint) from anon;
