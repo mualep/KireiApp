@@ -58,12 +58,31 @@ assertNoForbiddenPattern(
   /\b(formAction|useActionState|handleStart|handleFinish|handleCuti|handleSakit|handlePending|handleLembur)\b/i,
   "R2C-B-02 must not activate tracker UI controls.",
 );
-assertNoForbiddenPattern(/\b(cron|reset|cancel|lembur)\b/i, "R2C-B-02 baseline excludes cron/reset/cancel/lembur automation.");
+assertNoForbiddenPattern(
+  /\b(pg_cron|cron\.schedule|reset_tracker|cancel_tracker|p_action\s*=\s*'LEMBUR'|'LEMBUR'\s*,\s*'lembur')\b/i,
+  "R2C-B-02 baseline excludes cron/reset/cancel/lembur automation.",
+);
 
 assert.equal(
   /\bbreak_late_seconds\b/i.test(migrationSql),
   false,
-  "R2C-B-02C skeleton must not write break_late_seconds.",
+  "R2C-B-02D must not write break_late_seconds.",
+);
+assertNoForbiddenPattern(
+  /\binsert\s+into\s+public\.worker_attendance\b/i,
+  "R2C-B-02D must not insert attendance rows yet.",
+);
+assertNoForbiddenPattern(
+  /\binsert\s+into\s+public\.worker_records\b|\bupdate\s+public\.worker_records\b/i,
+  "R2C-B-02D must not write worker_records yet.",
+);
+assertNoForbiddenPattern(
+  /\bcuti_stock\s*=\s*cuti_stock\s*-\s*1\b/i,
+  "R2C-B-02D must not decrement cuti_stock yet.",
+);
+assertNoForbiddenPattern(
+  /\bwrite_audit_log\s*\(/i,
+  "R2C-B-02D must not write audit logs yet.",
 );
 
 assertSqlIncludes("auth.uid()");
@@ -71,6 +90,9 @@ assertSqlIncludes("tracker.unauthenticated");
 assertSqlIncludes("tracker.unauthorized");
 assertSqlIncludes("tracker.invalid_action");
 assertSqlIncludes("tracker.invalid_target");
+assertSqlIncludes("tracker.version_conflict");
+assertSqlIncludes("tracker.invalid_transition");
+assertSqlIncludes("tracker.alpha_rejected");
 assertSqlIncludes("u.is_deleted = false");
 assertSqlIncludes("u.tier in ('owner', 'admin')");
 assertSqlIncludes("'START'");
@@ -81,8 +103,37 @@ assertSqlIncludes("'CUTI'");
 assertSqlIncludes("'IZIN'");
 assertSqlIncludes("'SAKIT'");
 assertSqlIncludes("p_expected_version is null or p_expected_version < 0");
-assertSqlIncludes("skeleton_only");
 assertSqlIncludes("app_private.apply_tracker_action_impl");
+assertSqlIncludes("from public.worker_status as ws");
+assertSqlIncludes("for update");
+assertSqlIncludes("from public.worker_profiles as wp");
+assertSqlIncludes("tu.is_deleted = false");
+assertSqlIncludes("v_from_version <> p_expected_version");
+assertSqlIncludes("version = v_from_version + 1");
+assertSqlIncludes("v_to_version is distinct from v_from_version + 1");
+assertSqlIncludes("v_wib_timestamp := p_now at time zone 'Asia/Jakarta'");
+assertSqlIncludes("v_attendance_date := v_wib_date - 1");
+assertSqlIncludes("v_period_month := pg_catalog.date_trunc('month', v_attendance_date::timestamp)::date");
+assertSqlIncludes("pg_catalog.make_timestamptz");
+assertSqlIncludes("pg_catalog.make_interval(mins => 10)");
+assertSqlIncludes("v_display_status_before := 'LATE'");
+assertSqlIncludes("v_display_status_before = 'ALPHA'");
+assertSqlIncludes("v_work_late_seconds_delta");
+assertSqlIncludes("if v_action = 'START' then");
+assertSqlIncludes("elsif v_action = 'ISTIRAHAT' then");
+assertSqlIncludes("elsif v_action = 'LANJUT' then");
+assertSqlIncludes("elsif v_action = 'SELESAI' then");
+assertSqlIncludes("current_status = 'on'");
+assertSqlIncludes("current_status = 'break'");
+assertSqlIncludes("current_status = 'off'");
+assertSqlIncludes("shift_active_date = v_attendance_date");
+assertSqlIncludes("shift_active_started_at = p_now");
+assertSqlIncludes("break_started_at = p_now");
+assertSqlIncludes("break_timer_running = true");
+assertSqlIncludes("break_accumulated_secs = v_break_accumulated_secs");
+assertSqlIncludes("break_started_at = null");
+assertSqlIncludes("break_timer_running = false");
+assertSqlIncludes("shift_active_date = null");
 assert.equal(
   /\b(current_status|status)\s*=\s*'izin'\b/i.test(migrationSql),
   false,
