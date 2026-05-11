@@ -218,10 +218,11 @@ begin
     and p_now < v_shift_ends_at
   then
     v_display_status_before := 'LATE';
-    v_work_late_seconds_delta := pg_catalog.greatest(
-      0,
-      pg_catalog.floor(pg_catalog.date_part('epoch', p_now - v_grace_at))::integer
-    );
+    v_work_late_seconds_delta := case
+      when pg_catalog.floor(pg_catalog.date_part('epoch', p_now - v_grace_at))::integer > 0
+        then pg_catalog.floor(pg_catalog.date_part('epoch', p_now - v_grace_at))::integer
+      else 0
+    end;
   else
     v_display_status_before := case v_from_status
       when 'off' then 'OFF'
@@ -388,10 +389,11 @@ begin
     end if;
 
     if v_break_timer_running = true and v_break_started_at is not null then
-      v_break_accumulated_secs := v_break_accumulated_secs + pg_catalog.greatest(
-        0,
-        pg_catalog.floor(pg_catalog.date_part('epoch', p_now - v_break_started_at))::integer
-      );
+      v_break_accumulated_secs := v_break_accumulated_secs + case
+        when pg_catalog.floor(pg_catalog.date_part('epoch', p_now - v_break_started_at))::integer > 0
+          then pg_catalog.floor(pg_catalog.date_part('epoch', p_now - v_break_started_at))::integer
+        else 0
+      end;
     end if;
 
     update public.worker_status as ws

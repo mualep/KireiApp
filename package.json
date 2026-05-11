@@ -13,6 +13,7 @@
     "import:bulk-users:execute": "tsx scripts/import-bulk-users.ts --execute",
     "test:bulk-import-audit": "tsx scripts/test-bulk-import-audit.ts",
     "test:tracker-actions-contract": "tsx scripts/test-tracker-actions-contract.ts",
+    "test:tracker-rpc-behavior": "tsx scripts/test-tracker-rpc-behavior.ts",
     "test:tracker-rpc-migration": "tsx scripts/test-tracker-rpc-migration.ts",
     "test:worker-attendance-records-schema": "tsx scripts/test-worker-attendance-records-schema.ts",
     "test:tracker-readonly": "tsx scripts/test-tracker-readonly.ts",
