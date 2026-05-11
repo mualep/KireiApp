@@ -48,6 +48,8 @@ declare
   v_attendance_status text;
   v_source_action text;
   v_attendance_id uuid;
+  v_existing_attendance_status text;
+  v_attendance_reused boolean := false;
   v_cuti_stock_before smallint;
   v_cuti_stock_after smallint;
   v_record_work_late_seconds integer := 0;
@@ -263,46 +265,68 @@ begin
     end;
     v_source_action := v_audit_action;
 
-    perform 1
+    select wa.status
+      into v_existing_attendance_status
     from public.worker_attendance as wa
     where wa.user_id = p_target_user_id
       and wa.attendance_date = v_attendance_date
-    limit 1;
+    for update;
 
-    if found then
-      raise exception 'tracker.attendance_conflict' using errcode = '23505';
+    if v_existing_attendance_status is not null then
+      if v_action = 'START' and v_existing_attendance_status = 'hadir' then
+        v_attendance_reused := true;
+        v_work_late_seconds_delta := 0;
+      else
+        raise exception 'tracker.attendance_conflict' using errcode = '23505';
+      end if;
     end if;
   end if;
 
   if v_action = 'START' then
     v_attendance_id := null;
 
-    insert into public.worker_attendance (
-      user_id,
-      attendance_date,
-      status,
-      source,
-      source_action,
-      created_at,
-      updated_at
-    )
-    values (
-      p_target_user_id,
-      v_attendance_date,
-      v_attendance_status,
-      'tracker',
-      v_source_action,
-      p_now,
-      p_now
-    )
-    on conflict on constraint worker_attendance_user_date_key do nothing
-    returning id into v_attendance_id;
+    if not v_attendance_reused then
+      insert into public.worker_attendance (
+        user_id,
+        attendance_date,
+        status,
+        source,
+        source_action,
+        created_at,
+        updated_at
+      )
+      values (
+        p_target_user_id,
+        v_attendance_date,
+        v_attendance_status,
+        'tracker',
+        v_source_action,
+        p_now,
+        p_now
+      )
+      on conflict on constraint worker_attendance_user_date_key do nothing
+      returning id into v_attendance_id;
 
-    if v_attendance_id is null then
-      raise exception 'tracker.attendance_conflict' using errcode = '23505';
+      if v_attendance_id is null then
+        v_existing_attendance_status := null;
+
+        select wa.status
+          into v_existing_attendance_status
+        from public.worker_attendance as wa
+        where wa.user_id = p_target_user_id
+          and wa.attendance_date = v_attendance_date
+        for update;
+
+        if v_existing_attendance_status = 'hadir' then
+          v_attendance_reused := true;
+          v_work_late_seconds_delta := 0;
+        else
+          raise exception 'tracker.attendance_conflict' using errcode = '23505';
+        end if;
+      end if;
     end if;
 
-    if v_display_status_before = 'LATE' then
+    if v_display_status_before = 'LATE' and not v_attendance_reused then
       v_record_work_late_seconds := v_work_late_seconds_delta;
       v_record_deltas := pg_catalog.jsonb_build_object(
         'work_late_seconds',
@@ -749,6 +773,7 @@ begin
         'from_version', v_from_version,
         'to_version', v_to_version,
         'attendance_status', v_attendance_status,
+        'attendance_reused', case when v_attendance_reused then true end,
         'record_deltas', v_record_deltas,
         'cuti_stock_delta', v_cuti_stock_delta,
         'cuti_stock_after', v_cuti_stock_after,
@@ -772,6 +797,7 @@ begin
     'display_status_before', v_display_status_before,
     'work_late_seconds_delta', v_work_late_seconds_delta,
     'attendance_status', v_attendance_status,
+    'attendance_reused', v_attendance_reused,
     'source_action', v_source_action,
     'cuti_stock_after', v_cuti_stock_after
   );

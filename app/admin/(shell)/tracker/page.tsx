@@ -25,6 +25,7 @@ import {
   parseTrackerFilters,
   type TrackerSearchParams,
 } from "@/lib/tracker/helpers";
+import { canStaffTierPerformTrackerAction } from "@/lib/workers/tracker-actions";
 
 export const metadata: Metadata = {
   title: "Tracker | Kireiku",
@@ -58,9 +59,9 @@ export default async function AdminTrackerPage({
   const cards = filterAndSortTrackerCards(data.cards, filters);
   const roleTabs = getTrackerRoleTabs(data.cards);
   const statusTabs = getTrackerStatusTabs(data.cards);
+  const canApplyTrackerActions = canStaffTierPerformTrackerAction(staff.profile.tier);
   const scopeLabel =
     staff.profile.tier === "member" ? "Self-only" : "All visible workers";
-  const showActionPreview = staff.profile.tier !== "member";
   const emptyTitle = hasFilters
     ? "No workers match these filters."
     : staff.profile.tier === "member"
@@ -85,7 +86,7 @@ export default async function AdminTrackerPage({
           variant="outline"
           className="h-5 border-border bg-background/30 px-2 text-[0.65rem] text-muted-foreground"
         >
-          Read-only
+          {canApplyTrackerActions ? "Actions enabled" : "Read-only"}
         </Badge>
       </section>
 
@@ -111,7 +112,7 @@ export default async function AdminTrackerPage({
             <TrackerCard
               key={card.userId}
               card={card}
-              showActionPreview={showActionPreview}
+              canApplyTrackerActions={canApplyTrackerActions}
               updatedAtText={formatDate(card.statusUpdatedAt)}
             />
           ))}

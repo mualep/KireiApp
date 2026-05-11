@@ -70,6 +70,9 @@ export type WorkerStatusDTO = {
 };
 
 export type TrackerCardDTO = {
+  breakAccumulatedSecs: number;
+  breakStartedAt: string | null;
+  breakTimerRunning: boolean;
   cutiStock: number;
   displayStatus: WorkerDisplayStatus;
   employeeRole: WorkerRole;
@@ -83,4 +86,3 @@ export type TrackerCardDTO = {
   userId: string;
   version: number;
 };
-

@@ -19,6 +19,11 @@ const ids = {
   invalidTransition: "20000000-0000-4000-8000-000000000111",
   alpha: "20000000-0000-4000-8000-000000000112",
   auditFail: "20000000-0000-4000-8000-000000000113",
+  startExistingHadir: "20000000-0000-4000-8000-000000000114",
+  lateExistingHadir: "20000000-0000-4000-8000-000000000115",
+  startExistingCuti: "20000000-0000-4000-8000-000000000116",
+  startExistingPending: "20000000-0000-4000-8000-000000000117",
+  startExistingSakit: "20000000-0000-4000-8000-000000000118",
 } as const;
 
 const dbContainer = findLocalSupabaseDbContainer();
@@ -250,7 +255,12 @@ with fixture_users(id, email, tier, name) as (
     ('${ids.conflict}'::uuid, 'r2c-b-02g-conflict@example.test', 'member', 'R2C 02G Conflict'),
     ('${ids.invalidTransition}'::uuid, 'r2c-b-02g-invalid-transition@example.test', 'member', 'R2C 02G Invalid Transition'),
     ('${ids.alpha}'::uuid, 'r2c-b-02g-alpha@example.test', 'member', 'R2C 02G Alpha'),
-    ('${ids.auditFail}'::uuid, 'r2c-b-02g-audit-fail@example.test', 'member', 'R2C 02G Audit Fail')
+    ('${ids.auditFail}'::uuid, 'r2c-b-02g-audit-fail@example.test', 'member', 'R2C 02G Audit Fail'),
+    ('${ids.startExistingHadir}'::uuid, 'r2c-b-04b-start-existing-hadir@example.test', 'member', 'R2C 04B Start Existing Hadir'),
+    ('${ids.lateExistingHadir}'::uuid, 'r2c-b-04b-late-existing-hadir@example.test', 'member', 'R2C 04B Late Existing Hadir'),
+    ('${ids.startExistingCuti}'::uuid, 'r2c-b-04b-start-existing-cuti@example.test', 'member', 'R2C 04B Start Existing Cuti'),
+    ('${ids.startExistingPending}'::uuid, 'r2c-b-04b-start-existing-pending@example.test', 'member', 'R2C 04B Start Existing Pending'),
+    ('${ids.startExistingSakit}'::uuid, 'r2c-b-04b-start-existing-sakit@example.test', 'member', 'R2C 04B Start Existing Sakit')
 )
 insert into auth.users (
   id,
@@ -292,7 +302,12 @@ with fixture_users(id, email, tier, name) as (
     ('${ids.conflict}'::uuid, 'r2c-b-02g-conflict@example.test', 'member', 'R2C 02G Conflict'),
     ('${ids.invalidTransition}'::uuid, 'r2c-b-02g-invalid-transition@example.test', 'member', 'R2C 02G Invalid Transition'),
     ('${ids.alpha}'::uuid, 'r2c-b-02g-alpha@example.test', 'member', 'R2C 02G Alpha'),
-    ('${ids.auditFail}'::uuid, 'r2c-b-02g-audit-fail@example.test', 'member', 'R2C 02G Audit Fail')
+    ('${ids.auditFail}'::uuid, 'r2c-b-02g-audit-fail@example.test', 'member', 'R2C 02G Audit Fail'),
+    ('${ids.startExistingHadir}'::uuid, 'r2c-b-04b-start-existing-hadir@example.test', 'member', 'R2C 04B Start Existing Hadir'),
+    ('${ids.lateExistingHadir}'::uuid, 'r2c-b-04b-late-existing-hadir@example.test', 'member', 'R2C 04B Late Existing Hadir'),
+    ('${ids.startExistingCuti}'::uuid, 'r2c-b-04b-start-existing-cuti@example.test', 'member', 'R2C 04B Start Existing Cuti'),
+    ('${ids.startExistingPending}'::uuid, 'r2c-b-04b-start-existing-pending@example.test', 'member', 'R2C 04B Start Existing Pending'),
+    ('${ids.startExistingSakit}'::uuid, 'r2c-b-04b-start-existing-sakit@example.test', 'member', 'R2C 04B Start Existing Sakit')
 )
 insert into public.users (id, name, email, tier)
 select id, name, email, tier
@@ -318,7 +333,11 @@ values
   ('${ids.conflict}'::uuid, 'KRU-110', 'Professional Player', 'flexible', true, 2),
   ('${ids.invalidTransition}'::uuid, 'KRU-111', 'Professional Player', 'flexible', true, 2),
   ('${ids.alpha}'::uuid, 'KRU-112', 'Professional Player', 'flexible', true, 2),
-  ('${ids.auditFail}'::uuid, 'KRU-113', 'Professional Player', 'flexible', true, 2);
+  ('${ids.auditFail}'::uuid, 'KRU-113', 'Professional Player', 'flexible', true, 2),
+  ('${ids.startExistingHadir}'::uuid, 'KRU-114', 'Professional Player', 'flexible', true, 2),
+  ('${ids.startExistingCuti}'::uuid, 'KRU-116', 'Professional Player', 'flexible', true, 2),
+  ('${ids.startExistingPending}'::uuid, 'KRU-117', 'Professional Player', 'flexible', true, 2),
+  ('${ids.startExistingSakit}'::uuid, 'KRU-118', 'Professional Player', 'flexible', true, 2);
 
 with wib as (
   select (
@@ -356,6 +375,42 @@ select
   2
 from late_shift;
 
+with wib as (
+  select (
+    pg_catalog.date_part('hour', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer * 60
+  ) + pg_catalog.date_part('minute', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer as minute_of_day
+),
+late_shift as (
+  select
+    ((minute_of_day + 1410) % 1440) as starts_at_minute,
+    ((minute_of_day + 120) % 1440) as ends_at_minute
+  from wib
+)
+insert into public.worker_profiles (
+  user_id,
+  gid,
+  employee_role,
+  shift,
+  shift_start_hour,
+  shift_start_min,
+  shift_end_hour,
+  shift_end_min,
+  is_flexible,
+  cuti_stock
+)
+select
+  '${ids.lateExistingHadir}'::uuid,
+  'KRU-115',
+  'Professional Player',
+  'A',
+  starts_at_minute / 60,
+  starts_at_minute % 60,
+  ends_at_minute / 60,
+  ends_at_minute % 60,
+  false,
+  2
+from late_shift;
+
 insert into public.worker_status (user_id, version, current_status)
 values
   ('${ids.adminStart}'::uuid, 0, 'off'),
@@ -367,6 +422,11 @@ values
   ('${ids.sakit}'::uuid, 0, 'off'),
   ('${ids.conflict}'::uuid, 0, 'off'),
   ('${ids.auditFail}'::uuid, 0, 'off'),
+  ('${ids.startExistingHadir}'::uuid, 0, 'off'),
+  ('${ids.lateExistingHadir}'::uuid, 0, 'off'),
+  ('${ids.startExistingCuti}'::uuid, 0, 'off'),
+  ('${ids.startExistingPending}'::uuid, 0, 'off'),
+  ('${ids.startExistingSakit}'::uuid, 0, 'off'),
   ('${ids.stale}'::uuid, 3, 'off'),
   ('${ids.invalidTransition}'::uuid, 0, 'on'),
   ('${ids.alpha}'::uuid, 0, 'off');
@@ -406,6 +466,98 @@ values (
   'absensi',
   'absensi.manual'
 );
+
+insert into public.worker_attendance (
+  user_id,
+  attendance_date,
+  status,
+  source,
+  source_action
+)
+values
+  (
+    '${ids.startExistingHadir}'::uuid,
+    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    'hadir',
+    'absensi',
+    'absensi.manual'
+  ),
+  (
+    '${ids.startExistingCuti}'::uuid,
+    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    'cuti',
+    'absensi',
+    'absensi.manual'
+  ),
+  (
+    '${ids.startExistingPending}'::uuid,
+    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    'pending',
+    'absensi',
+    'absensi.manual'
+  ),
+  (
+    '${ids.startExistingSakit}'::uuid,
+    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    'sakit',
+    'absensi',
+    'absensi.manual'
+  );
+
+with wib as (
+  select
+    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date as today,
+    (
+      pg_catalog.date_part('hour', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer * 60
+    ) + pg_catalog.date_part('minute', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer as minute_of_day
+),
+late_shift as (
+  select
+    today,
+    minute_of_day,
+    ((minute_of_day + 1410) % 1440) as starts_at_minute,
+    ((minute_of_day + 120) % 1440) as ends_at_minute
+  from wib
+),
+late_attendance as (
+  select
+    case
+      when starts_at_minute > ends_at_minute and minute_of_day < ends_at_minute
+        then today - 1
+      else today
+    end as attendance_date
+  from late_shift
+)
+insert into public.worker_attendance (
+  user_id,
+  attendance_date,
+  status,
+  source,
+  source_action
+)
+select
+  '${ids.lateExistingHadir}'::uuid,
+  attendance_date,
+  'hadir',
+  'absensi',
+  'absensi.manual'
+from late_attendance;
+
+insert into public.worker_records (
+  user_id,
+  period_month,
+  work_late_seconds,
+  last_source,
+  last_source_action
+)
+select
+  '${ids.lateExistingHadir}'::uuid,
+  pg_catalog.date_trunc('month', attendance_date::timestamp)::date,
+  90,
+  'absensi',
+  'absensi.manual'
+from public.worker_attendance
+where user_id = '${ids.lateExistingHadir}'::uuid;
 
 set local role authenticated;
 select pg_temp.set_auth(null);
@@ -529,6 +681,55 @@ select pg_temp.assert_true(
 );
 
 with result as (
+  select public.apply_tracker_action('${ids.startExistingHadir}'::uuid, 'START', 0) as payload
+)
+select
+  pg_temp.assert_true(payload->>'source_action' = 'tracker.start', 'START existing hadir should return tracker.start'),
+  pg_temp.assert_true(payload->>'attendance_status' = 'hadir', 'START existing hadir should return hadir attendance'),
+  pg_temp.assert_true((payload->>'attendance_reused')::boolean, 'START existing hadir should report reused attendance'),
+  pg_temp.assert_true((payload->>'work_late_seconds_delta')::integer = 0, 'START existing hadir should be zero-delta'),
+  pg_temp.assert_true((payload->>'to_version')::bigint = 1, 'START existing hadir should increment version once'),
+  pg_temp.assert_true(payload->>'audit_id' is not null, 'START existing hadir should return audit_id')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.startExistingHadir}'::uuid
+      and current_status = 'on'
+      and version = 1
+  ),
+  'START existing hadir should move worker_status to on'
+);
+select pg_temp.assert_true(
+  (select count(*) from public.worker_attendance where user_id = '${ids.startExistingHadir}'::uuid) = 1
+  and exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.startExistingHadir}'::uuid
+      and status = 'hadir'
+      and source = 'absensi'
+      and source_action = 'absensi.manual'
+  ),
+  'START existing hadir must reuse attendance without duplicate insert'
+);
+select pg_temp.assert_true(
+  not exists (select 1 from public.worker_records where user_id = '${ids.startExistingHadir}'::uuid),
+  'non-late START existing hadir should not create worker_records'
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.audit_logs as al
+    where al.actor_user_id = '${ids.owner}'::uuid
+      and al.target_user_id = '${ids.startExistingHadir}'::uuid
+      and al.action = 'tracker.start'
+      and (al.payload_json->'summary'->>'attendance_reused')::boolean
+  ),
+  'START existing hadir should audit attendance reuse'
+);
+
+with result as (
   select public.apply_tracker_action('${ids.late}'::uuid, 'START', 0) as payload
 )
 select
@@ -586,6 +787,94 @@ select pg_temp.assert_true(
   and (select count(*) from public.worker_records where user_id = '${ids.late}'::uuid) = 1
   and (select count(*) from public.audit_logs where target_user_id = '${ids.late}'::uuid) = 1,
   'old late START retry must not duplicate side effects'
+);
+
+with result as (
+  select public.apply_tracker_action('${ids.lateExistingHadir}'::uuid, 'START', 0) as payload
+)
+select
+  pg_temp.assert_true(payload->>'display_status_before' = 'LATE', 'late START existing hadir should derive LATE display status'),
+  pg_temp.assert_true(payload->>'source_action' = 'tracker.start_late', 'late START existing hadir should return tracker.start_late'),
+  pg_temp.assert_true((payload->>'attendance_reused')::boolean, 'late START existing hadir should report reused attendance'),
+  pg_temp.assert_true((payload->>'work_late_seconds_delta')::integer = 0, 'late START existing hadir should not add late seconds'),
+  pg_temp.assert_true((payload->>'to_version')::bigint = 1, 'late START existing hadir should increment version once'),
+  pg_temp.assert_true(payload->>'audit_id' is not null, 'late START existing hadir should return audit_id')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.lateExistingHadir}'::uuid
+      and current_status = 'on'
+      and version = 1
+  ),
+  'late START existing hadir should move worker_status to on'
+);
+select pg_temp.assert_true(
+  (select count(*) from public.worker_attendance where user_id = '${ids.lateExistingHadir}'::uuid) = 1
+  and exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.lateExistingHadir}'::uuid
+      and status = 'hadir'
+      and source = 'absensi'
+      and source_action = 'absensi.manual'
+  ),
+  'late START existing hadir must reuse attendance without duplicate insert'
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_records
+    where user_id = '${ids.lateExistingHadir}'::uuid
+      and work_late_seconds = 90
+      and break_late_seconds = 0
+      and last_source = 'absensi'
+      and last_source_action = 'absensi.manual'
+  ),
+  'late START existing hadir must not double increment work_late_seconds'
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.audit_logs as al
+    where al.actor_user_id = '${ids.owner}'::uuid
+      and al.target_user_id = '${ids.lateExistingHadir}'::uuid
+      and al.action = 'tracker.start_late'
+      and (al.payload_json->'summary'->>'attendance_reused')::boolean
+      and al.payload_json->'summary'->'record_deltas' = '{}'::jsonb
+  ),
+  'late START existing hadir should audit reuse without record_deltas'
+);
+select pg_temp.expect_error(
+  'START existing cuti attendance',
+  'select public.apply_tracker_action(''${ids.startExistingCuti}''::uuid, ''START'', 0::bigint)',
+  'tracker.attendance_conflict'
+);
+select pg_temp.expect_error(
+  'START existing pending attendance',
+  'select public.apply_tracker_action(''${ids.startExistingPending}''::uuid, ''START'', 0::bigint)',
+  'tracker.attendance_conflict'
+);
+select pg_temp.expect_error(
+  'START existing sakit attendance',
+  'select public.apply_tracker_action(''${ids.startExistingSakit}''::uuid, ''START'', 0::bigint)',
+  'tracker.attendance_conflict'
+);
+select pg_temp.assert_true(
+  exists (select 1 from public.worker_status where user_id = '${ids.startExistingCuti}'::uuid and current_status = 'off' and version = 0)
+  and exists (select 1 from public.worker_status where user_id = '${ids.startExistingPending}'::uuid and current_status = 'off' and version = 0)
+  and exists (select 1 from public.worker_status where user_id = '${ids.startExistingSakit}'::uuid and current_status = 'off' and version = 0)
+  and not exists (
+    select 1
+    from public.audit_logs
+    where target_user_id in (
+      '${ids.startExistingCuti}'::uuid,
+      '${ids.startExistingPending}'::uuid,
+      '${ids.startExistingSakit}'::uuid
+    )
+  ),
+  'START existing non-hadir attendance must not write side effects'
 );
 
 with result as (
@@ -752,6 +1041,16 @@ select pg_temp.assert_true(
 select pg_temp.expect_error(
   'attendance conflict before CUTI stock decrement',
   'select public.apply_tracker_action(''${ids.conflict}''::uuid, ''CUTI'', 0::bigint)',
+  'tracker.attendance_conflict'
+);
+select pg_temp.expect_error(
+  'attendance conflict before IZIN records',
+  'select public.apply_tracker_action(''${ids.conflict}''::uuid, ''IZIN'', 0::bigint)',
+  'tracker.attendance_conflict'
+);
+select pg_temp.expect_error(
+  'attendance conflict before SAKIT records',
+  'select public.apply_tracker_action(''${ids.conflict}''::uuid, ''SAKIT'', 0::bigint)',
   'tracker.attendance_conflict'
 );
 select pg_temp.assert_true(

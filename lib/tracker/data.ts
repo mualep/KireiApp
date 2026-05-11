@@ -40,6 +40,9 @@ type WorkerProfileRow = {
 
 type WorkerStatusRow = {
   alpha_done: boolean;
+  break_accumulated_secs: number;
+  break_started_at: string | null;
+  break_timer_running: boolean;
   current_status: string;
   updated_at: string;
   user_id: string;
@@ -84,7 +87,9 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         .returns<UserRow[]>(),
       supabase
         .from("worker_status")
-        .select("user_id,version,current_status,alpha_done,updated_at")
+        .select(
+          "user_id,version,current_status,alpha_done,updated_at,break_started_at,break_timer_running,break_accumulated_secs",
+        )
         .in("user_id", userIds)
         .returns<WorkerStatusRow[]>(),
     ]);
@@ -150,6 +155,9 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
 
     return [
       {
+        breakAccumulatedSecs: status.break_accumulated_secs,
+        breakStartedAt: status.break_started_at,
+        breakTimerRunning: status.break_timer_running,
         cutiStock: profile.cuti_stock,
         displayStatus: computeWorkerDisplayStatus({
           alphaDone: status.alpha_done,

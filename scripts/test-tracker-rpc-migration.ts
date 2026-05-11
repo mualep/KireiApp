@@ -108,6 +108,7 @@ assertSqlIncludes("'display_status_before', v_display_status_before");
 assertSqlIncludes("'from_version', v_from_version");
 assertSqlIncludes("'to_version', v_to_version");
 assertSqlIncludes("'attendance_status', v_attendance_status");
+assertSqlIncludes("'attendance_reused', case when v_attendance_reused then true end");
 assertSqlIncludes("'record_deltas', v_record_deltas");
 assertSqlIncludes("'cuti_stock_delta', v_cuti_stock_delta");
 assertSqlIncludes("'cuti_stock_after', v_cuti_stock_after");
@@ -174,9 +175,19 @@ assertSqlIncludes("break_started_at = null");
 assertSqlIncludes("break_timer_running = false");
 assertSqlIncludes("shift_active_date = null");
 assertSqlIncludes("from public.worker_attendance as wa");
+assertSqlIncludes("v_existing_attendance_status text;");
+assertSqlIncludes("v_attendance_reused boolean := false;");
+assertSqlIncludes("select wa.status into v_existing_attendance_status");
+assertSqlIncludes("if v_existing_attendance_status is not null then");
+assertSqlIncludes("if v_action = 'START' and v_existing_attendance_status = 'hadir' then");
+assertSqlIncludes("v_attendance_reused := true;");
+assertSqlIncludes("v_work_late_seconds_delta := 0;");
+assertSqlIncludes("else raise exception 'tracker.attendance_conflict'");
 assertSqlIncludes("insert into public.worker_attendance");
 assertSqlIncludes("on conflict on constraint worker_attendance_user_date_key do nothing");
 assertSqlIncludes("status, source, source_action, created_at, updated_at");
+assertSqlIncludes("if not v_attendance_reused then");
+assertSqlIncludes("if v_display_status_before = 'LATE' and not v_attendance_reused then");
 assertSqlIncludes("'hadir'");
 assertSqlIncludes("'cuti'");
 assertSqlIncludes("'pending'");
@@ -207,10 +218,19 @@ assertSqlIncludes("current_status = 'sakit'");
 assertSqlIncludes("cuti_set_date = v_attendance_date");
 assertSqlIncludes("pending_started_at = p_now");
 assertSqlIncludes("sakit_started_at = p_now");
+assertSqlIncludes("'attendance_reused', v_attendance_reused");
 assert.equal(
   /\b(current_status|status)\s*=\s*'izin'\b/i.test(migrationSql),
   false,
   "IZIN must map to pending and must not introduce an izin DB status.",
+);
+assertNoForbiddenPattern(
+  /\bv_action\s*(?:=|in\s*\()[^;]*'PENDING'|\bp_action\s*(?:=|in\s*\()[^;]*'PENDING'/i,
+  "R2C-B-04B must not introduce a PENDING tracker action enum.",
+);
+assertNoForbiddenPattern(
+  /\b(PAUSE|RESUME)\b/i,
+  "R2C-B-04B must not introduce pause/resume tracker actions.",
 );
 
 console.log("Tracker RPC migration static tests passed.");
