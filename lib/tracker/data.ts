@@ -56,6 +56,13 @@ type UserRow = {
   name: string;
 };
 
+type ActiveTrackerAttendanceRow = {
+  id: string;
+  source_action: string;
+  status: string;
+  user_id: string;
+};
+
 export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDataResult> {
   const supabase = await createClient();
   const { data: profiles, error: profilesError } = await supabase
@@ -78,7 +85,11 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   }
 
   const userIds = profileRows.map((profile) => profile.user_id);
-  const [{ data: users, error: usersError }, { data: statuses, error: statusesError }] =
+  const [
+    { data: users, error: usersError },
+    { data: statuses, error: statusesError },
+    { data: activeTrackerAttendances, error: attendancesError },
+  ] =
     await Promise.all([
       supabase
         .from("users")
@@ -92,6 +103,14 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         )
         .in("user_id", userIds)
         .returns<WorkerStatusRow[]>(),
+      supabase
+        .from("worker_attendance")
+        .select("id,user_id,status,source_action")
+        .in("user_id", userIds)
+        .eq("source", "tracker")
+        .eq("is_canceled", false)
+        .order("attendance_date", { ascending: false })
+        .returns<ActiveTrackerAttendanceRow[]>(),
     ]);
 
   if (usersError) {
@@ -102,10 +121,21 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
     throw new Error("Tracker worker statuses could not load.");
   }
 
+  if (attendancesError) {
+    throw new Error("Tracker attendance rows could not load.");
+  }
+
   const usersById = new Map((users ?? []).map((user) => [user.id, user]));
   const statusesByUserId = new Map(
     (statuses ?? []).map((status) => [status.user_id, status]),
   );
+  const activeTrackerAttendancesByUserId = new Map<string, ActiveTrackerAttendanceRow>();
+
+  for (const attendance of activeTrackerAttendances ?? []) {
+    if (!activeTrackerAttendancesByUserId.has(attendance.user_id)) {
+      activeTrackerAttendancesByUserId.set(attendance.user_id, attendance);
+    }
+  }
   const issues: TrackerDataIssue[] = [];
   const now = new Date();
   const cards = profileRows.flatMap((profile) => {
@@ -155,6 +185,11 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
 
     return [
       {
+        activeTrackerAttendanceId:
+          getMatchingTrackerAttendanceId(
+            activeTrackerAttendancesByUserId.get(profile.user_id),
+            status.current_status,
+          ),
         breakAccumulatedSecs: status.break_accumulated_secs,
         breakStartedAt: status.break_started_at,
         breakTimerRunning: status.break_timer_running,
@@ -187,4 +222,23 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
     }),
     issues,
   };
+}
+
+function getMatchingTrackerAttendanceId(
+  attendance: ActiveTrackerAttendanceRow | undefined,
+  storedStatus: string,
+): string | null {
+  if (!attendance) {
+    return null;
+  }
+
+  const expectedSourceAction = {
+    cuti: "tracker.cuti",
+    pending: "tracker.izin",
+    sakit: "tracker.sakit",
+  }[storedStatus];
+
+  return attendance.status === storedStatus && attendance.source_action === expectedSourceAction
+    ? attendance.id
+    : null;
 }

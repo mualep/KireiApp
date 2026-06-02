@@ -29,6 +29,7 @@ const ids = {
   breakOver: "20000000-0000-4000-8000-000000000121",
   breakCumulative: "20000000-0000-4000-8000-000000000122",
   breakAuditFail: "20000000-0000-4000-8000-000000000123",
+  absenceReuse: "20000000-0000-4000-8000-000000000124",
 } as const;
 
 const dbContainer = findLocalSupabaseDbContainer();
@@ -270,7 +271,8 @@ with fixture_users(id, email, tier, name) as (
     ('${ids.breakBoundary}'::uuid, 'r2c-d-break-boundary@example.test', 'member', 'R2C D Break Boundary'),
     ('${ids.breakOver}'::uuid, 'r2c-d-break-over@example.test', 'member', 'R2C D Break Over'),
     ('${ids.breakCumulative}'::uuid, 'r2c-d-break-cumulative@example.test', 'member', 'R2C D Break Cumulative'),
-    ('${ids.breakAuditFail}'::uuid, 'r2c-d-break-audit-fail@example.test', 'member', 'R2C D Break Audit Fail')
+    ('${ids.breakAuditFail}'::uuid, 'r2c-d-break-audit-fail@example.test', 'member', 'R2C D Break Audit Fail'),
+    ('${ids.absenceReuse}'::uuid, 'r2c-c-absence-reuse@example.test', 'member', 'R2C C Absence Reuse')
 )
 insert into auth.users (
   id,
@@ -322,7 +324,8 @@ with fixture_users(id, email, tier, name) as (
     ('${ids.breakBoundary}'::uuid, 'r2c-d-break-boundary@example.test', 'member', 'R2C D Break Boundary'),
     ('${ids.breakOver}'::uuid, 'r2c-d-break-over@example.test', 'member', 'R2C D Break Over'),
     ('${ids.breakCumulative}'::uuid, 'r2c-d-break-cumulative@example.test', 'member', 'R2C D Break Cumulative'),
-    ('${ids.breakAuditFail}'::uuid, 'r2c-d-break-audit-fail@example.test', 'member', 'R2C D Break Audit Fail')
+    ('${ids.breakAuditFail}'::uuid, 'r2c-d-break-audit-fail@example.test', 'member', 'R2C D Break Audit Fail'),
+    ('${ids.absenceReuse}'::uuid, 'r2c-c-absence-reuse@example.test', 'member', 'R2C C Absence Reuse')
 )
 insert into public.users (id, name, email, tier)
 select id, name, email, tier
@@ -357,7 +360,8 @@ values
   ('${ids.breakBoundary}'::uuid, 'KRU-120', 'Professional Player', 'flexible', true, 2),
   ('${ids.breakOver}'::uuid, 'KRU-121', 'Professional Player', 'flexible', true, 2),
   ('${ids.breakCumulative}'::uuid, 'KRU-122', 'Professional Player', 'flexible', true, 2),
-  ('${ids.breakAuditFail}'::uuid, 'KRU-123', 'Professional Player', 'flexible', true, 2);
+  ('${ids.breakAuditFail}'::uuid, 'KRU-123', 'Professional Player', 'flexible', true, 2),
+  ('${ids.absenceReuse}'::uuid, 'KRU-124', 'Professional Player', 'flexible', true, 2);
 
 with wib as (
   select (
@@ -447,6 +451,7 @@ values
   ('${ids.startExistingCuti}'::uuid, 0, 'off'),
   ('${ids.startExistingPending}'::uuid, 0, 'off'),
   ('${ids.startExistingSakit}'::uuid, 0, 'off'),
+  ('${ids.absenceReuse}'::uuid, 0, 'off'),
   ('${ids.stale}'::uuid, 3, 'off'),
   ('${ids.invalidTransition}'::uuid, 0, 'on'),
   ('${ids.alpha}'::uuid, 0, 'off');
@@ -1365,6 +1370,345 @@ select pg_temp.assert_true(
   and not exists (select 1 from public.worker_records where user_id = '${ids.breakAuditFail}'::uuid)
   and not exists (select 1 from public.audit_logs where target_user_id = '${ids.breakAuditFail}'::uuid),
   'audit writer failure must roll back BREAK_LATE records, marker, status, and version'
+);
+
+select pg_temp.set_auth('${ids.member}'::uuid);
+select pg_temp.expect_error(
+  'member tracker correction public call',
+  'select public.apply_tracker_correction(''${ids.cuti}''::uuid, ''CANCEL_CUTI'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''member must fail'')',
+  'tracker.unauthorized'
+);
+
+select pg_temp.set_auth(null);
+select pg_temp.expect_error(
+  'tracker correction audit fail closed rollback',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.sakit}''::uuid, ''CANCEL_SAKIT'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.sakit}''::uuid), ''audit rollback'', pg_catalog.clock_timestamp())',
+  'unauthenticated'
+);
+select pg_temp.assert_true(
+  exists (select 1 from public.worker_status where user_id = '${ids.sakit}'::uuid and current_status = 'sakit' and version = 1)
+  and exists (select 1 from public.worker_attendance where user_id = '${ids.sakit}'::uuid and is_canceled = false)
+  and exists (select 1 from public.worker_records where user_id = '${ids.sakit}'::uuid and sakit_days = 1)
+  and not exists (select 1 from public.worker_attendance_corrections where target_user_id = '${ids.sakit}'::uuid),
+  'audit failure must roll back tracker correction status, attendance, records, ledger, and version'
+);
+
+select pg_temp.set_auth('${ids.owner}'::uuid);
+reset role;
+select pg_temp.expect_error(
+  'tracker correction after flexible business date',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_CUTI'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''too late'', pg_catalog.clock_timestamp() + interval ''1 day'')',
+  'tracker.correction_expired'
+);
+update public.worker_profiles
+set
+  shift = 'A',
+  shift_start_hour = 8,
+  shift_start_min = 0,
+  shift_end_hour = 17,
+  shift_end_min = 0,
+  is_flexible = false
+where user_id = '${ids.cuti}'::uuid;
+select pg_temp.expect_error(
+  'tracker correction after fixed shift end',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_CUTI'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''too late'', (select (attendance_date::timestamp + interval ''18 hours'') at time zone ''Asia/Jakarta'' from public.worker_attendance where user_id = ''${ids.cuti}''::uuid))',
+  'tracker.correction_expired'
+);
+update public.worker_profiles
+set
+  shift = 'flexible',
+  shift_start_hour = null,
+  shift_start_min = null,
+  shift_end_hour = null,
+  shift_end_min = null,
+  is_flexible = true
+where user_id = '${ids.cuti}'::uuid;
+select pg_temp.expect_error(
+  'tracker correction wrong stored status',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_SAKIT'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''wrong state'', pg_catalog.clock_timestamp())',
+  'tracker.invalid_transition'
+);
+update public.worker_status
+set current_status = 'cuti'
+where user_id = '${ids.startExistingCuti}'::uuid;
+select pg_temp.expect_error(
+  'tracker correction absensi source rejection',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.startExistingCuti}''::uuid, ''CANCEL_CUTI'', 0::bigint, (select id from public.worker_attendance where user_id = ''${ids.startExistingCuti}''::uuid), ''wrong source'', pg_catalog.clock_timestamp())',
+  'tracker.attendance_missing'
+);
+select app_private.apply_tracker_correction_impl(
+  '${ids.owner}'::uuid,
+  '${ids.cuti}'::uuid,
+  'CANCEL_CUTI',
+  1,
+  (select id from public.worker_attendance where user_id = '${ids.cuti}'::uuid),
+  'wrong CUTI entry',
+  pg_catalog.clock_timestamp()
+);
+select app_private.apply_tracker_correction_impl(
+  '${ids.owner}'::uuid,
+  '${ids.izin}'::uuid,
+  'CANCEL_IZIN',
+  1,
+  (select id from public.worker_attendance where user_id = '${ids.izin}'::uuid),
+  'wrong PENDING entry',
+  pg_catalog.clock_timestamp()
+);
+select app_private.apply_tracker_correction_impl(
+  '${ids.owner}'::uuid,
+  '${ids.sakit}'::uuid,
+  'CANCEL_SAKIT',
+  1,
+  (select id from public.worker_attendance where user_id = '${ids.sakit}'::uuid),
+  'wrong SAKIT entry',
+  pg_catalog.clock_timestamp()
+);
+select pg_temp.assert_true(
+  exists (select 1 from public.worker_status where user_id = '${ids.cuti}'::uuid and current_status = 'off' and version = 2)
+  and exists (select 1 from public.worker_status where user_id = '${ids.izin}'::uuid and current_status = 'off' and version = 2)
+  and exists (select 1 from public.worker_status where user_id = '${ids.sakit}'::uuid and current_status = 'off' and version = 2)
+  and exists (select 1 from public.worker_attendance where user_id = '${ids.cuti}'::uuid and is_canceled = true)
+  and exists (select 1 from public.worker_attendance where user_id = '${ids.izin}'::uuid and is_canceled = true)
+  and exists (select 1 from public.worker_attendance where user_id = '${ids.sakit}'::uuid and is_canceled = true)
+  and exists (select 1 from public.worker_profiles where user_id = '${ids.cuti}'::uuid and cuti_stock = 2)
+  and exists (select 1 from public.worker_records where user_id = '${ids.cuti}'::uuid and cuti_stock_snapshot = 2)
+  and exists (select 1 from public.worker_records where user_id = '${ids.izin}'::uuid and pending_days = 0)
+  and exists (select 1 from public.worker_records where user_id = '${ids.sakit}'::uuid and sakit_days = 0)
+  and (select count(*) from public.worker_attendance_corrections where target_user_id in ('${ids.cuti}'::uuid, '${ids.izin}'::uuid, '${ids.sakit}'::uuid)) = 3
+  and (
+    select count(*)
+    from public.audit_logs
+    where action in ('tracker.cancel_cuti', 'tracker.cancel_izin', 'tracker.cancel_sakit')
+      and target_user_id in ('${ids.cuti}'::uuid, '${ids.izin}'::uuid, '${ids.sakit}'::uuid)
+  ) = 3,
+  'tracker corrections must reverse CUTI, IZIN, and SAKIT exactly once with ledger and audit'
+);
+select pg_temp.expect_error(
+  'old CUTI correction retry',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_CUTI'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''retry'', pg_catalog.clock_timestamp())',
+  'tracker.version_conflict'
+);
+select pg_temp.assert_true(
+  exists (select 1 from public.worker_profiles where user_id = '${ids.cuti}'::uuid and cuti_stock = 2)
+  and (select count(*) from public.worker_attendance_corrections where target_user_id = '${ids.cuti}'::uuid) = 1,
+  'repeated correction must not double reverse side effects'
+);
+select app_private.apply_tracker_action_impl(
+  '${ids.owner}'::uuid,
+  '${ids.cuti}'::uuid,
+  'START',
+  2,
+  pg_catalog.clock_timestamp()
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.cuti}'::uuid
+      and status = 'hadir'
+      and source = 'tracker'
+      and source_action = 'tracker.start'
+      and is_canceled = false
+  )
+  and (select count(*) from public.worker_attendance where user_id = '${ids.cuti}'::uuid) = 1,
+  'START must revive a canceled daily attendance slot without creating a duplicate row'
+);
+
+select app_private.apply_tracker_action_impl(
+  '${ids.owner}'::uuid,
+  '${ids.absenceReuse}'::uuid,
+  'CUTI',
+  0,
+  pg_catalog.clock_timestamp()
+);
+select app_private.apply_tracker_correction_impl(
+  '${ids.owner}'::uuid,
+  '${ids.absenceReuse}'::uuid,
+  'CANCEL_CUTI',
+  1,
+  (select id from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid),
+  'reuse after CUTI',
+  pg_catalog.clock_timestamp()
+);
+select app_private.apply_tracker_action_impl(
+  '${ids.owner}'::uuid,
+  '${ids.absenceReuse}'::uuid,
+  'SAKIT',
+  2,
+  pg_catalog.clock_timestamp()
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.absenceReuse}'::uuid
+      and status = 'sakit'
+      and source = 'tracker'
+      and source_action = 'tracker.sakit'
+      and is_canceled = false
+  )
+  and (select count(*) from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid) = 1
+  and exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.absenceReuse}'::uuid
+      and current_status = 'sakit'
+      and version = 3
+  )
+  and exists (
+    select 1
+    from public.worker_records
+    where user_id = '${ids.absenceReuse}'::uuid
+      and sakit_days = 1
+      and pending_days = 0
+      and cuti_stock_snapshot = 2
+  ),
+  'SAKIT must revive a canceled CUTI slot without duplicate rows or stale side effects'
+);
+select app_private.apply_tracker_correction_impl(
+  '${ids.owner}'::uuid,
+  '${ids.absenceReuse}'::uuid,
+  'CANCEL_SAKIT',
+  3,
+  (select id from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid),
+  'reuse after SAKIT',
+  pg_catalog.clock_timestamp()
+);
+select app_private.apply_tracker_action_impl(
+  '${ids.owner}'::uuid,
+  '${ids.absenceReuse}'::uuid,
+  'IZIN',
+  4,
+  pg_catalog.clock_timestamp()
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.absenceReuse}'::uuid
+      and status = 'pending'
+      and source = 'tracker'
+      and source_action = 'tracker.izin'
+      and is_canceled = false
+  )
+  and (select count(*) from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid) = 1
+  and exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.absenceReuse}'::uuid
+      and current_status = 'pending'
+      and version = 5
+  )
+  and exists (
+    select 1
+    from public.worker_records
+    where user_id = '${ids.absenceReuse}'::uuid
+      and sakit_days = 0
+      and pending_days = 1
+      and cuti_stock_snapshot = 2
+  ),
+  'IZIN must revive a canceled SAKIT slot without duplicate rows or stale side effects'
+);
+select app_private.apply_tracker_correction_impl(
+  '${ids.owner}'::uuid,
+  '${ids.absenceReuse}'::uuid,
+  'CANCEL_IZIN',
+  5,
+  (select id from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid),
+  'reuse after IZIN',
+  pg_catalog.clock_timestamp()
+);
+select app_private.apply_tracker_action_impl(
+  '${ids.owner}'::uuid,
+  '${ids.absenceReuse}'::uuid,
+  'CUTI',
+  6,
+  pg_catalog.clock_timestamp()
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.absenceReuse}'::uuid
+      and status = 'cuti'
+      and source = 'tracker'
+      and source_action = 'tracker.cuti'
+      and is_canceled = false
+  )
+  and (select count(*) from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid) = 1
+  and exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.absenceReuse}'::uuid
+      and current_status = 'cuti'
+      and version = 7
+  )
+  and exists (
+    select 1
+    from public.worker_profiles
+    where user_id = '${ids.absenceReuse}'::uuid
+      and cuti_stock = 1
+  )
+  and exists (
+    select 1
+    from public.worker_records
+    where user_id = '${ids.absenceReuse}'::uuid
+      and sakit_days = 0
+      and pending_days = 0
+      and cuti_stock_snapshot = 1
+  ),
+  'CUTI must revive a canceled IZIN slot without duplicate rows or stale side effects'
+);
+select app_private.apply_tracker_correction_impl(
+  '${ids.owner}'::uuid,
+  '${ids.absenceReuse}'::uuid,
+  'CANCEL_CUTI',
+  7,
+  (select id from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid),
+  'final CUTI reversal',
+  pg_catalog.clock_timestamp()
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.absenceReuse}'::uuid
+      and is_canceled = true
+  )
+  and (select count(*) from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid) = 1
+  and exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.absenceReuse}'::uuid
+      and current_status = 'off'
+      and version = 8
+  )
+  and exists (
+    select 1
+    from public.worker_profiles
+    where user_id = '${ids.absenceReuse}'::uuid
+      and cuti_stock = 2
+  )
+  and exists (
+    select 1
+    from public.worker_records
+    where user_id = '${ids.absenceReuse}'::uuid
+      and sakit_days = 0
+      and pending_days = 0
+      and cuti_stock_snapshot = 2
+  )
+  and (
+    select count(*)
+    from public.worker_attendance_corrections
+    where target_user_id = '${ids.absenceReuse}'::uuid
+  ) = 4
+  and (
+    select count(*)
+    from public.audit_logs
+    where target_user_id = '${ids.absenceReuse}'::uuid
+      and action in ('tracker.cancel_cuti', 'tracker.cancel_izin', 'tracker.cancel_sakit')
+  ) = 4,
+  'absence slot reuse must keep one row and apply each side effect, correction, and audit exactly once'
 );
 
 select pg_temp.assert_true(

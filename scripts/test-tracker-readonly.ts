@@ -61,6 +61,7 @@ assert.match(
 );
 assertIncludes(trackerActionControlsSource, 'from "@/app/admin/(shell)/tracker/actions"');
 assertIncludes(trackerActionControlsSource, "applyTrackerAction({");
+assertIncludes(trackerActionControlsSource, "applyTrackerCorrection({");
 assertIncludes(trackerActionControlsSource, "targetUserId: card.userId");
 assertIncludes(trackerActionControlsSource, "expectedVersion: card.version");
 assertIncludes(trackerActionControlsSource, "action");
@@ -91,6 +92,11 @@ assertIncludes(trackerActionControlsSource, 'label: "FINISH"');
 assertIncludes(trackerActionControlsSource, 'label: "BREAK"');
 assertIncludes(trackerActionControlsSource, 'label: "STOP ISTIRAHAT"');
 assertIncludes(trackerActionControlsSource, 'action: "LANJUT"');
+assertIncludes(trackerActionControlsSource, 'label: "BATAL CUTI"');
+assertIncludes(trackerActionControlsSource, 'label: "BATAL SAKIT"');
+assertIncludes(trackerActionControlsSource, 'label: "BATAL PENDING"');
+assertIncludes(trackerActionControlsSource, "attendanceId: card.activeTrackerAttendanceId");
+assertIncludes(trackerActionControlsSource, "window.prompt");
 assertIncludes(trackerActionControlsSource, "Ends break and returns to active work.");
 assertIncludes(trackerActionControlsSource, "Break Remaining");
 assertIncludes(trackerActionControlsSource, "formatBreakRemainingSeconds");
@@ -129,8 +135,8 @@ assertNoPattern(
 );
 assertNoPattern(
   trackerActionControlsSource,
-  /\b(LEMBUR|Cancel|RESET|CORRECTION|break_late_seconds|storedStatus:\s*["']late["']|storedStatus:\s*["']izin["'])\b/i,
-  "Active tracker controls must not add LEMBUR/cancel/reset/correction, break-late writes, or stored late/izin logic.",
+  /\b(LEMBUR|RESET|break_late_seconds|storedStatus:\s*["']late["']|storedStatus:\s*["']izin["'])\b/i,
+  "Active tracker controls must not add LEMBUR/reset, break-late writes, or stored late/izin logic.",
 );
 assertNoPattern(
   trackerActionControlsSource,
@@ -398,6 +404,7 @@ function buildCard({
   userId: string;
 }): TrackerCardDTO {
   return {
+    activeTrackerAttendanceId: null,
     cutiStock: 2,
     breakAccumulatedSecs: 0,
     breakStartedAt: null,

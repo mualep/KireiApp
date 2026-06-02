@@ -70,6 +70,7 @@ export type WorkerStatusDTO = {
 };
 
 export type TrackerCardDTO = {
+  activeTrackerAttendanceId: string | null;
   breakAccumulatedSecs: number;
   breakStartedAt: string | null;
   breakTimerRunning: boolean;

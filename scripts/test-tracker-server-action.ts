@@ -43,6 +43,7 @@ assertIncludes('from "@/lib/workers/tracker-actions"');
 assertIncludes("canStaffTierPerformTrackerAction");
 assertIncludes("trackerActions");
 assertIncludes("export async function applyTrackerAction(input: unknown)");
+assertIncludes("export async function applyTrackerCorrection(");
 assertIncludes("export type ApplyTrackerActionInput");
 assertIncludes("export type ApplyTrackerActionResult");
 assertIncludes("export type TrackerActionResultCode");
@@ -50,6 +51,7 @@ assertIncludes("z.enum(trackerActions)");
 assertIncludes("targetUserId: z.string().uuid()");
 assertIncludes("expectedVersion: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER)");
 assertIncludes('supabase.rpc("apply_tracker_action"');
+assertIncludes('supabase.rpc("apply_tracker_correction"');
 assertIncludes("p_target_user_id: parsed.data.targetUserId");
 assertIncludes("p_action: parsed.data.action");
 assertIncludes("p_expected_version: parsed.data.expectedVersion");
@@ -136,6 +138,10 @@ assert.ok(
 assert.ok(
   normalize(trackerActionControlsSource).includes(normalize("applyTrackerAction({")),
   "R2C-B-04 controls must call applyTrackerAction.",
+);
+assert.ok(
+  normalize(trackerActionControlsSource).includes(normalize("applyTrackerCorrection({")),
+  "R2C-C controls must call applyTrackerCorrection.",
 );
 assert.equal(
   /from\s+["'][^"']*tracker\/actions["']|from\s+["']\.\/actions["']|applyTrackerAction/.test(

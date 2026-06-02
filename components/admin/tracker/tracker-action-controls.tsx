@@ -15,7 +15,9 @@ import {
 
 import {
   applyTrackerAction,
+  applyTrackerCorrection,
   type ApplyTrackerActionResult,
+  type ApplyTrackerCorrectionResult,
 } from "@/app/admin/(shell)/tracker/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +26,7 @@ import {
 } from "@/lib/tracker/break-timer";
 import { cn } from "@/lib/utils";
 import type { TrackerAction } from "@/lib/workers/tracker-actions";
+import type { TrackerCorrectionAction } from "@/lib/workers/tracker-corrections";
 import type { TrackerCardDTO } from "@/lib/workers";
 
 type TrackerActionControlsProps = {
@@ -40,6 +43,16 @@ type ActionControlConfig = {
   tone: ControlTone;
 };
 
+type CorrectionControlConfig = {
+  className?: string;
+  correctionAction: TrackerCorrectionAction;
+  icon: React.ReactNode;
+  label: string;
+  tone: ControlTone;
+};
+
+type TrackerControlConfig = ActionControlConfig | CorrectionControlConfig;
+
 const genericFailure: ApplyTrackerActionResult = {
   code: "generic_error",
   message: "We could not apply that tracker action. Please try again.",
@@ -50,9 +63,14 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   const router = useRouter();
   const [isTransitionPending, startTransition] = useTransition();
   const [pendingAction, setPendingAction] = useState<TrackerAction | null>(null);
-  const [result, setResult] = useState<ApplyTrackerActionResult | null>(null);
+  const [pendingCorrectionAction, setPendingCorrectionAction] =
+    useState<TrackerCorrectionAction | null>(null);
+  const [result, setResult] = useState<
+    ApplyTrackerActionResult | ApplyTrackerCorrectionResult | null
+  >(null);
   const controlGroups = getActiveControlGroups(card);
-  const isPending = isTransitionPending || pendingAction !== null;
+  const isPending =
+    isTransitionPending || pendingAction !== null || pendingCorrectionAction !== null;
   const isBreakCard = card.storedStatus === "break" && card.displayStatus === "BREAK";
   const [nowMs, setNowMs] = useState<number | null>(null);
 
@@ -104,6 +122,43 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
     });
   }
 
+  function runTrackerCorrection(action: TrackerCorrectionAction) {
+    if (isPending || !card.activeTrackerAttendanceId) {
+      return;
+    }
+
+    const reason = window.prompt("Reason for tracker correction:");
+
+    if (!reason?.trim()) {
+      return;
+    }
+
+    setResult(null);
+    setPendingCorrectionAction(action);
+
+    startTransition(async () => {
+      try {
+        const nextResult = await applyTrackerCorrection({
+          action,
+          attendanceId: card.activeTrackerAttendanceId,
+          expectedVersion: card.version,
+          reason,
+          targetUserId: card.userId,
+        });
+
+        setResult(nextResult);
+
+        if (nextResult.code === "success" || nextResult.code === "version_conflict") {
+          router.refresh();
+        }
+      } catch {
+        setResult(genericFailure);
+      } finally {
+        setPendingCorrectionAction(null);
+      }
+    });
+  }
+
   if (controlGroups.length === 0) {
     return (
       <div className="rounded-md border border-border/75 bg-background/35 px-2 py-1.5 text-xs font-medium text-muted-foreground">
@@ -148,7 +203,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         >
           {group.map((control) => (
             <Button
-              key={control.action}
+              key={"action" in control ? control.action : control.correctionAction}
               type="button"
               disabled={isPending}
               variant="outline"
@@ -170,11 +225,19 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
                   "border-border bg-muted/35 text-muted-foreground",
                 control.className,
               )}
-              onClick={() => runTrackerAction(control.action)}
+              onClick={() =>
+                "action" in control
+                  ? runTrackerAction(control.action)
+                  : runTrackerCorrection(control.correctionAction)
+              }
             >
               {control.icon}
               <span className="truncate">
-                {pendingAction === control.action ? "Working…" : control.label}
+                {("action" in control && pendingAction === control.action) ||
+                ("correctionAction" in control &&
+                  pendingCorrectionAction === control.correctionAction)
+                  ? "Working…"
+                  : control.label}
               </span>
             </Button>
           ))}
@@ -199,7 +262,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   );
 }
 
-function getActiveControlGroups(card: TrackerCardDTO): ActionControlConfig[][] {
+function getActiveControlGroups(card: TrackerCardDTO): TrackerControlConfig[][] {
   if (
     card.storedStatus === "off" &&
     (card.displayStatus === "OFF" || card.displayStatus === "LATE")
@@ -265,6 +328,45 @@ function getActiveControlGroups(card: TrackerCardDTO): ActionControlConfig[][] {
           action: "LANJUT",
           icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
           label: "STOP ISTIRAHAT",
+          tone: "danger",
+        },
+      ],
+    ];
+  }
+
+  if (card.activeTrackerAttendanceId && card.storedStatus === "cuti") {
+    return [
+      [
+        {
+          correctionAction: "CANCEL_CUTI",
+          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+          label: "BATAL CUTI",
+          tone: "danger",
+        },
+      ],
+    ];
+  }
+
+  if (card.activeTrackerAttendanceId && card.storedStatus === "sakit") {
+    return [
+      [
+        {
+          correctionAction: "CANCEL_SAKIT",
+          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+          label: "BATAL SAKIT",
+          tone: "danger",
+        },
+      ],
+    ];
+  }
+
+  if (card.activeTrackerAttendanceId && card.storedStatus === "pending") {
+    return [
+      [
+        {
+          correctionAction: "CANCEL_IZIN",
+          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+          label: "BATAL PENDING",
           tone: "danger",
         },
       ],

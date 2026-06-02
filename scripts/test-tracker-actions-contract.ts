@@ -11,6 +11,13 @@ import {
   trackerActionTargetStatuses,
   workerStoredStatuses,
 } from "../lib/workers";
+import {
+  evaluateTrackerCorrectionTransition,
+  isTrackerCorrectionAction,
+  trackerCorrectionActions,
+  trackerCorrectionSourceActions,
+  trackerCorrectionStatuses,
+} from "../lib/workers/tracker-corrections";
 
 const expectedTrackerActions = [
   "START",
@@ -225,6 +232,48 @@ assert.equal(
     shift: getShiftDefinition("flexible"),
   }),
   0,
+);
+
+assert.deepEqual(trackerCorrectionActions, [
+  "CANCEL_CUTI",
+  "CANCEL_SAKIT",
+  "CANCEL_IZIN",
+]);
+assert.deepEqual(trackerCorrectionStatuses, {
+  CANCEL_CUTI: "cuti",
+  CANCEL_IZIN: "pending",
+  CANCEL_SAKIT: "sakit",
+});
+assert.deepEqual(trackerCorrectionSourceActions, {
+  CANCEL_CUTI: "tracker.cuti",
+  CANCEL_IZIN: "tracker.izin",
+  CANCEL_SAKIT: "tracker.sakit",
+});
+assert.equal(isTrackerCorrectionAction("CANCEL_CUTI"), true);
+assert.equal(isTrackerCorrectionAction("CANCEL_ALPHA"), false);
+assert.deepEqual(
+  evaluateTrackerCorrectionTransition({
+    action: "CANCEL_CUTI",
+    actorTier: "owner",
+    storedStatus: "cuti",
+  }),
+  { ok: true, sourceAction: "tracker.cuti", status: "cuti" },
+);
+assert.deepEqual(
+  evaluateTrackerCorrectionTransition({
+    action: "CANCEL_SAKIT",
+    actorTier: "member",
+    storedStatus: "sakit",
+  }),
+  { ok: false, reason: "member_read_only" },
+);
+assert.deepEqual(
+  evaluateTrackerCorrectionTransition({
+    action: "CANCEL_IZIN",
+    actorTier: "admin",
+    storedStatus: "cuti",
+  }),
+  { ok: false, reason: "invalid_source_status" },
 );
 
 console.log("Tracker action contract tests passed.");
