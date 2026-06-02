@@ -11,6 +11,12 @@ const migrationSql = readR2CBMigration();
 const normalizedSql = normalizeSql(migrationSql);
 const publicFunctionSql = extractFunctionSql("public.apply_tracker_action");
 const privateFunctionSql = extractFunctionSql("app_private.apply_tracker_action_impl");
+const r2cDMigrationSql = readR2CDMigration();
+const normalizedR2CDMigrationSql = normalizeSql(r2cDMigrationSql);
+const r2cDPrivateFunctionSql = extractFunctionSqlFrom(
+  r2cDMigrationSql,
+  "app_private.apply_tracker_action_impl",
+);
 
 assertFunctionShape(publicFunctionSql, expectedPublicSignature);
 assertFunctionShape(privateFunctionSql, expectedPrivateSignature);
@@ -233,6 +239,69 @@ assertNoForbiddenPattern(
   "R2C-B-04B must not introduce pause/resume tracker actions.",
 );
 
+assertFunctionShape(r2cDPrivateFunctionSql, expectedPrivateSignature);
+assertR2CDSqlIncludes(
+  "revoke execute on function app_private.apply_tracker_action_impl(uuid, uuid, text, bigint, timestamptz) from public",
+);
+assertR2CDSqlIncludes(
+  "revoke execute on function app_private.apply_tracker_action_impl(uuid, uuid, text, bigint, timestamptz) from anon",
+);
+assertR2CDSqlIncludes(
+  "revoke execute on function app_private.apply_tracker_action_impl(uuid, uuid, text, bigint, timestamptz) from authenticated",
+);
+assertR2CDSqlIncludes("v_break_accumulated_secs_before integer;");
+assertR2CDSqlIncludes("v_record_break_late_seconds integer := 0;");
+assertR2CDSqlIncludes("ws.break_late_recorded");
+assertR2CDSqlIncludes("break_late_recorded = false");
+assertR2CDSqlIncludes("v_break_accumulated_secs_before := v_break_accumulated_secs;");
+assertR2CDSqlIncludes(
+  "v_record_break_late_seconds := greatest(v_break_accumulated_secs - 3600, 0) - greatest(v_break_accumulated_secs_before - 3600, 0);",
+);
+assert.equal(
+  /\bpg_catalog\.greatest\s*\(/i.test(r2cDMigrationSql),
+  false,
+  "R2C-D must use PostgreSQL GREATEST syntax without schema qualification.",
+);
+assertR2CDSqlIncludes("if v_record_break_late_seconds > 0 and not v_break_late_recorded then");
+assertR2CDSqlIncludes("v_break_late_recorded := true;");
+assertR2CDSqlIncludes("break_late_seconds");
+assertR2CDSqlIncludes(
+  "break_late_seconds = public.worker_records.break_late_seconds + excluded.break_late_seconds",
+);
+assertR2CDSqlIncludes(
+  "v_record_deltas := pg_catalog.jsonb_build_object('break_late_seconds', v_record_break_late_seconds);",
+);
+assertR2CDSqlIncludes("break_late_recorded = v_break_late_recorded");
+assert.equal(
+  /\b(create|alter|drop)\s+table\b/i.test(r2cDMigrationSql),
+  false,
+  "R2C-D must not change table schemas.",
+);
+assert.equal(
+  /\bgrant\s+update\s+on\s+public\.worker_status\s+to\s+authenticated\b/i.test(
+    r2cDMigrationSql,
+  ),
+  false,
+  "R2C-D must not grant direct worker_status UPDATE to authenticated.",
+);
+assert.equal(
+  /\bservice_role\b/i.test(r2cDMigrationSql),
+  false,
+  "R2C-D must not use service role strings.",
+);
+assert.equal(
+  /\b(PAUSE|RESUME)\b/i.test(r2cDMigrationSql),
+  false,
+  "R2C-D must not add pause/resume tracker actions.",
+);
+assert.equal(
+  /\bcreate\s+or\s+replace\s+function\s+public\.apply_tracker_action\b/i.test(
+    r2cDMigrationSql,
+  ),
+  false,
+  "R2C-D must not replace the stable public tracker RPC.",
+);
+
 console.log("Tracker RPC migration static tests passed.");
 
 function readR2CBMigration() {
@@ -245,6 +314,17 @@ function readR2CBMigration() {
     migrationFile,
     "R2C-B tracker RPC migration not found yet. This is expected before R2C-B-02C.",
   );
+
+  return readFileSync(join(migrationsDir, migrationFile), "utf8");
+}
+
+function readR2CDMigration() {
+  const migrationsDir = resolve(process.cwd(), "supabase/migrations");
+  const migrationFile = readdirSync(migrationsDir).find((entry) =>
+    entry.endsWith("_release_2c_d_tracker_break_late.sql"),
+  );
+
+  assert.ok(migrationFile, "R2C-D tracker BREAK_LATE migration not found.");
 
   return readFileSync(join(migrationsDir, migrationFile), "utf8");
 }
@@ -275,11 +355,15 @@ function assertFunctionShape(functionSql: string, expectedSignature: string) {
 }
 
 function extractFunctionSql(functionName: string) {
+  return extractFunctionSqlFrom(migrationSql, functionName);
+}
+
+function extractFunctionSqlFrom(sql: string, functionName: string) {
   const pattern = new RegExp(
     `create\\s+or\\s+replace\\s+function\\s+${escapeRegExp(functionName)}\\s*\\([\\s\\S]*?\\n\\$\\$;`,
     "i",
   );
-  const match = migrationSql.match(pattern);
+  const match = sql.match(pattern);
 
   assert.ok(match, `Missing function body for ${functionName}.`);
   return match[0];
@@ -287,6 +371,13 @@ function extractFunctionSql(functionName: string) {
 
 function assertSqlIncludes(fragment: string) {
   assert.ok(normalizedSql.includes(normalizeSql(fragment)), `Missing SQL fragment: ${fragment}`);
+}
+
+function assertR2CDSqlIncludes(fragment: string) {
+  assert.ok(
+    normalizedR2CDMigrationSql.includes(normalizeSql(fragment)),
+    `Missing R2C-D SQL fragment: ${fragment}`,
+  );
 }
 
 function assertNoForbiddenPattern(pattern: RegExp, message: string) {

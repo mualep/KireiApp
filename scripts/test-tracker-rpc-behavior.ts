@@ -24,6 +24,11 @@ const ids = {
   startExistingCuti: "20000000-0000-4000-8000-000000000116",
   startExistingPending: "20000000-0000-4000-8000-000000000117",
   startExistingSakit: "20000000-0000-4000-8000-000000000118",
+  breakUnder: "20000000-0000-4000-8000-000000000119",
+  breakBoundary: "20000000-0000-4000-8000-000000000120",
+  breakOver: "20000000-0000-4000-8000-000000000121",
+  breakCumulative: "20000000-0000-4000-8000-000000000122",
+  breakAuditFail: "20000000-0000-4000-8000-000000000123",
 } as const;
 
 const dbContainer = findLocalSupabaseDbContainer();
@@ -260,7 +265,12 @@ with fixture_users(id, email, tier, name) as (
     ('${ids.lateExistingHadir}'::uuid, 'r2c-b-04b-late-existing-hadir@example.test', 'member', 'R2C 04B Late Existing Hadir'),
     ('${ids.startExistingCuti}'::uuid, 'r2c-b-04b-start-existing-cuti@example.test', 'member', 'R2C 04B Start Existing Cuti'),
     ('${ids.startExistingPending}'::uuid, 'r2c-b-04b-start-existing-pending@example.test', 'member', 'R2C 04B Start Existing Pending'),
-    ('${ids.startExistingSakit}'::uuid, 'r2c-b-04b-start-existing-sakit@example.test', 'member', 'R2C 04B Start Existing Sakit')
+    ('${ids.startExistingSakit}'::uuid, 'r2c-b-04b-start-existing-sakit@example.test', 'member', 'R2C 04B Start Existing Sakit'),
+    ('${ids.breakUnder}'::uuid, 'r2c-d-break-under@example.test', 'member', 'R2C D Break Under'),
+    ('${ids.breakBoundary}'::uuid, 'r2c-d-break-boundary@example.test', 'member', 'R2C D Break Boundary'),
+    ('${ids.breakOver}'::uuid, 'r2c-d-break-over@example.test', 'member', 'R2C D Break Over'),
+    ('${ids.breakCumulative}'::uuid, 'r2c-d-break-cumulative@example.test', 'member', 'R2C D Break Cumulative'),
+    ('${ids.breakAuditFail}'::uuid, 'r2c-d-break-audit-fail@example.test', 'member', 'R2C D Break Audit Fail')
 )
 insert into auth.users (
   id,
@@ -307,7 +317,12 @@ with fixture_users(id, email, tier, name) as (
     ('${ids.lateExistingHadir}'::uuid, 'r2c-b-04b-late-existing-hadir@example.test', 'member', 'R2C 04B Late Existing Hadir'),
     ('${ids.startExistingCuti}'::uuid, 'r2c-b-04b-start-existing-cuti@example.test', 'member', 'R2C 04B Start Existing Cuti'),
     ('${ids.startExistingPending}'::uuid, 'r2c-b-04b-start-existing-pending@example.test', 'member', 'R2C 04B Start Existing Pending'),
-    ('${ids.startExistingSakit}'::uuid, 'r2c-b-04b-start-existing-sakit@example.test', 'member', 'R2C 04B Start Existing Sakit')
+    ('${ids.startExistingSakit}'::uuid, 'r2c-b-04b-start-existing-sakit@example.test', 'member', 'R2C 04B Start Existing Sakit'),
+    ('${ids.breakUnder}'::uuid, 'r2c-d-break-under@example.test', 'member', 'R2C D Break Under'),
+    ('${ids.breakBoundary}'::uuid, 'r2c-d-break-boundary@example.test', 'member', 'R2C D Break Boundary'),
+    ('${ids.breakOver}'::uuid, 'r2c-d-break-over@example.test', 'member', 'R2C D Break Over'),
+    ('${ids.breakCumulative}'::uuid, 'r2c-d-break-cumulative@example.test', 'member', 'R2C D Break Cumulative'),
+    ('${ids.breakAuditFail}'::uuid, 'r2c-d-break-audit-fail@example.test', 'member', 'R2C D Break Audit Fail')
 )
 insert into public.users (id, name, email, tier)
 select id, name, email, tier
@@ -337,7 +352,12 @@ values
   ('${ids.startExistingHadir}'::uuid, 'KRU-114', 'Professional Player', 'flexible', true, 2),
   ('${ids.startExistingCuti}'::uuid, 'KRU-116', 'Professional Player', 'flexible', true, 2),
   ('${ids.startExistingPending}'::uuid, 'KRU-117', 'Professional Player', 'flexible', true, 2),
-  ('${ids.startExistingSakit}'::uuid, 'KRU-118', 'Professional Player', 'flexible', true, 2);
+  ('${ids.startExistingSakit}'::uuid, 'KRU-118', 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakUnder}'::uuid, 'KRU-119', 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakBoundary}'::uuid, 'KRU-120', 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakOver}'::uuid, 'KRU-121', 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakCumulative}'::uuid, 'KRU-122', 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakAuditFail}'::uuid, 'KRU-123', 'Professional Player', 'flexible', true, 2);
 
 with wib as (
   select (
@@ -446,6 +466,95 @@ values (
   (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
   pg_catalog.clock_timestamp(),
   'flexible'
+);
+
+insert into public.worker_status (
+  user_id,
+  version,
+  current_status,
+  shift_active_date,
+  shift_active_started_at,
+  shift_active_label,
+  break_started_at,
+  break_timer_running,
+  break_accumulated_secs,
+  break_late_recorded
+)
+values
+  (
+    '${ids.breakUnder}'::uuid,
+    0,
+    'break',
+    '2026-06-01'::date,
+    '2026-06-01T00:00:00Z'::timestamptz,
+    'flexible',
+    '2026-06-01T00:00:00Z'::timestamptz,
+    true,
+    0,
+    false
+  ),
+  (
+    '${ids.breakBoundary}'::uuid,
+    0,
+    'break',
+    '2026-06-01'::date,
+    '2026-06-01T00:00:00Z'::timestamptz,
+    'flexible',
+    '2026-06-01T00:00:00Z'::timestamptz,
+    true,
+    0,
+    false
+  ),
+  (
+    '${ids.breakOver}'::uuid,
+    0,
+    'break',
+    '2026-06-01'::date,
+    '2026-06-01T00:00:00Z'::timestamptz,
+    'flexible',
+    '2026-06-01T00:00:00Z'::timestamptz,
+    true,
+    0,
+    false
+  ),
+  (
+    '${ids.breakCumulative}'::uuid,
+    0,
+    'break',
+    '2026-06-01'::date,
+    '2026-06-01T00:00:00Z'::timestamptz,
+    'flexible',
+    '2026-06-01T00:00:00Z'::timestamptz,
+    true,
+    3700,
+    false
+  ),
+  (
+    '${ids.breakAuditFail}'::uuid,
+    0,
+    'break',
+    '2026-06-01'::date,
+    '2026-06-01T00:00:00Z'::timestamptz,
+    'flexible',
+    '2026-06-01T00:00:00Z'::timestamptz,
+    true,
+    0,
+    false
+  );
+
+insert into public.worker_records (
+  user_id,
+  period_month,
+  break_late_seconds,
+  last_source,
+  last_source_action
+)
+values (
+  '${ids.breakCumulative}'::uuid,
+  '2026-06-01'::date,
+  100,
+  'tracker',
+  'tracker.break_end'
 );
 
 update public.worker_status
@@ -571,6 +680,11 @@ select pg_temp.set_auth('${ids.member}'::uuid);
 select pg_temp.expect_error(
   'member public call',
   'select public.apply_tracker_action(''${ids.start}''::uuid, ''START'', 0::bigint)',
+  'tracker.unauthorized'
+);
+select pg_temp.expect_error(
+  'member LANJUT public call',
+  'select public.apply_tracker_action(''${ids.breakUnder}''::uuid, ''LANJUT'', 0::bigint)',
   'tracker.unauthorized'
 );
 
@@ -1077,6 +1191,182 @@ select pg_temp.assert_true(
   'audit writer failure must roll back private tracker mutation'
 );
 
+select pg_temp.set_auth('${ids.owner}'::uuid);
+with result as (
+  select app_private.apply_tracker_action_impl(
+    '${ids.owner}'::uuid,
+    '${ids.breakUnder}'::uuid,
+    'LANJUT',
+    0,
+    '2026-06-01T00:59:59Z'::timestamptz
+  ) as payload
+)
+select pg_temp.assert_true((payload->>'to_version')::bigint = 1, 'under-threshold LANJUT should increment version once')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.breakUnder}'::uuid
+      and current_status = 'on'
+      and version = 1
+      and break_accumulated_secs = 3599
+      and break_late_recorded = false
+  )
+  and not exists (select 1 from public.worker_records where user_id = '${ids.breakUnder}'::uuid),
+  'under-threshold LANJUT must not write BREAK_LATE'
+);
+
+with result as (
+  select app_private.apply_tracker_action_impl(
+    '${ids.owner}'::uuid,
+    '${ids.breakBoundary}'::uuid,
+    'LANJUT',
+    0,
+    '2026-06-01T01:00:00Z'::timestamptz
+  ) as payload
+)
+select pg_temp.assert_true((payload->>'to_version')::bigint = 1, 'boundary LANJUT should increment version once')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.breakBoundary}'::uuid
+      and current_status = 'on'
+      and version = 1
+      and break_accumulated_secs = 3600
+      and break_late_recorded = false
+  )
+  and not exists (select 1 from public.worker_records where user_id = '${ids.breakBoundary}'::uuid),
+  'exactly 3600 seconds must not write BREAK_LATE'
+);
+
+with result as (
+  select app_private.apply_tracker_action_impl(
+    '${ids.owner}'::uuid,
+    '${ids.breakOver}'::uuid,
+    'LANJUT',
+    0,
+    '2026-06-01T01:03:12Z'::timestamptz
+  ) as payload
+)
+select pg_temp.assert_true((payload->>'to_version')::bigint = 1, 'overdue LANJUT should increment version once')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.breakOver}'::uuid
+      and current_status = 'on'
+      and version = 1
+      and break_accumulated_secs = 3792
+      and break_late_recorded = true
+  )
+  and exists (
+    select 1
+    from public.worker_records
+    where user_id = '${ids.breakOver}'::uuid
+      and period_month = '2026-06-01'::date
+      and break_late_seconds = 192
+      and last_source = 'tracker'
+      and last_source_action = 'tracker.break_end'
+  )
+  and exists (
+    select 1
+    from public.audit_logs
+    where target_user_id = '${ids.breakOver}'::uuid
+      and action = 'tracker.break_end'
+      and (payload_json->'summary'->'record_deltas'->>'break_late_seconds')::integer = 192
+  ),
+  'overdue LANJUT must write the newly accrued BREAK_LATE seconds once'
+);
+select pg_temp.expect_error(
+  'old overdue LANJUT retry',
+  'select app_private.apply_tracker_action_impl(''${ids.owner}''::uuid, ''${ids.breakOver}''::uuid, ''LANJUT'', 0::bigint, ''2026-06-01T01:03:12Z''::timestamptz)',
+  'tracker.version_conflict'
+);
+select pg_temp.expect_error(
+  'repeated overdue LANJUT close',
+  'select app_private.apply_tracker_action_impl(''${ids.owner}''::uuid, ''${ids.breakOver}''::uuid, ''LANJUT'', 1::bigint, ''2026-06-01T01:03:13Z''::timestamptz)',
+  'tracker.invalid_transition'
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_records
+    where user_id = '${ids.breakOver}'::uuid
+      and break_late_seconds = 192
+  )
+  and (select count(*) from public.audit_logs where target_user_id = '${ids.breakOver}'::uuid) = 1,
+  'retry and repeated close must not double increment BREAK_LATE'
+);
+
+with result as (
+  select app_private.apply_tracker_action_impl(
+    '${ids.owner}'::uuid,
+    '${ids.breakCumulative}'::uuid,
+    'LANJUT',
+    0,
+    '2026-06-01T00:02:00Z'::timestamptz
+  ) as payload
+)
+select pg_temp.assert_true((payload->>'to_version')::bigint = 1, 'cumulative LANJUT should increment version once')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_records
+    where user_id = '${ids.breakCumulative}'::uuid
+      and break_late_seconds = 220
+  ),
+  'later cumulative break must add only newly accrued overdue seconds'
+);
+with result as (
+  select app_private.apply_tracker_action_impl(
+    '${ids.owner}'::uuid,
+    '${ids.breakCumulative}'::uuid,
+    'ISTIRAHAT',
+    1,
+    '2026-06-01T00:03:00Z'::timestamptz
+  ) as payload
+)
+select pg_temp.assert_true((payload->>'to_version')::bigint = 2, 'new break episode should increment version once')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.breakCumulative}'::uuid
+      and current_status = 'break'
+      and version = 2
+      and break_accumulated_secs = 3820
+      and break_late_recorded = false
+  ),
+  'ISTIRAHAT must preserve cumulative seconds and reset the episode marker'
+);
+
+select pg_temp.set_auth(null);
+select pg_temp.expect_error(
+  'BREAK_LATE audit fail closed rollback',
+  'select app_private.apply_tracker_action_impl(''${ids.owner}''::uuid, ''${ids.breakAuditFail}''::uuid, ''LANJUT'', 0::bigint, ''2026-06-01T01:03:12Z''::timestamptz)',
+  'unauthenticated'
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.breakAuditFail}'::uuid
+      and current_status = 'break'
+      and version = 0
+      and break_accumulated_secs = 0
+      and break_late_recorded = false
+  )
+  and not exists (select 1 from public.worker_records where user_id = '${ids.breakAuditFail}'::uuid)
+  and not exists (select 1 from public.audit_logs where target_user_id = '${ids.breakAuditFail}'::uuid),
+  'audit writer failure must roll back BREAK_LATE records, marker, status, and version'
+);
+
 select pg_temp.assert_true(
   not exists (
     select 1
@@ -1086,11 +1376,6 @@ select pg_temp.assert_true(
   ),
   'tracker must not create ALPHA attendance'
 );
-select pg_temp.assert_true(
-  not exists (select 1 from public.worker_records where break_late_seconds <> 0),
-  'tracker behavior probe must not write break_late_seconds'
-);
-
 rollback;
 `;
 }
