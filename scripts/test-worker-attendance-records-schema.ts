@@ -17,6 +17,8 @@ const migrationSql = readR2CAMigration();
 const normalizedSql = normalizeSql(migrationSql);
 const attendanceTableSql = extractCreateTableSql("worker_attendance");
 const recordsTableSql = extractCreateTableSql("worker_records");
+const correctionMigrationSql = readR2CCMigration();
+const normalizedCorrectionSql = normalizeSql(correctionMigrationSql);
 
 assert.match(migrationSql, /create table if not exists public\.worker_attendance/i);
 assert.match(migrationSql, /create table if not exists public\.worker_records/i);
@@ -109,6 +111,50 @@ assertSqlIncludes(
 assert.match(migrationSql, /set_worker_attendance_updated_at/);
 assert.match(migrationSql, /set_worker_records_updated_at/);
 
+assertCorrectionSqlIncludes(
+  "alter table public.worker_attendance add column if not exists is_canceled boolean not null default false",
+);
+assertCorrectionSqlIncludes(
+  "create table if not exists public.worker_attendance_corrections",
+);
+assertCorrectionSqlIncludes("alter table public.worker_attendance_corrections enable row level security");
+assertCorrectionSqlIncludes(
+  "revoke all on public.worker_attendance_corrections from anon, authenticated",
+);
+assertCorrectionSqlIncludes(
+  "create or replace function app_private.apply_tracker_correction_impl",
+);
+assertCorrectionSqlIncludes("create or replace function public.apply_tracker_correction");
+assertCorrectionSqlIncludes("security definer");
+assertCorrectionSqlIncludes("set search_path = ''");
+assertCorrectionSqlIncludes(
+  "revoke execute on function app_private.apply_tracker_correction_impl(uuid, uuid, text, bigint, uuid, text, timestamptz) from public",
+);
+assertCorrectionSqlIncludes(
+  "revoke execute on function app_private.apply_tracker_correction_impl(uuid, uuid, text, bigint, uuid, text, timestamptz) from anon",
+);
+assertCorrectionSqlIncludes(
+  "revoke execute on function app_private.apply_tracker_correction_impl(uuid, uuid, text, bigint, uuid, text, timestamptz) from authenticated",
+);
+assertCorrectionSqlIncludes(
+  "grant execute on function public.apply_tracker_correction(uuid, text, bigint, uuid, text) to authenticated",
+);
+assertCorrectionSqlIncludes("where public.worker_attendance.is_canceled = true");
+assert.equal(
+  (
+    normalizedCorrectionSql.match(
+      /where public\.worker_attendance\.is_canceled = true/g,
+    ) ?? []
+  ).length,
+  2,
+  "R2C-C must patch canceled-slot revival for START and tracker absence actions.",
+);
+assertCorrectionSqlIncludes(
+  "R2C-C could not add canceled attendance slot revival for tracker absence actions",
+);
+assert.equal(/\bdelete\s+from\s+public\.worker_attendance\b/i.test(correctionMigrationSql), false);
+assert.equal(/\bservice_role\b/i.test(correctionMigrationSql), false);
+
 console.log("Worker attendance/records schema tests passed.");
 
 function readR2CAMigration() {
@@ -118,6 +164,16 @@ function readR2CAMigration() {
   );
 
   assert.ok(migrationFile, "R2C-A attendance/records migration was not found.");
+  return readFileSync(join(migrationsDir, migrationFile), "utf8");
+}
+
+function readR2CCMigration() {
+  const migrationsDir = resolve(process.cwd(), "supabase/migrations");
+  const migrationFile = readdirSync(migrationsDir).find((entry) =>
+    entry.endsWith("_release_2c_c_tracker_corrections.sql"),
+  );
+
+  assert.ok(migrationFile, "R2C-C tracker corrections migration was not found.");
   return readFileSync(join(migrationsDir, migrationFile), "utf8");
 }
 
@@ -193,6 +249,13 @@ function assertPolicy(
 
 function assertSqlIncludes(fragment: string) {
   assert.ok(normalizedSql.includes(normalizeSql(fragment)), `Missing SQL fragment: ${fragment}`);
+}
+
+function assertCorrectionSqlIncludes(fragment: string) {
+  assert.ok(
+    normalizedCorrectionSql.includes(normalizeSql(fragment)),
+    `Missing R2C-C SQL fragment: ${fragment}`,
+  );
 }
 
 function normalizeSql(sql: string) {
