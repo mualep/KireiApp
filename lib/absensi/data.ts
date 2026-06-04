@@ -19,6 +19,7 @@ export type AbsensiDataIssue = {
 
 export type AbsensiCellDTO = {
   attendanceId: string;
+  attendanceUpdatedAt: string;
   label: (typeof absensiAttendanceLabels)[AbsensiAttendanceStatus];
   source: WorkerAttendanceSource;
   sourceAction: string;
@@ -60,6 +61,7 @@ type AttendanceRow = {
   source: string;
   source_action: string;
   status: string;
+  updated_at: string;
   user_id: string;
 };
 
@@ -119,7 +121,7 @@ export async function getAbsensiData({
       .returns<UserRow[]>(),
     supabase
       .from("worker_attendance")
-      .select("id,user_id,attendance_date,status,source,source_action")
+      .select("id,user_id,attendance_date,status,source,source_action,updated_at")
       .in("user_id", userIds)
       .gte("attendance_date", month.monthStart)
       .lt("attendance_date", month.nextMonthStart)
@@ -160,6 +162,7 @@ export async function getAbsensiData({
     const cells = cellsByUserId.get(attendance.user_id) ?? {};
     cells[attendance.attendance_date] = {
       attendanceId: attendance.id,
+      attendanceUpdatedAt: attendance.updated_at,
       label: absensiAttendanceLabels[attendance.status],
       source,
       sourceAction: attendance.source_action,

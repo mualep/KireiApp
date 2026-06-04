@@ -5,8 +5,6 @@ import { join, resolve } from "node:path";
 const projectRoot = process.cwd();
 const actionPath = resolve(projectRoot, "app/admin/(shell)/absensi/actions.ts");
 const helperPath = resolve(projectRoot, "lib/absensi/corrections.ts");
-const absensiPagePath = resolve(projectRoot, "app/admin/(shell)/absensi/page.tsx");
-const absensiComponentsDir = resolve(projectRoot, "components/admin/absensi");
 const appDir = resolve(projectRoot, "app");
 
 assert.ok(existsSync(actionPath), "Absensi Server Action file must exist.");
@@ -15,12 +13,6 @@ assert.ok(existsSync(helperPath), "Absensi correction helper file must exist.");
 const actionSource = readFileSync(actionPath, "utf8");
 const helperSource = readFileSync(helperPath, "utf8");
 const combinedSource = `${actionSource}\n${helperSource}`;
-const uiSources = [
-  readFileSync(absensiPagePath, "utf8"),
-  ...listFiles(absensiComponentsDir)
-    .filter((filePath) => filePath.endsWith(".ts") || filePath.endsWith(".tsx"))
-    .map((filePath) => readFileSync(filePath, "utf8")),
-].join("\n");
 
 assert.match(actionSource, /^"use server";/);
 assertIncludes(actionSource, 'from "next/cache"');
@@ -118,22 +110,6 @@ assert.equal(
   ),
   false,
   "R3D-B must not add an /api/absensi route handler.",
-);
-
-assertNoPattern(
-  uiSources,
-  /from\s+["'][^"']*absensi\/actions["']|from\s+["']\.\/actions["']|applyAbsensiCorrection/,
-  "R3D-B must not wire the Absensi correction Server Action into UI.",
-);
-assertNoPattern(
-  uiSources,
-  /\b(formAction|useActionState|useFormStatus|onSubmit|handleCorrection|handleEdit|handleSave)\b/i,
-  "R3D-B must not add Absensi client mutation controls.",
-);
-assertNoPattern(
-  uiSources,
-  /\b(BATAL|Correction|Koreksi|Edit|Save|Reset|Apply|Submit|Modal|Dialog)\b/i,
-  "R3D-B must keep Absensi UI read-only.",
 );
 
 console.log("Absensi correction Server Action static tests passed.");

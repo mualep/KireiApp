@@ -68,7 +68,6 @@ assertNoPattern(absensiSources, /\b(use server|revalidatePath)\b/);
 assertNoPattern(absensiSources, /\.rpc\s*\(/);
 assertNoPattern(absensiSources, /\.(insert|update|upsert|delete)\s*\(/);
 assertNoPattern(absensiSources, /\b(service_role|SERVICE_ROLE|createAdminClient)\b/);
-assertNoPattern(absensiSources, /\b(BATAL|Correction|Koreksi|Edit|Save|Reset)\b/i);
 
 console.log("Absensi correction contract tests passed.");
 

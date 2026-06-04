@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { canAccessAdminAbsensi } from "@/lib/auth/redirects";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { getAbsensiData } from "@/lib/absensi/data";
+import { getCurrentWibDateParam } from "@/lib/absensi/helpers";
 
 export const metadata: Metadata = {
   title: "Absensi | KireiApp",
@@ -37,8 +38,11 @@ export default async function AdminAbsensiPage({
   const params = await searchParams;
   const monthParam = typeof params.month === "string" ? params.month : undefined;
   const data = await getAbsensiData({ monthParam, staff });
+  const canCorrectAbsensi = staff.profile.tier !== "member";
+  const currentWibDate = getCurrentWibDateParam();
   const scopeLabel =
     staff.profile.tier === "member" ? "Self-only" : "All visible workers";
+  const modeLabel = canCorrectAbsensi ? "Correction Controls" : "Read-only";
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -65,7 +69,7 @@ export default async function AdminAbsensiPage({
               variant="outline"
               className="h-6 border-border bg-background/30 px-2 text-[0.65rem] text-muted-foreground"
             >
-              Read-only
+              {modeLabel}
             </Badge>
             <Button asChild variant="outline" size="sm">
               <Link href={`/admin/absensi?month=${data.month.previousMonthParam}`}>
@@ -81,7 +85,12 @@ export default async function AdminAbsensiPage({
         </CardContent>
       </Card>
 
-      <AbsensiMonthGrid month={data.month} rows={data.rows} />
+      <AbsensiMonthGrid
+        canCorrect={canCorrectAbsensi}
+        currentWibDate={currentWibDate}
+        month={data.month}
+        rows={data.rows}
+      />
     </div>
   );
 }
