@@ -22,6 +22,7 @@
     "test:absensi-correction-truth-table": "tsx scripts/test-absensi-correction-truth-table.ts",
     "test:absensi-correction-rpc-migration": "tsx scripts/test-absensi-correction-rpc-migration.ts",
     "test:absensi-correction-rpc-behavior": "tsx scripts/test-absensi-correction-rpc-behavior.ts",
+    "test:absensi-correction-server-action": "tsx scripts/test-absensi-correction-server-action.ts",
     "test:tracker-readonly": "tsx scripts/test-tracker-readonly.ts",
     "test:worker-helpers": "tsx scripts/test-worker-helpers.ts"
   },
