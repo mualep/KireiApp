@@ -18,6 +18,7 @@
     "test:tracker-rpc-migration": "tsx scripts/test-tracker-rpc-migration.ts",
     "test:worker-attendance-records-schema": "tsx scripts/test-worker-attendance-records-schema.ts",
     "test:absensi-readonly": "tsx scripts/test-absensi-readonly.ts",
+    "test:absensi-correction-contract": "tsx scripts/test-absensi-correction-contract.ts",
     "test:tracker-readonly": "tsx scripts/test-tracker-readonly.ts",
     "test:worker-helpers": "tsx scripts/test-worker-helpers.ts"
   },
