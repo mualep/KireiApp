@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { CheckIcon, CircleAlertIcon } from "lucide-react";
 
 import { applyAbsensiCorrection } from "@/app/admin/(shell)/absensi/actions";
@@ -122,39 +122,40 @@ function AbsensiCorrectionForm({
     ...correction,
     afterStatus,
   };
-  const reasonLength = reason.length;
-  const isReasonMissing = reason.trim().length === 0;
+  const reasonLength = reason.trim().length;
   const isSameStatus = selected.afterStatus === selected.beforeStatus;
-  const isHadirDeferred = selected.beforeStatus === "hadir";
   const isSubmitDisabled =
     isPending ||
-    isReasonMissing ||
+    Boolean(successMessage) ||
     isSameStatus ||
-    isHadirDeferred ||
-    reasonLength > 500;
+    reasonLength > 20;
+
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+
+    const closeTimer = window.setTimeout(() => {
+      onOpenChange(false);
+    }, 800);
+
+    return () => {
+      window.clearTimeout(closeTimer);
+    };
+  }, [onOpenChange, successMessage]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const trimmedReason = reason.trim();
 
-    if (trimmedReason.length === 0) {
-      setFormError("Reason is required.");
-      return;
-    }
-
-    if (trimmedReason.length > 500) {
-      setFormError("Reason must be 500 characters or fewer.");
+    if (trimmedReason.length > 20) {
+      setFormError("Reason must be 20 characters or fewer.");
       return;
     }
 
     if (selected.afterStatus === selected.beforeStatus) {
       setFormError("Choose a different status.");
-      return;
-    }
-
-    if (selected.beforeStatus === "hadir") {
-      setFormError("HADIR correction is not available in v1.");
       return;
     }
 
@@ -228,7 +229,7 @@ function AbsensiCorrectionForm({
       ) : null}
 
       <FieldGroup>
-        <Field data-invalid={isSameStatus || isHadirDeferred ? true : undefined}>
+        <Field data-invalid={isSameStatus ? true : undefined}>
           <FieldLabel htmlFor="absensi-after-status">After status</FieldLabel>
           <Select
             id="absensi-after-status"
@@ -237,9 +238,9 @@ function AbsensiCorrectionForm({
             onChange={(event) =>
               setAfterStatus(event.target.value as CorrectionAfterStatus)
             }
-            disabled={isPending || isHadirDeferred}
+            disabled={isPending}
             autoComplete="off"
-            aria-invalid={isSameStatus || isHadirDeferred ? true : undefined}
+            aria-invalid={isSameStatus ? true : undefined}
           >
             {availableStatuses.map((status) => (
               <option key={status.value} value={status.value}>
@@ -247,14 +248,12 @@ function AbsensiCorrectionForm({
               </option>
             ))}
           </Select>
-          {isHadirDeferred ? (
-            <FieldError>HADIR correction is not available in v1.</FieldError>
-          ) : isSameStatus ? (
+          {isSameStatus ? (
             <FieldError>Choose a different status.</FieldError>
           ) : null}
         </Field>
 
-        <Field data-invalid={isReasonMissing && reasonLength > 0 ? true : undefined}>
+        <Field data-invalid={reasonLength > 20 ? true : undefined}>
           <FieldLabel htmlFor="absensi-correction-reason">Reason</FieldLabel>
           <Textarea
             id="absensi-correction-reason"
@@ -262,20 +261,15 @@ function AbsensiCorrectionForm({
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             disabled={isPending}
-            required
-            maxLength={500}
+            maxLength={20}
             autoComplete="off"
-            aria-invalid={
-              (isReasonMissing && reasonLength > 0) || reasonLength > 500
-                ? true
-                : undefined
-            }
-            placeholder="Describe the correction…"
+            aria-invalid={reasonLength > 20 ? true : undefined}
+            placeholder="Optional note"
             className="max-h-36 resize-none"
           />
-          <FieldDescription>{reasonLength}/500</FieldDescription>
-          {isReasonMissing && reasonLength > 0 ? (
-            <FieldError>Reason is required.</FieldError>
+          <FieldDescription>{reasonLength}/20 optional</FieldDescription>
+          {reasonLength > 20 ? (
+            <FieldError>Reason must be 20 characters or fewer.</FieldError>
           ) : null}
         </Field>
       </FieldGroup>

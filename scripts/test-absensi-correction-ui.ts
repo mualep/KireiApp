@@ -67,17 +67,21 @@ assert.match(gridSource, /^"use client";/);
 assertIncludes(gridSource, "AbsensiCorrectionDialog");
 assertIncludes(gridSource, "canCorrect");
 assertIncludes(gridSource, "currentWibDate");
-assertIncludes(gridSource, 'beforeStatus: "none"');
+assertIncludes(gridSource, 'const beforeStatus = cell?.status ?? "none";');
 assertIncludes(gridSource, "attendanceUpdatedAt");
 assertIncludes(gridSource, "expectedAttendanceId");
 assertIncludes(gridSource, "expectedAttendanceUpdatedAt");
 assertIncludes(gridSource, "expectedAttendanceId: null");
 assertIncludes(gridSource, "expectedAttendanceUpdatedAt: null");
 assertIncludes(gridSource, 'day < currentWibDate');
-assertIncludes(gridSource, 'cell?.status !== "hadir"');
+assertNormalizedIncludes(gridSource, "const canOpenCorrection = canCorrect && isHistorical;");
 assertIncludes(gridSource, "Historical corrections only");
-assertIncludes(gridSource, "HADIR correction is not available in v1");
 assertIncludes(gridSource, "absensiAttendanceInitials");
+assertNoPattern(
+  gridSource,
+  /cell\?\.status\s*!==\s*["']hadir["']|beforeStatus\s*===\s*["']hadir["']|HADIR correction is not available in v1/,
+  "Historical HADIR cells must be correctable for Owner/Admin.",
+);
 
 assert.match(dialogSource, /^"use client";/);
 assertIncludes(dialogSource, 'from "@/app/admin/(shell)/absensi/actions"');
@@ -88,13 +92,32 @@ assertIncludes(dialogSource, "Dialog");
 assertIncludes(dialogSource, "Select");
 assertIncludes(dialogSource, "Textarea");
 assertIncludes(dialogSource, "reason.trim()");
-assertIncludes(dialogSource, "maxLength={500}");
-assertIncludes(dialogSource, "required");
-assertIncludes(dialogSource, "reason.trim().length === 0");
+assertIncludes(dialogSource, "const reasonLength = reason.trim().length;");
+assertIncludes(dialogSource, "maxLength={20}");
+assertIncludes(dialogSource, "reasonLength > 20");
 assertIncludes(dialogSource, "selected.afterStatus === selected.beforeStatus");
-assertIncludes(dialogSource, 'selected.beforeStatus === "hadir"');
+assertIncludes(dialogSource, "window.setTimeout");
+assertIncludes(dialogSource, "window.clearTimeout");
+assertIncludes(dialogSource, "onOpenChange(false)");
+assertIncludes(dialogSource, "800");
+assertIncludes(dialogSource, "Boolean(successMessage)");
 assertIncludes(dialogSource, "expectedAttendanceId");
 assertIncludes(dialogSource, "expectedAttendanceUpdatedAt");
+assertNoPattern(
+  dialogSource,
+  /\brequired\b|Reason is required|reason\.trim\(\)\.length\s*===\s*0/,
+  "Reason must be optional in the correction UI.",
+);
+assertNoPattern(
+  dialogSource,
+  /selected\.beforeStatus\s*===\s*["']hadir["']|isHadirDeferred|HADIR correction is not available in v1/,
+  "The correction dialog must not block historical HADIR corrections.",
+);
+assertNoPattern(
+  dialogSource,
+  /\btoast\b|sonner|Toaster/,
+  "R3D-C alignment should not add toast infrastructure.",
+);
 
 for (const status of ["hadir", "cuti", "sakit", "pending", "alpha"]) {
   assertIncludes(dialogSource, `value: "${status}"`);
@@ -159,8 +182,19 @@ function assertIncludes(source: string, expected: string) {
   assert.ok(source.includes(expected), `Expected source to include: ${expected}`);
 }
 
+function assertNormalizedIncludes(source: string, expected: string) {
+  assert.ok(
+    normalize(source).includes(normalize(expected)),
+    `Expected normalized source to include: ${expected}`,
+  );
+}
+
 function assertNoPattern(source: string, pattern: RegExp, message: string) {
   assert.equal(pattern.test(source), false, message);
+}
+
+function normalize(value: string) {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function listFiles(directory: string): string[] {

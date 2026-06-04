@@ -160,11 +160,9 @@ function AbsensiCell({
 }) {
   const beforeStatus = cell?.status ?? "none";
   const isHistorical = day < currentWibDate;
-  const canOpenCorrection =
-    canCorrect && isHistorical && cell?.status !== "hadir";
+  const canOpenCorrection = canCorrect && isHistorical;
   const label = cell?.label ?? "No recorded attendance";
   const title = getCellTitle({
-    beforeStatus,
     canCorrect,
     cell,
     isHistorical,
@@ -236,12 +234,10 @@ function AbsensiCell({
 }
 
 function getCellTitle({
-  beforeStatus,
   canCorrect,
   cell,
   isHistorical,
 }: {
-  beforeStatus: "none" | AbsensiCellDTO["status"];
   canCorrect: boolean;
   cell: AbsensiCellDTO | undefined;
   isHistorical: boolean;
@@ -252,10 +248,6 @@ function getCellTitle({
 
   if (!isHistorical) {
     return "Historical corrections only";
-  }
-
-  if (beforeStatus === "hadir") {
-    return "HADIR correction is not available in v1";
   }
 
   return cell ? `Correct ${cell.label} - ${cell.sourceAction}` : "Correct empty day";
