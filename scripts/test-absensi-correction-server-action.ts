@@ -39,11 +39,14 @@ assertIncludes(helperSource, "z.enum(absensiCorrectionBeforeStatuses)");
 assertIncludes(helperSource, "z.enum(absensiCorrectionAfterStatuses)");
 assertIncludes(helperSource, "attendanceDate");
 assertIncludes(helperSource, "dateParamPattern");
-assertIncludes(helperSource, "reason: z.string().trim().min(1).max(500)");
+assertIncludes(helperSource, "reason: z.string().trim().max(20)");
 assertIncludes(helperSource, "parsed.data.beforeStatus === parsed.data.afterStatus");
-assertIncludes(helperSource, 'parsed.data.beforeStatus === "hadir"');
 assertOrderedFragments(helperSource, "parsed.data.beforeStatus === parsed.data.afterStatus", 'supabase.rpc("apply_absensi_correction"');
-assertOrderedFragments(helperSource, 'parsed.data.beforeStatus === "hadir"', 'supabase.rpc("apply_absensi_correction"');
+assertNoPattern(
+  helperSource,
+  /parsed\.data\.beforeStatus\s*===\s*["']hadir["']/,
+  "Absensi Server Action helper must not pre-reject historical HADIR corrections.",
+);
 assertIncludes(helperSource, 'supabase.rpc("apply_absensi_correction"');
 assertIncludes(helperSource, "p_target_user_id: parsed.data.targetUserId");
 assertIncludes(helperSource, "p_attendance_date: parsed.data.attendanceDate");

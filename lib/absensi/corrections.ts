@@ -29,7 +29,7 @@ export const applyAbsensiCorrectionSchema = z.object({
   beforeStatus: z.enum(absensiCorrectionBeforeStatuses),
   expectedAttendanceId: z.string().uuid().nullable(),
   expectedAttendanceUpdatedAt: z.string().datetime({ offset: true }).nullable(),
-  reason: z.string().trim().min(1).max(500),
+  reason: z.string().trim().max(20),
   targetUserId: z.string().uuid(),
 });
 
@@ -81,10 +81,6 @@ export async function applyAbsensiCorrectionMutation(
   }
 
   if (parsed.data.beforeStatus === parsed.data.afterStatus) {
-    return actionError("invalid_transition");
-  }
-
-  if (parsed.data.beforeStatus === "hadir") {
     return actionError("invalid_transition");
   }
 

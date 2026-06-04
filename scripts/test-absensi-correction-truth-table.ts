@@ -37,7 +37,8 @@ assertIncludes(contractSource, "Release 3B prepares the future Absensi/Admin cor
 
 for (const required of [
   "R3A Absensi remains read-only",
-  "No correction UI, RPC, Server Action, migration, or mutation path is introduced in this release",
+  "No correction UI, RPC, Server Action, migration, or mutation path was introduced in the original release",
+  "R3D-C amends this truth table before exposing the Owner/Admin UI",
   "PRD v1 remains frozen",
   "Owner and Admin are the only future actors allowed to correct Absensi attendance",
   "Member remains self-only and read-only for Absensi",
@@ -69,6 +70,10 @@ for (const required of [
   "| `none` | `sakit` |",
   "| `none` | `pending` |",
   "| `none` | `alpha` |",
+  "| `hadir` | `cuti` |",
+  "| `hadir` | `sakit` |",
+  "| `hadir` | `pending` |",
+  "| `hadir` | `alpha` |",
   "| `cuti` | `hadir` |",
   "| `cuti` | `sakit` |",
   "| `cuti` | `pending` |",
@@ -88,7 +93,7 @@ for (const required of [
   "Same-status no-op is rejected",
   "`alpha` is a controlled Absensi/Admin correction status",
   "`alpha` is set manually from Absensi/Admin, not from Tracker",
-  "Active `hadir -> cuti`, `hadir -> sakit`, `hadir -> pending`, and `hadir -> alpha` are deferred",
+  "Active historical `hadir -> cuti`, `hadir -> sakit`, `hadir -> pending`, and `hadir -> alpha` are allowed",
   "Tracker must not create, correct, or recover `alpha`",
   "Realtime synchronization between Absensi correction and live Tracker state is out of scope v1",
   "Future Tracker displays may derive historical ALPHA/absence display from `worker_attendance` where appropriate",
@@ -96,7 +101,7 @@ for (const required of [
   "`LATE` is derived-only and must never be stored as an attendance status",
   "Canceled rows count as no active row and may be revived",
   "Tracker-origin active `cuti`, `sakit`, and `pending` rows may be corrected only for historical dates",
-  "Tracker-origin active `hadir` rows are deferred from the first Absensi correction mutation slice",
+  "Tracker-origin active `hadir` rows may be corrected only for historical dates",
   "Future corrected rows must use `source = 'absensi'`",
   "Future corrected rows must use `source_action = 'absensi.correct_<status>'`",
   "Rows must not be physically deleted",
@@ -123,6 +128,7 @@ for (const required of [
   "`worker_status` must not be mutated by the first Absensi correction foundation",
   "Audit must be written in the same transaction",
   "Audit failure must fail closed",
+  "Reason is optional, stored as null when blank, and capped at 20 trimmed characters",
   "public.apply_absensi_correction(",
   "p_target_user_id uuid",
   "p_attendance_date date",
@@ -142,9 +148,8 @@ for (const required of [
   "RLS remains restrictive for direct table access",
   "If `p_before_status = 'none'`, then `p_expected_attendance_id` and `p_expected_attendance_updated_at` must be null",
   "Re-running the same correction after success must fail as a state conflict",
-  "No Server Action in R3C",
-  "No RPC mutation in R3C",
-  "No schema or migration in R3C",
+  "No direct client mutation in R3C",
+  "R3D-C backend amendment uses an additive migration",
   "No `worker_records` query from the read-only Absensi grid",
   "Realtime sync is deferred from v1",
   "Custom typed Absensi statuses are deferred from v1",
@@ -153,19 +158,6 @@ for (const required of [
 }
 
 assertNoPattern(truthTableSource, /\bTODO\b|\bTBD\b/i);
-
-for (const forbiddenTransition of [
-  "| `hadir` | `cuti` |",
-  "| `hadir` | `sakit` |",
-  "| `hadir` | `pending` |",
-  "| `hadir` | `alpha` |",
-]) {
-  assert.equal(
-    truthTableSource.includes(forbiddenTransition),
-    false,
-    `Forbidden transition must not appear as an allowed row: ${forbiddenTransition}`,
-  );
-}
 
 assertNoPattern(absensiSources, /\b(use server|revalidatePath)\b/);
 assertNoPattern(absensiSources, /\.rpc\s*\(/);

@@ -52,6 +52,7 @@ for (const required of [
   "Actor user id",
   "Target worker user id",
   "Before and after attendance status",
+  "Optional human-readable reason or note capped at 20 characters",
   "Worker record deltas",
   "No service-role or admin Supabase client in app code",
   "RLS remains restrictive for direct table access",

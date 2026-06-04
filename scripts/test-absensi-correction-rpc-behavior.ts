@@ -32,6 +32,10 @@ const allowedTransitions: Array<{ before: AbsensiStatus; after: Exclude<AbsensiS
     before: "none" as const,
     after,
   })),
+  ...(["cuti", "sakit", "pending", "alpha"] as const).map((after) => ({
+    before: "hadir" as const,
+    after,
+  })),
   ...(["hadir", "sakit", "pending", "alpha"] as const).map((after) => ({
     before: "cuti" as const,
     after,
@@ -415,7 +419,7 @@ values
 select pg_temp.set_auth(null);
 select pg_temp.expect_error(
   'unauthenticated public absensi correction',
-  'select public.apply_absensi_correction(''${ids.publicTarget}''::uuid, ''2026-06-01''::date, ''none'', ''alpha'', null::uuid, null::timestamptz, ''unauthenticated attempt'')',
+  'select public.apply_absensi_correction(''${ids.publicTarget}''::uuid, ''2026-06-01''::date, ''none'', ''alpha'', null::uuid, null::timestamptz, ''unauth test'')',
   'absensi.unauthenticated'
 );
 
@@ -463,9 +467,30 @@ select pg_temp.expect_error(
   'absensi.invalid_transition'
 );
 select pg_temp.expect_error(
-  'active hadir to alpha deferred',
-  'select public.apply_absensi_correction(''${ids.hadirDeferred}''::uuid, ''2026-06-01''::date, ''hadir'', ''alpha'', (select id from public.worker_attendance where user_id = ''${ids.hadirDeferred}''::uuid), (select updated_at from public.worker_attendance where user_id = ''${ids.hadirDeferred}''::uuid), ''hadir deferred'')',
-  'absensi.invalid_transition'
+  'reason over 20 rejected',
+  'select public.apply_absensi_correction(''${ids.invalid}''::uuid, ''2026-06-01''::date, ''none'', ''alpha'', null::uuid, null::timestamptz, ''123456789012345678901'')',
+  'absensi.invalid_input'
+);
+
+select public.apply_absensi_correction(
+  '${ids.publicTarget}'::uuid,
+  '2026-06-01'::date,
+  'none',
+  'alpha',
+  null,
+  null,
+  ''
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_absensi_corrections
+    where target_user_id = '${ids.publicTarget}'::uuid
+      and before_status = 'none'
+      and after_status = 'alpha'
+      and reason is null
+  ),
+  'empty reason must be stored as NULL'
 );
 
 ${transitionCases.map((testCase) => buildAllowedTransitionSql(testCase)).join("\n")}
@@ -478,7 +503,7 @@ select public.apply_absensi_correction(
   'alpha',
   (select id from public.worker_attendance where user_id = '${ids.trackerCuti}'::uuid),
   (select updated_at from public.worker_attendance where user_id = '${ids.trackerCuti}'::uuid),
-  'admin corrects tracker cuti'
+  'tracker cuti'
 );
 select pg_temp.assert_true(
   exists (
@@ -505,10 +530,41 @@ select pg_temp.assert_true(
   ),
   'tracker-origin historical CUTI may be corrected by Admin through Absensi'
 );
-select pg_temp.expect_error(
-  'tracker hadir remains deferred',
-  'select public.apply_absensi_correction(''${ids.trackerHadir}''::uuid, ''2026-06-01''::date, ''hadir'', ''alpha'', (select id from public.worker_attendance where user_id = ''${ids.trackerHadir}''::uuid), (select updated_at from public.worker_attendance where user_id = ''${ids.trackerHadir}''::uuid), ''tracker hadir deferred'')',
-  'absensi.invalid_transition'
+select public.apply_absensi_correction(
+  '${ids.trackerHadir}'::uuid,
+  '2026-06-01'::date,
+  'hadir',
+  'sakit',
+  (select id from public.worker_attendance where user_id = '${ids.trackerHadir}'::uuid),
+  (select updated_at from public.worker_attendance where user_id = '${ids.trackerHadir}'::uuid),
+  'tracker hadir'
+);
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.trackerHadir}'::uuid
+      and status = 'sakit'
+      and source = 'absensi'
+      and source_action = 'absensi.correct_sakit'
+      and is_canceled = false
+  )
+  and exists (
+    select 1
+    from public.worker_records
+    where user_id = '${ids.trackerHadir}'::uuid
+      and sakit_days = 1
+  )
+  and exists (
+    select 1
+    from public.worker_absensi_corrections
+    where target_user_id = '${ids.trackerHadir}'::uuid
+      and before_status = 'hadir'
+      and after_status = 'sakit'
+      and before_source = 'tracker'
+      and sakit_days_delta = 1
+  ),
+  'tracker-origin historical HADIR may be corrected by Admin through Absensi'
 );
 
 select public.apply_absensi_correction(
@@ -573,11 +629,11 @@ select public.apply_absensi_correction(
   'alpha',
   (select id from public.worker_attendance where user_id = '${ids.retry}'::uuid),
   (select updated_at from public.worker_attendance where user_id = '${ids.retry}'::uuid),
-  'first retry target correction'
+  'retry one'
 );
 select pg_temp.expect_error(
   'retry after success conflict',
-  'select public.apply_absensi_correction(''${ids.retry}''::uuid, ''2026-06-01''::date, ''pending'', ''alpha'', (select id from public.worker_attendance where user_id = ''${ids.retry}''::uuid), (select updated_at from public.worker_attendance where user_id = ''${ids.retry}''::uuid), ''second retry target correction'')',
+  'select public.apply_absensi_correction(''${ids.retry}''::uuid, ''2026-06-01''::date, ''pending'', ''alpha'', (select id from public.worker_attendance where user_id = ''${ids.retry}''::uuid), (select updated_at from public.worker_attendance where user_id = ''${ids.retry}''::uuid), ''retry two'')',
   'absensi.attendance_conflict'
 );
 select pg_temp.assert_true(
@@ -654,7 +710,7 @@ select pg_temp.assert_true(
     select 1
     from public.worker_status
     where user_id in (
-      ${[...transitionCases.map((testCase) => `'${testCase.id}'::uuid`), `'${ids.trackerCuti}'::uuid`, `'${ids.canceledRevival}'::uuid`, `'${ids.retry}'::uuid`].join(",\n      ")}
+      ${[...transitionCases.map((testCase) => `'${testCase.id}'::uuid`), `'${ids.publicTarget}'::uuid`, `'${ids.trackerCuti}'::uuid`, `'${ids.trackerHadir}'::uuid`, `'${ids.canceledRevival}'::uuid`, `'${ids.retry}'::uuid`].join(",\n      ")}
     )
       and (
         version <> 0
@@ -691,7 +747,7 @@ select public.apply_absensi_correction(
   '${testCase.after}',
   ${testCase.before === "none" ? "null" : `(select id from public.worker_attendance where user_id = '${testCase.id}'::uuid)`},
   ${testCase.before === "none" ? "null" : `(select updated_at from public.worker_attendance where user_id = '${testCase.id}'::uuid)`},
-  'allowed ${testCase.label}'
+  'allowed'
 );
 select pg_temp.assert_true(
   exists (

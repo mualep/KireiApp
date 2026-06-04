@@ -8,10 +8,13 @@ const expectedPrivateSignature =
   "app_private.apply_absensi_correction_impl(p_actor_user_id uuid, p_target_user_id uuid, p_attendance_date date, p_before_status text, p_after_status text, p_expected_attendance_id uuid, p_expected_attendance_updated_at timestamptz, p_reason text, p_now timestamptz)";
 
 const migrationSql = readR3DAMigration();
-const normalizedSql = normalizeSql(migrationSql);
+const amendmentSql = readR3DCAmendmentMigration();
+const combinedMigrationSql = `${migrationSql}\n${amendmentSql}`;
+const normalizedSql = normalizeSql(combinedMigrationSql);
+const normalizedAmendmentSql = normalizeSql(amendmentSql);
 const ledgerSql = extractCreateTableSql("worker_absensi_corrections");
-const publicFunctionSql = extractFunctionSql("public.apply_absensi_correction");
-const privateFunctionSql = extractFunctionSql("app_private.apply_absensi_correction_impl");
+const publicFunctionSql = extractLastFunctionSql("public.apply_absensi_correction");
+const privateFunctionSql = extractLastFunctionSql("app_private.apply_absensi_correction_impl");
 
 assertSqlIncludes("create table if not exists public.worker_absensi_corrections");
 assertSqlIncludes("attendance_id uuid not null references public.worker_attendance(id)");
@@ -32,6 +35,9 @@ assertSqlIncludes("cuti_stock_delta integer not null default 0");
 assertSqlIncludes("cuti_stock_before smallint");
 assertSqlIncludes("cuti_stock_after smallint");
 assertSqlIncludes("reason text not null");
+assertAmendmentSqlIncludes(
+  "alter table public.worker_absensi_corrections alter column reason drop not null",
+);
 
 for (const status of ["none", "hadir", "cuti", "sakit", "pending", "alpha"]) {
   assert.ok(ledgerSql.includes(`'${status}'`), `Ledger must include controlled status: ${status}`);
@@ -47,15 +53,23 @@ for (const action of [
   assert.ok(ledgerSql.includes(`'${action}'`), `Ledger must constrain source action: ${action}`);
 }
 
-assertSqlIncludes("before_status <> after_status");
-assertSqlIncludes("before_status <> 'hadir'");
+assertAmendmentSqlIncludes(
+  "alter table public.worker_absensi_corrections drop constraint if exists worker_absensi_corrections_transition_check",
+);
+assertAmendmentSqlIncludes("before_status <> after_status");
 assertSqlIncludes("after_source = 'absensi'");
-assertSqlIncludes("char_length(pg_catalog.btrim(reason)) between 1 and 500");
+assertAmendmentSqlIncludes(
+  "alter table public.worker_absensi_corrections drop constraint if exists worker_absensi_corrections_reason_check",
+);
+assertAmendmentSqlIncludes(
+  "reason is null or char_length(pg_catalog.btrim(reason)) between 1 and 20",
+);
 assertSqlIncludes("cuti_stock_before is null or cuti_stock_before >= 0");
 assertSqlIncludes("cuti_stock_after is null or cuti_stock_after >= 0");
 
 for (const fragment of [
   "before_status = 'none' and after_status in ('hadir', 'cuti', 'sakit', 'pending', 'alpha')",
+  "before_status = 'hadir' and after_status in ('cuti', 'sakit', 'pending', 'alpha')",
   "before_status = 'cuti' and after_status in ('hadir', 'sakit', 'pending', 'alpha')",
   "before_status = 'sakit' and after_status in ('hadir', 'cuti', 'pending', 'alpha')",
   "before_status = 'pending' and after_status in ('hadir', 'cuti', 'sakit', 'alpha')",
@@ -81,6 +95,20 @@ assertSqlIncludes("using ((select app_private.is_admin_or_owner()))");
 
 assertFunctionShape(publicFunctionSql, expectedPublicSignature);
 assertFunctionShape(privateFunctionSql, expectedPrivateSignature);
+assert.ok(
+  normalizeSql(privateFunctionSql).includes("pg_catalog.char_length(v_reason) > 20"),
+  "Private Absensi RPC must cap trimmed reason at 20 characters.",
+);
+assert.equal(
+  /v_reason\s+is\s+null/i.test(privateFunctionSql),
+  false,
+  "Private Absensi RPC must allow blank reason to become NULL.",
+);
+assert.equal(
+  /v_before_status\s*=\s*'hadir'\s+or/i.test(privateFunctionSql),
+  false,
+  "Private Absensi RPC must not reject historical HADIR corrections.",
+);
 
 assertSqlIncludes(
   "revoke execute on function public.apply_absensi_correction(uuid, date, text, text, uuid, timestamptz, text) from public",
@@ -160,6 +188,11 @@ assertNoForbiddenPattern(
   /\bexception\s+when\b/i,
   "R3D-A must not catch or suppress audit failures.",
 );
+assert.equal(
+  /before_status\s*<>\s*'hadir'/i.test(amendmentSql),
+  false,
+  "R3D-C amendment must not keep the old HADIR transition rejection.",
+);
 
 console.log("Absensi correction RPC migration static tests passed.");
 
@@ -173,6 +206,16 @@ function readR3DAMigration() {
   return readFileSync(join(migrationsDir, migrationFile), "utf8");
 }
 
+function readR3DCAmendmentMigration() {
+  const migrationsDir = resolve(process.cwd(), "supabase/migrations");
+  const migrationFile = readdirSync(migrationsDir).find((entry) =>
+    entry.endsWith("_amend_absensi_correction_contract.sql"),
+  );
+
+  assert.ok(migrationFile, "R3D-C Absensi correction contract amendment migration not found.");
+  return readFileSync(join(migrationsDir, migrationFile), "utf8");
+}
+
 function extractCreateTableSql(tableName: string) {
   const pattern = new RegExp(
     `create table if not exists public\\.${tableName} \\([\\s\\S]*?\\n\\);`,
@@ -183,15 +226,15 @@ function extractCreateTableSql(tableName: string) {
   return normalizeSql(match[0]);
 }
 
-function extractFunctionSql(functionName: string) {
+function extractLastFunctionSql(functionName: string) {
   const pattern = new RegExp(
     `create\\s+or\\s+replace\\s+function\\s+${escapeRegExp(functionName)}\\s*\\([\\s\\S]*?\\n\\$\\$;`,
-    "i",
+    "gi",
   );
-  const match = migrationSql.match(pattern);
+  const matches = [...combinedMigrationSql.matchAll(pattern)];
 
-  assert.ok(match, `Missing function body for ${functionName}.`);
-  return match[0];
+  assert.ok(matches.length > 0, `Missing function body for ${functionName}.`);
+  return matches[matches.length - 1][0];
 }
 
 function assertFunctionShape(functionSql: string, expectedSignature: string) {
@@ -220,8 +263,15 @@ function assertSqlIncludes(fragment: string) {
   assert.ok(normalizedSql.includes(normalizeSql(fragment)), `Missing SQL fragment: ${fragment}`);
 }
 
+function assertAmendmentSqlIncludes(fragment: string) {
+  assert.ok(
+    normalizedAmendmentSql.includes(normalizeSql(fragment)),
+    `Missing amendment SQL fragment: ${fragment}`,
+  );
+}
+
 function assertNoForbiddenPattern(pattern: RegExp, message: string) {
-  assert.equal(pattern.test(migrationSql), false, message);
+  assert.equal(pattern.test(combinedMigrationSql), false, message);
 }
 
 function normalizeSql(sql: string) {

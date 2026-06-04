@@ -79,9 +79,9 @@ The audit trail must include:
 - Attendance date.
 - Before and after attendance status.
 - Before and after attendance source and source action when available.
+- Optional human-readable reason or note capped at 20 characters.
 - Worker record deltas.
 - Cuti stock before and after when affected.
-- Human-readable reason or note.
 - Timestamp.
 - Linked attendance id or correction id.
 
