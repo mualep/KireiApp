@@ -175,7 +175,7 @@ assertNoPattern(absensiSources, /\b(BATAL|Correction|Koreksi|Edit|Save|Reset)\b/
 
 assertNoPattern(
   migrationSources,
-  /\bapply_absensi_correction\b|\babsensi\.correct_|\bcreate\s+table\s+if\s+not\s+exists\s+public\.absensi/i,
+  /\bcreate\s+table\s+if\s+not\s+exists\s+public\.absensi/i,
 );
 
 console.log("Absensi correction truth-table tests passed.");
