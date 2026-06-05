@@ -34,6 +34,10 @@ const trackerCardPath = resolve(
   projectRoot,
   "components/admin/tracker/tracker-card.tsx",
 );
+const trackerFilterFormPath = resolve(
+  projectRoot,
+  "components/admin/tracker/tracker-filter-form.tsx",
+);
 const trackerActionControlsPath = resolve(
   projectRoot,
   "components/admin/tracker/tracker-action-controls.tsx",
@@ -49,6 +53,7 @@ assert.ok(
 
 const trackerPageSource = readFileSync(trackerPagePath, "utf8");
 const trackerCardSource = readFileSync(trackerCardPath, "utf8");
+const trackerFilterFormSource = readFileSync(trackerFilterFormPath, "utf8");
 const trackerActionControlsSource = readFileSync(trackerActionControlsPath, "utf8");
 const trackerActionsSource = readFileSync(trackerActionsPath, "utf8");
 const trackerDataSource = readFileSync(trackerDataPath, "utf8");
@@ -216,6 +221,42 @@ assertIncludes(trackerCardSource, "Self View");
 assertIncludes(trackerCardSource, "R2C");
 assertNoPattern(
   trackerPageSource,
+  /tracker-glass-panel flex min-h-10 items-center justify-between/,
+  "Tracker page must not render the duplicate section header below the shared topbar.",
+);
+assertNoPattern(
+  trackerPageSource,
+  /statusTabs=\{statusTabs\}|getTrackerStatusTabs\(data\.cards\)/,
+  "Tracker page must not pass status tabs into the toolbar UI.",
+);
+assertIncludes(trackerFilterFormSource, 'placeholder="Search worker name');
+assertNoPattern(
+  trackerFilterFormSource,
+  /Search name or GID|placeholder=.*GID/,
+  "Tracker toolbar search copy must not mention GID.",
+);
+assertIncludes(trackerFilterFormSource, 'aria-label="Tracker role groups"');
+assertIncludes(trackerFilterFormSource, "tab.shortLabel");
+assertIncludes(trackerFilterFormSource, "title={tab.label}");
+assertIncludes(trackerFilterFormSource, "aria-label={`${tab.label}: ${tab.count} workers`}");
+assertNoPattern(
+  trackerFilterFormSource,
+  /Tracker status groups|statusTabs\.map|<TrackerStatusBadge status=\{tab\.value\} compact/,
+  "Tracker toolbar must remove the noisy status tabs row.",
+);
+assertNoPattern(
+  trackerFilterFormSource,
+  /overflow-x-auto|min-w-max/,
+  "Tracker role tabs must wrap inside the toolbar instead of creating horizontal overflow.",
+);
+assertIncludes(trackerFilterFormSource, 'id="tracker-shift"');
+assertIncludes(trackerFilterFormSource, 'id="tracker-status"');
+assertIncludes(trackerFilterFormSource, 'id="tracker-sort"');
+assertIncludes(trackerFilterFormSource, "visibleCount}/{readableCount");
+assertIncludes(trackerFilterFormSource, "Apply");
+assertIncludes(trackerFilterFormSource, "Clear");
+assertNoPattern(
+  trackerPageSource,
   /staff\.profile\.tier\s*!==\s*["']member["']/,
   "Tracker page should use the shared tracker action permission helper.",
 );
@@ -341,16 +382,20 @@ assert.deepEqual(
 );
 
 assert.deepEqual(
-  getTrackerRoleTabs(memberScopedCards).map((tab) => [tab.label, tab.count]),
+  getTrackerRoleTabs(memberScopedCards).map((tab) => [
+    tab.label,
+    tab.shortLabel,
+    tab.count,
+  ]),
   [
-    ["All", 1],
-    ["Professional Player", 1],
-    ["Expert Player", 0],
-    ["Customer Service", 0],
-    ["Explorer", 0],
-    ["Security", 0],
-    ["Cleaning", 0],
-    ["Internship", 0],
+    ["All", "All", 1],
+    ["Professional Player", "PP", 1],
+    ["Expert Player", "EP", 0],
+    ["Customer Service", "CS", 0],
+    ["Explorer", "EX", 0],
+    ["Security", "SC", 0],
+    ["Cleaning Service", "CL", 0],
+    ["Internship", "IN", 0],
   ],
 );
 

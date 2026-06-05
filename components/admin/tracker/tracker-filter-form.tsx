@@ -5,35 +5,26 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowDownAZIcon, SearchIcon, XIcon } from "lucide-react";
 
-import { TrackerStatusBadge } from "@/components/admin/tracker/tracker-status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type {
-  TrackerFilters,
-  TrackerRoleTab,
-  TrackerStatusTab,
-} from "@/lib/tracker/helpers";
+import type { TrackerFilters, TrackerRoleTab } from "@/lib/tracker/helpers";
 import { workerDisplayStatuses, workerShifts } from "@/lib/workers";
 
 type TrackerFilterFormProps = {
   filters: TrackerFilters;
-  hasFilters: boolean;
   readableCount: string;
   roleTabs: TrackerRoleTab[];
-  statusTabs: TrackerStatusTab[];
   visibleCount: string;
 };
 
 export function TrackerFilterForm({
   filters,
-  hasFilters,
   readableCount,
   roleTabs,
-  statusTabs,
   visibleCount,
 }: TrackerFilterFormProps) {
   const pathname = usePathname();
@@ -59,10 +50,8 @@ export function TrackerFilterForm({
 
   function getFilterHref({
     role = filters.role,
-    status = filters.status,
   }: {
     role?: TrackerFilters["role"];
-    status?: TrackerFilters["status"];
   }) {
     const params = new URLSearchParams();
 
@@ -78,8 +67,8 @@ export function TrackerFilterForm({
       params.set("shift", filters.shift);
     }
 
-    if (status) {
-      params.set("status", status);
+    if (filters.status) {
+      params.set("status", filters.status);
     }
 
     const query = params.toString();
@@ -101,7 +90,7 @@ export function TrackerFilterForm({
                 name="q"
                 type="search"
                 defaultValue={filters.q}
-                placeholder="Search name or GID…"
+                placeholder="Search worker name…"
                 autoComplete="off"
                 className="h-9 bg-background/55"
               />
@@ -183,8 +172,8 @@ export function TrackerFilterForm({
           </FieldGroup>
         </form>
 
-        <nav aria-label="Tracker role groups" className="-mx-1 overflow-x-auto px-1">
-          <div className="flex min-w-max items-center gap-1.5 pb-1">
+        <nav aria-label="Tracker role groups" className="w-full">
+          <div className="grid w-full grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-8">
             {roleTabs.map((tab) => {
               const isActive = filters.role === tab.value;
 
@@ -193,58 +182,26 @@ export function TrackerFilterForm({
                   key={tab.label}
                   href={getFilterHref({ role: tab.value })}
                   aria-current={isActive ? "page" : undefined}
+                  aria-label={`${tab.label}: ${tab.count} workers`}
+                  title={tab.label}
                   className={cn(
-                    "inline-flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                    "inline-flex h-7 min-w-0 items-center justify-center gap-1 rounded-lg border px-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                     isActive
                       ? "border-primary/45 bg-primary/15 text-primary shadow-sm shadow-primary/20"
                       : "border-border/75 bg-background/45 text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
-                  <span>{tab.label}</span>
+                  <span className="truncate sm:hidden">{tab.shortLabel}</span>
+                  <span className="hidden truncate sm:inline lg:hidden">
+                    {tab.shortLabel}
+                  </span>
+                  <span className="hidden truncate lg:inline">{tab.label}</span>
                   <span className="rounded-full border border-current/20 bg-background/45 px-1.5 py-0.5 font-mono text-[0.65rem] tabular-nums">
                     {tab.count}
                   </span>
                 </Link>
               );
             })}
-          </div>
-        </nav>
-
-        <nav
-          aria-label="Tracker status groups"
-          className="-mx-1 overflow-x-auto px-1"
-        >
-          <div className="flex min-w-max items-center gap-1.5">
-            {statusTabs.map((tab) => {
-              const isActive = filters.status === tab.value;
-
-              return (
-                <Link
-                  key={tab.value}
-                  href={getFilterHref({ status: tab.value })}
-                  aria-current={isActive ? "page" : undefined}
-                  className={cn(
-                    "inline-flex h-7 items-center gap-1.5 rounded-lg border px-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                    isActive
-                      ? "border-primary/45 bg-primary/15 shadow-sm shadow-primary/20"
-                      : "border-border/75 bg-background/35 hover:bg-muted",
-                  )}
-                >
-                  <TrackerStatusBadge status={tab.value} compact />
-                  <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground">
-                    {tab.count}
-                  </span>
-                </Link>
-              );
-            })}
-            {hasFilters ? (
-              <Link
-                href={pathname}
-                className="inline-flex h-7 items-center rounded-lg border border-border/75 bg-background/35 px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                Reset
-              </Link>
-            ) : null}
           </div>
         </nav>
       </CardContent>
