@@ -137,7 +137,7 @@ function AbsensiCorrectionForm({
 
     const closeTimer = window.setTimeout(() => {
       onOpenChange(false);
-    }, 800);
+    }, 1500);
 
     return () => {
       window.clearTimeout(closeTimer);
@@ -219,10 +219,10 @@ function AbsensiCorrectionForm({
       ) : null}
 
       {successMessage ? (
-        <Alert>
+        <Alert className="border-status-on/30 bg-status-on/10 text-status-on shadow-sm shadow-status-on/10">
           <CheckIcon aria-hidden="true" />
           <AlertTitle>{successMessage}</AlertTitle>
-          <AlertDescription>
+          <AlertDescription className="text-status-on/85">
             The Absensi page will use the refreshed server data.
           </AlertDescription>
         </Alert>

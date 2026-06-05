@@ -18,6 +18,14 @@ const absensiDialogPath = resolve(
 const absensiComponentsDir = resolve(projectRoot, "components/admin/absensi");
 const appDir = resolve(projectRoot, "app");
 const packageJsonPath = resolve(projectRoot, "package.json");
+const deferredRequestsPath = resolve(
+  projectRoot,
+  "docs/plans/absensi-tracker-sync-deferred-requests.md",
+);
+const prdFreezeChecklistPath = resolve(
+  projectRoot,
+  "docs/plans/prd-v1-freeze-checklist.md",
+);
 
 for (const path of [
   absensiPagePath,
@@ -26,6 +34,8 @@ for (const path of [
   absensiHelpersPath,
   absensiGridPath,
   absensiDialogPath,
+  deferredRequestsPath,
+  prdFreezeChecklistPath,
 ]) {
   assert.ok(existsSync(path), `${path} must exist for R3D-C correction UI.`);
 }
@@ -37,6 +47,8 @@ const dataSource = readFileSync(absensiDataPath, "utf8");
 const helpersSource = readFileSync(absensiHelpersPath, "utf8");
 const gridSource = readFileSync(absensiGridPath, "utf8");
 const dialogSource = readFileSync(absensiDialogPath, "utf8");
+const deferredRequestsSource = readFileSync(deferredRequestsPath, "utf8");
+const prdFreezeChecklistSource = readFileSync(prdFreezeChecklistPath, "utf8");
 const componentSources = listFiles(absensiComponentsDir)
   .filter((filePath) => filePath.endsWith(".ts") || filePath.endsWith(".tsx"))
   .map((filePath) => readFileSync(filePath, "utf8"))
@@ -99,8 +111,13 @@ assertIncludes(dialogSource, "selected.afterStatus === selected.beforeStatus");
 assertIncludes(dialogSource, "window.setTimeout");
 assertIncludes(dialogSource, "window.clearTimeout");
 assertIncludes(dialogSource, "onOpenChange(false)");
-assertIncludes(dialogSource, "800");
+assertIncludes(dialogSource, "1500");
 assertIncludes(dialogSource, "Boolean(successMessage)");
+assertIncludes(dialogSource, "border-status-on/30");
+assertIncludes(dialogSource, "bg-status-on/10");
+assertIncludes(dialogSource, "text-status-on");
+assertIncludes(dialogSource, "shadow-status-on/10");
+assertIncludes(dialogSource, "text-status-on/85");
 assertIncludes(dialogSource, "expectedAttendanceId");
 assertIncludes(dialogSource, "expectedAttendanceUpdatedAt");
 assertNoPattern(
@@ -174,6 +191,29 @@ assertNoPattern(
   [pageSource, gridSource].join("\n"),
   /applyAbsensiCorrection/,
   "Only the dialog should call the Absensi correction Server Action from UI.",
+);
+
+assertIncludes(
+  deferredRequestsSource,
+  "# Absensi / Tracker Sync Deferred Requests",
+);
+assertIncludes(
+  deferredRequestsSource,
+  "Deferred / out of scope for PRD v1 and R3D-C",
+);
+assertIncludes(
+  deferredRequestsSource,
+  "Current/future Absensi cells interactive and correctable",
+);
+assertIncludes(
+  deferredRequestsSource,
+  "Absensi and Tracker should be synchronized",
+);
+assertIncludes(deferredRequestsSource, "Future scheduling is out of scope v1");
+assertIncludes(deferredRequestsSource, "R3E / v1.x design amendment");
+assertIncludes(
+  prdFreezeChecklistSource,
+  "absensi-tracker-sync-deferred-requests.md",
 );
 
 console.log("Absensi correction UI static tests passed.");
