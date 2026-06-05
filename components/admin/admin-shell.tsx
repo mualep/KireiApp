@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 
+import type { AdminNavIconKey } from "@/components/admin/admin-icons";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminTopbar } from "@/components/admin/admin-topbar";
 import { cn } from "@/lib/utils";
@@ -10,7 +11,7 @@ import type { StaffTier } from "@/lib/auth/tiers";
 
 export type AdminShellNavItem = {
   href: string;
-  icon: "absensi" | "content" | "dashboard" | "profile" | "tracker";
+  icon: AdminNavIconKey;
   label: string;
 };
 
@@ -41,8 +42,11 @@ export function AdminShell({
     navItems.find((item) => pathname === item.href) ?? navItems[0];
   const activeTitle =
     pathname === "/admin/profile" ? "Profile" : (activeItem?.label ?? "Admin");
+  const activeIcon: AdminNavIconKey =
+    pathname === "/admin/profile" ? "profile" : (activeItem?.icon ?? "dashboard");
   const isTrackerRoute =
     pathname === "/admin/tracker" || pathname.startsWith("/admin/tracker/");
+  const contentWidthClass = "mx-auto w-full max-w-[112rem]";
   const contentOffset = cn(
     "relative z-10 flex min-h-svh flex-col px-4 py-4 md:max-lg:pl-[6.75rem] md:max-lg:pr-5 lg:pr-6",
     desktopSidebarCollapsed ? "lg:pl-[7.5rem]" : "lg:pl-[19rem]",
@@ -121,6 +125,7 @@ export function AdminShell({
       <div className={contentOffset}>
         <AdminTopbar
           dateText={dateText}
+          iconKey={activeIcon}
           onOpenNavigation={() => {
             setMobileSidebarOpen(true);
             setTabletSidebarExpanded(true);
@@ -130,8 +135,9 @@ export function AdminShell({
         <main
           id="admin-main"
           className={cn(
-            "mx-auto flex w-full flex-1 flex-col focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-            isTrackerRoute ? "max-w-[112rem] gap-3 py-4" : "max-w-6xl gap-6 py-6",
+            contentWidthClass,
+            "flex flex-1 flex-col focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+            isTrackerRoute ? "gap-3 py-4" : "gap-6 py-6",
           )}
           tabIndex={-1}
         >

@@ -5,26 +5,46 @@ import { join, resolve } from "node:path";
 const projectRoot = process.cwd();
 const packageJsonPath = resolve(projectRoot, "package.json");
 const layoutPath = resolve(projectRoot, "app/admin/(shell)/layout.tsx");
+const adminIconsPath = resolve(projectRoot, "components/admin/admin-icons.tsx");
 const shellPath = resolve(projectRoot, "components/admin/admin-shell.tsx");
 const sidebarPath = resolve(projectRoot, "components/admin/admin-sidebar.tsx");
 const topbarPath = resolve(projectRoot, "components/admin/admin-topbar.tsx");
+const logoutButtonPath = resolve(projectRoot, "components/admin/logout-button.tsx");
 const appDir = resolve(projectRoot, "app");
 
-for (const path of [packageJsonPath, layoutPath, shellPath, sidebarPath, topbarPath]) {
+for (const path of [
+  packageJsonPath,
+  layoutPath,
+  adminIconsPath,
+  shellPath,
+  sidebarPath,
+  topbarPath,
+  logoutButtonPath,
+]) {
   assert.ok(existsSync(path), `${path} must exist for admin shell navigation.`);
 }
 
 const packageJsonSource = readFileSync(packageJsonPath, "utf8");
 const layoutSource = readFileSync(layoutPath, "utf8");
+const adminIconsSource = readFileSync(adminIconsPath, "utf8");
 const shellSource = readFileSync(shellPath, "utf8");
 const sidebarSource = readFileSync(sidebarPath, "utf8");
 const topbarSource = readFileSync(topbarPath, "utf8");
-const shellUiSource = [shellSource, sidebarSource, topbarSource].join("\n");
-const adminShellSources = [
-  layoutSource,
+const logoutButtonSource = readFileSync(logoutButtonPath, "utf8");
+const shellUiSource = [
+  adminIconsSource,
   shellSource,
   sidebarSource,
   topbarSource,
+  logoutButtonSource,
+].join("\n");
+const adminShellSources = [
+  layoutSource,
+  adminIconsSource,
+  shellSource,
+  sidebarSource,
+  topbarSource,
+  logoutButtonSource,
 ].join("\n");
 
 assertIncludes(packageJsonSource, '"test:admin-shell-navigation"');
@@ -32,6 +52,18 @@ assertIncludes(packageJsonSource, '"test:admin-shell-navigation"');
 assert.match(shellSource, /^"use client";/);
 assert.match(sidebarSource, /^"use client";/);
 assert.match(topbarSource, /^"use client";/);
+assert.match(logoutButtonSource, /^"use client";/);
+
+assertIncludes(adminIconsSource, "export type AdminNavIconKey");
+assertIncludes(adminIconsSource, "export function AdminNavIcon");
+assertIncludes(adminIconsSource, "MousePointerClickIcon");
+assertIncludes(adminIconsSource, "SidebarOpenIcon");
+assertIncludes(adminIconsSource, "SidebarCloseIcon");
+assertIncludes(adminIconsSource, 'tracker: MousePointerClickIcon');
+assertIncludes(adminIconsSource, 'dashboard: LayoutDashboardIcon');
+assertIncludes(adminIconsSource, 'absensi: CalendarCheckIcon');
+assertIncludes(adminIconsSource, 'content: NewspaperIcon');
+assertIncludes(adminIconsSource, 'profile: UserRoundIcon');
 
 const ownerNavSource = getBetween(
   layoutSource,
@@ -72,12 +104,37 @@ assertIncludes(sidebarSource, 'href="/admin/profile"');
 assertIncludes(sidebarSource, "Profile");
 assertIncludes(sidebarSource, "Logout");
 assertIncludes(sidebarSource, "LogoutButton");
+assertIncludes(sidebarSource, "AdminNavIcon");
+assertIncludes(sidebarSource, "SidebarOpenIcon");
+assertIncludes(sidebarSource, "SidebarCloseIcon");
+assertIncludes(sidebarSource, "group/brand");
+assertIncludes(sidebarSource, "group-hover/brand:opacity-0");
+assertIncludes(sidebarSource, "group-hover/brand:opacity-100");
+assertIncludes(sidebarSource, "group-focus-within/brand:opacity-100");
+assertNoPattern(
+  sidebarSource,
+  /rounded-\[2rem\]|rounded-2xl/,
+  "Admin sidebar chrome/nav should avoid over-rounded pill-like shapes.",
+);
+assertNoPattern(
+  sidebarSource,
+  /PanelLeftOpenIcon|PanelLeftCloseIcon|ActivityIcon/,
+  "Sidebar should use shared admin icons and sidebar-open/sidebar-close affordances.",
+);
 
 assertIncludes(shellSource, "useState");
 assertIncludes(shellSource, "desktopSidebarCollapsed");
 assertIncludes(shellSource, "tabletSidebarExpanded");
 assertIncludes(shellSource, "mobileSidebarOpen");
 assertIncludes(shellSource, 'data-sidebar-state={desktopSidebarCollapsed ? "collapsed" : "expanded"}');
+assertIncludes(shellSource, "activeIcon");
+assertIncludes(shellSource, "contentWidthClass");
+assertIncludes(shellSource, "max-w-[112rem]");
+assertNoPattern(
+  shellSource,
+  /isTrackerRoute\s*\?\s*["'][^"']*max-w-\[112rem\][^"']*["']\s*:\s*["'][^"']*max-w-6xl/,
+  "Shared admin shell should not use narrower non-Tracker content width.",
+);
 assertNoPattern(
   shellSource,
   /localStorage|sessionStorage|supabase/i,
@@ -100,14 +157,41 @@ assert.ok(
 );
 
 assertIncludes(topbarSource, "MenuIcon");
+assertIncludes(topbarSource, "AdminLiveSignal");
+assertIncludes(topbarSource, 'status = "good"');
+assertIncludes(topbarSource, "signalStatusClasses");
+assertIncludes(topbarSource, "good:");
+assertIncludes(topbarSource, "warning:");
+assertIncludes(topbarSource, "slow:");
+assertIncludes(topbarSource, "bad:");
+assertIncludes(topbarSource, "disconnected:");
+assertIncludes(topbarSource, "bg-status-on");
+assertIncludes(topbarSource, "bg-yellow");
+assertIncludes(topbarSource, "bg-orange");
+assertIncludes(topbarSource, "bg-destructive");
+assertIncludes(topbarSource, "bg-muted-foreground");
+assertIncludes(topbarSource, "animate-ping");
+assertIncludes(topbarSource, "AdminNavIcon");
+assertIncludes(topbarSource, "iconKey");
 assertIncludes(topbarSource, "onOpenNavigation");
 assertIncludes(topbarSource, 'aria-label="Open Admin Navigation"');
-assertIncludes(topbarSource, "lg:hidden");
+assertIncludes(topbarSource, "md:hidden");
+assertNoPattern(
+  topbarSource,
+  /lg:hidden/,
+  "Admin topbar hamburger should be mobile-only, not tablet-visible.",
+);
+assertNoPattern(
+  topbarSource,
+  /RadioTowerIcon|ShieldCheckIcon|LIVE|max-w-6xl/,
+  "Admin topbar should use shared page icons, live signal dot, and full width.",
+);
 
 assertIncludes(sidebarSource, "onToggleCollapse");
 assertIncludes(sidebarSource, "onClose");
 assertIncludes(sidebarSource, "onNavigate");
-assertIncludes(sidebarSource, 'aria-label={collapsed ? "Expand Admin Navigation" : "Collapse Admin Navigation"}');
+assertIncludes(sidebarSource, 'aria-label="Expand Admin Navigation"');
+assertIncludes(sidebarSource, 'aria-label="Collapse Admin Navigation"');
 assertIncludes(sidebarSource, "title={item.label}");
 assertIncludes(sidebarSource, "aria-label={item.label}");
 assertIncludes(sidebarSource, "<Link");
@@ -116,6 +200,19 @@ assertNoPattern(
   /router\.push|window\.location|onClick=\{\(\)\s*=>\s*(?:router|window)/,
   "Admin sidebar navigation must remain real links.",
 );
+
+assertIncludes(logoutButtonSource, "Dialog");
+assertIncludes(logoutButtonSource, "DialogTrigger");
+assertIncludes(logoutButtonSource, "DialogContent");
+assertIncludes(logoutButtonSource, "DialogTitle");
+assertIncludes(logoutButtonSource, "DialogDescription");
+assertIncludes(logoutButtonSource, "DialogClose");
+assertIncludes(logoutButtonSource, "signOutStaff");
+assertIncludes(logoutButtonSource, "Are You Sure You Want To Log Out?");
+assertIncludes(logoutButtonSource, "Cancel");
+assertIncludes(logoutButtonSource, "Log Out");
+assertIncludes(logoutButtonSource, 'type="submit"');
+assertIncludes(logoutButtonSource, "asChild");
 
 assertNoPattern(
   shellUiSource,

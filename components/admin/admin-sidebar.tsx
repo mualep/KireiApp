@@ -1,19 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ActivityIcon,
-  CalendarCheckIcon,
-  PanelLeftCloseIcon,
-  PanelLeftOpenIcon,
-  LayoutDashboardIcon,
-  LogOutIcon,
-  NewspaperIcon,
-  XIcon,
-  UserRoundIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { LogOutIcon, XIcon } from "lucide-react";
 
+import {
+  AdminNavIcon,
+  SidebarCloseIcon,
+  SidebarOpenIcon,
+} from "@/components/admin/admin-icons";
 import { LogoutButton } from "@/components/admin/logout-button";
 import type { AdminShellNavItem } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
@@ -64,39 +58,60 @@ export function AdminSidebar({
     >
       <Card
         className={cn(
-          "flex h-full min-h-0 flex-col gap-5 rounded-[2rem] border-border/80 bg-card/75 p-4 shadow-2xl shadow-primary/5 backdrop-blur-xl",
+          "flex h-full min-h-0 flex-col gap-5 rounded-xl border-border/80 bg-card/75 p-4 shadow-2xl shadow-primary/5 backdrop-blur-xl",
           collapsed && "items-center px-3",
         )}
       >
         <div className="flex items-center justify-between px-1">
-          <Link
-            href="/admin"
+          <div
             className={cn(
-              "inline-flex min-w-0 items-center gap-3 rounded-2xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              "group/brand relative inline-flex min-w-0 items-center gap-3 rounded-lg",
               collapsed && "justify-center",
             )}
-            aria-label="Kireiku Admin Home"
-            onClick={onNavigate}
           >
-            <span
-              aria-hidden="true"
-              className="flex size-11 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-lg font-black italic tracking-tighter text-primary shadow-lg shadow-primary/15"
-              translate="no"
+            <Link
+              href="/admin"
+              className={cn(
+                "inline-flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                collapsed &&
+                  "justify-center transition-opacity group-hover/brand:opacity-0 group-focus-within/brand:opacity-0",
+              )}
+              aria-label="Kireiku Admin Home"
+              onClick={onNavigate}
             >
-              [K]
-            </span>
-            <span className={cn("min-w-0", collapsed ? "sr-only" : "block")}>
               <span
-                className="block truncate text-sm font-bold"
+                aria-hidden="true"
+                className="flex size-11 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-lg font-black italic tracking-tighter text-primary shadow-lg shadow-primary/15"
                 translate="no"
               >
-                Kireiku
+                [K]
               </span>
-              <span className="block truncate text-xs text-muted-foreground">
-                Admin Shell
+              <span className={cn("min-w-0", collapsed ? "sr-only" : "block")}>
+                <span
+                  className="block truncate text-sm font-bold"
+                  translate="no"
+                >
+                  Kireiku
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  Admin Shell
+                </span>
               </span>
-            </span>
-          </Link>
+            </Link>
+            {collapsed && !isMobile ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Expand Admin Navigation"
+                title="Expand Admin Navigation"
+                className="absolute inset-0 opacity-0 transition-opacity group-hover/brand:opacity-100 group-focus-within/brand:opacity-100"
+                onClick={onToggleCollapse}
+              >
+                <SidebarOpenIcon data-icon="icon" aria-hidden="true" />
+              </Button>
+            ) : null}
+          </div>
           {isMobile ? (
             <Button
               type="button"
@@ -107,20 +122,16 @@ export function AdminSidebar({
             >
               <XIcon data-icon="icon" aria-hidden="true" />
             </Button>
-          ) : (
+          ) : collapsed ? null : (
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
-              aria-label={collapsed ? "Expand Admin Navigation" : "Collapse Admin Navigation"}
-              title={collapsed ? "Expand Admin Navigation" : "Collapse Admin Navigation"}
+              aria-label="Collapse Admin Navigation"
+              title="Collapse Admin Navigation"
               onClick={onToggleCollapse}
             >
-              {collapsed ? (
-                <PanelLeftOpenIcon data-icon="icon" aria-hidden="true" />
-              ) : (
-                <PanelLeftCloseIcon data-icon="icon" aria-hidden="true" />
-              )}
+              <SidebarCloseIcon data-icon="icon" aria-hidden="true" />
             </Button>
           )}
         </div>
@@ -142,7 +153,6 @@ export function AdminSidebar({
           <div className="flex w-full flex-col gap-2">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
-              const Icon = adminNavIcons[item.icon];
 
               return (
                 <Link
@@ -153,14 +163,14 @@ export function AdminSidebar({
                   title={item.label}
                   onClick={onNavigate}
                   className={cn(
-                    "group inline-flex min-w-0 items-center gap-3 rounded-2xl border py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                    collapsed ? "justify-center px-2" : "px-4",
+                    "group inline-flex min-w-0 items-center gap-3 rounded-lg border py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                    collapsed ? "size-11 justify-center p-0" : "px-4",
                     isActive
                       ? "border-primary/35 bg-primary/15 text-primary shadow-lg shadow-primary/10"
                       : "border-transparent text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
                   )}
                 >
-                  <Icon aria-hidden="true" />
+                  <AdminNavIcon iconKey={item.icon} />
                   <span className={collapsed ? "sr-only" : "truncate"}>
                     {item.label}
                   </span>
@@ -178,7 +188,7 @@ export function AdminSidebar({
             title="View Staff Profile"
             onClick={onNavigate}
             className={cn(
-              "rounded-2xl border border-border bg-background/45 p-3 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              "rounded-lg border border-border bg-background/45 p-3 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
               collapsed && "p-2",
             )}
           >
@@ -189,7 +199,7 @@ export function AdminSidebar({
               )}
             >
               <span
-                className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary"
+                className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-xs font-bold text-primary"
                 translate="no"
               >
                 {initials}
@@ -212,7 +222,7 @@ export function AdminSidebar({
               type="submit"
               variant="ghost"
               className={cn(
-                "w-full rounded-2xl text-muted-foreground hover:text-primary",
+                "w-full rounded-lg text-muted-foreground hover:text-primary",
                 collapsed && "px-0",
               )}
             >
@@ -225,14 +235,6 @@ export function AdminSidebar({
     </aside>
   );
 }
-
-const adminNavIcons: Record<AdminShellNavItem["icon"], LucideIcon> = {
-  absensi: CalendarCheckIcon,
-  content: NewspaperIcon,
-  dashboard: LayoutDashboardIcon,
-  profile: UserRoundIcon,
-  tracker: ActivityIcon,
-};
 
 function getInitials(name: string, email: string): string {
   const fallback = email.slice(0, 2);
