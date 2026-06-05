@@ -255,6 +255,10 @@ assertIncludes(trackerFilterFormSource, 'id="tracker-sort"');
 assertIncludes(trackerFilterFormSource, "visibleCount}/{readableCount");
 assertIncludes(trackerFilterFormSource, "Apply");
 assertIncludes(trackerFilterFormSource, "Clear");
+assertIncludes(
+  trackerPageSource,
+  'className="tracker-card-grid mt-1.5 gap-3"',
+);
 assertNoPattern(
   trackerPageSource,
   /staff\.profile\.tier\s*!==\s*["']member["']/,

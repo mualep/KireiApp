@@ -79,7 +79,7 @@ export default async function AdminTrackerPage({
       {cards.length > 0 ? (
         <section
           aria-label="Worker tracker cards"
-          className="tracker-card-grid gap-3"
+          className="tracker-card-grid mt-1.5 gap-3"
         >
           {cards.map((card) => (
             <TrackerCard
