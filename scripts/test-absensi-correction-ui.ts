@@ -2,14 +2,27 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+import type { AbsensiWorkerRowDTO } from "../lib/absensi/data";
+import {
+  filterAbsensiRows,
+  getAbsensiRoleTabs,
+  hasAbsensiFilters,
+  parseAbsensiFilters,
+} from "../lib/absensi/filters";
+
 const projectRoot = process.cwd();
 const absensiPagePath = resolve(projectRoot, "app/admin/(shell)/absensi/page.tsx");
 const absensiActionPath = resolve(projectRoot, "app/admin/(shell)/absensi/actions.ts");
 const absensiDataPath = resolve(projectRoot, "lib/absensi/data.ts");
+const absensiFiltersPath = resolve(projectRoot, "lib/absensi/filters.ts");
 const absensiHelpersPath = resolve(projectRoot, "lib/absensi/helpers.ts");
 const absensiGridPath = resolve(
   projectRoot,
   "components/admin/absensi/absensi-month-grid.tsx",
+);
+const absensiToolbarPath = resolve(
+  projectRoot,
+  "components/admin/absensi/absensi-toolbar.tsx",
 );
 const absensiDialogPath = resolve(
   projectRoot,
@@ -31,8 +44,10 @@ for (const path of [
   absensiPagePath,
   absensiActionPath,
   absensiDataPath,
+  absensiFiltersPath,
   absensiHelpersPath,
   absensiGridPath,
+  absensiToolbarPath,
   absensiDialogPath,
   deferredRequestsPath,
   prdFreezeChecklistPath,
@@ -44,8 +59,10 @@ const packageJsonSource = readFileSync(packageJsonPath, "utf8");
 const pageSource = readFileSync(absensiPagePath, "utf8");
 const actionSource = readFileSync(absensiActionPath, "utf8");
 const dataSource = readFileSync(absensiDataPath, "utf8");
+const filtersSource = readFileSync(absensiFiltersPath, "utf8");
 const helpersSource = readFileSync(absensiHelpersPath, "utf8");
 const gridSource = readFileSync(absensiGridPath, "utf8");
+const toolbarSource = readFileSync(absensiToolbarPath, "utf8");
 const dialogSource = readFileSync(absensiDialogPath, "utf8");
 const deferredRequestsSource = readFileSync(deferredRequestsPath, "utf8");
 const prdFreezeChecklistSource = readFileSync(prdFreezeChecklistPath, "utf8");
@@ -57,16 +74,93 @@ const uiSources = [pageSource, gridSource, dialogSource].join("\n");
 
 assertIncludes(packageJsonSource, '"test:absensi-correction-ui"');
 
+const filterRows: AbsensiWorkerRowDTO[] = [
+  {
+    cellsByDate: {},
+    employeeRole: "Professional Player",
+    gid: "KRU-001",
+    name: "Budi Santoso",
+    shift: "A",
+    userId: "10000000-0000-4000-8000-000000000001",
+  },
+  {
+    cellsByDate: {},
+    employeeRole: "Cleaning Service",
+    gid: "BUDI-999",
+    name: "Sari Wangi",
+    shift: "B",
+    userId: "10000000-0000-4000-8000-000000000002",
+  },
+];
+
+assert.deepEqual(parseAbsensiFilters({ q: "  budi   santoso  " }), {
+  q: "budi santoso",
+  role: null,
+});
+assert.equal(parseAbsensiFilters({ q: "x".repeat(90) }).q.length, 80);
+assert.deepEqual(parseAbsensiFilters({ role: "Cleaning Service" }).role, "Cleaning Service");
+assert.deepEqual(parseAbsensiFilters({ role: "Owner" }).role, null);
+assert.equal(hasAbsensiFilters({ q: "", role: null }), false);
+assert.equal(hasAbsensiFilters({ q: "sari", role: null }), true);
+assert.deepEqual(
+  filterAbsensiRows(filterRows, { q: "budi", role: null }).map((row) => row.name),
+  ["Budi Santoso"],
+);
+assert.deepEqual(
+  filterAbsensiRows(filterRows, { q: "", role: "Cleaning Service" }).map(
+    (row) => row.name,
+  ),
+  ["Sari Wangi"],
+);
+assert.deepEqual(getAbsensiRoleTabs(filterRows).slice(0, 3), [
+  { count: 2, label: "All", value: null },
+  { count: 1, label: "Professional Player", value: "Professional Player" },
+  { count: 0, label: "Expert Player", value: "Expert Player" },
+]);
+assert.ok(
+  getAbsensiRoleTabs(filterRows).some(
+    (tab) => tab.label === "Cleaning" && tab.value === "Cleaning Service",
+  ),
+);
+
 assertIncludes(pageSource, "const canCorrectAbsensi");
 assertIncludes(pageSource, 'staff.profile.tier !== "member"');
 assertIncludes(pageSource, "currentWibDate");
 assertIncludes(pageSource, "getCurrentWibDateParam");
+assertIncludes(pageSource, "AbsensiToolbar");
+assertIncludes(pageSource, "parseAbsensiFilters");
+assertIncludes(pageSource, "filterAbsensiRows");
+assertIncludes(pageSource, "getAbsensiRoleTabs");
+assertIncludes(pageSource, "hasAbsensiFilters");
 assertIncludes(pageSource, "canCorrect={canCorrectAbsensi}");
 assertIncludes(pageSource, "currentWibDate={currentWibDate}");
+assertIncludes(pageSource, "rows={filteredRows}");
+assertIncludes(pageSource, "emptyTitle={emptyTitle}");
+assertIncludes(pageSource, "emptyDescription={emptyDescription}");
+assertIncludes(pageSource, "getAbsensiData({ monthParam, staff })");
 
 assertIncludes(dataSource, "attendanceUpdatedAt");
 assertIncludes(dataSource, "updated_at");
 assertIncludes(dataSource, '.eq("is_canceled", false)');
+
+assertIncludes(filtersSource, "export type AbsensiSearchParams");
+assertIncludes(filtersSource, "export type AbsensiFilters");
+assertIncludes(filtersSource, "export type AbsensiRoleTab");
+assertIncludes(filtersSource, "parseAbsensiFilters");
+assertIncludes(filtersSource, "filterAbsensiRows");
+assertIncludes(filtersSource, "getAbsensiRoleTabs");
+assertIncludes(filtersSource, "hasAbsensiFilters");
+assertIncludes(filtersSource, "isWorkerRole");
+assertIncludes(filtersSource, "q.slice(0, 80)");
+assertIncludes(filtersSource, "toLocaleLowerCase(\"id-ID\")");
+assertIncludes(filtersSource, "row.name.toLocaleLowerCase(\"id-ID\")");
+assertNoPattern(
+  filtersSource,
+  /row\.gid\.toLocaleLowerCase|row\.gid\.includes/,
+  "Absensi search must match worker name only, not GID.",
+);
+assertIncludes(filtersSource, 'label: "All"');
+assertIncludes(filtersSource, 'role === "Cleaning Service" ? "Cleaning" : role');
 
 assertIncludes(helpersSource, "absensiAttendanceInitials");
 assertIncludes(helpersSource, 'hadir: "H"');
@@ -79,6 +173,15 @@ assert.match(gridSource, /^"use client";/);
 assertIncludes(gridSource, "AbsensiCorrectionDialog");
 assertIncludes(gridSource, "canCorrect");
 assertIncludes(gridSource, "currentWibDate");
+assertIncludes(gridSource, "emptyTitle");
+assertIncludes(gridSource, "emptyDescription");
+assertIncludes(gridSource, "getAbsensiDateState");
+assertIncludes(gridSource, "dateState");
+assertIncludes(gridSource, "data-date-state");
+assertIncludes(gridSource, 'return "past"');
+assertIncludes(gridSource, 'return "today"');
+assertIncludes(gridSource, 'return "future"');
+assertIncludes(gridSource, "status-on");
 assertIncludes(gridSource, 'const beforeStatus = cell?.status ?? "none";');
 assertIncludes(gridSource, "attendanceUpdatedAt");
 assertIncludes(gridSource, "expectedAttendanceId");
@@ -94,6 +197,35 @@ assertNoPattern(
   /cell\?\.status\s*!==\s*["']hadir["']|beforeStatus\s*===\s*["']hadir["']|HADIR correction is not available in v1/,
   "Historical HADIR cells must be correctable for Owner/Admin.",
 );
+
+assertNoPattern(
+  gridSource,
+  /const canOpenCorrection = canCorrect && isHistorical &&|day <= currentWibDate|day >= currentWibDate/,
+  "Current/future correction gating must not be expanded.",
+);
+
+assert.match(toolbarSource, /^import Link from "next\/link";/);
+assertIncludes(toolbarSource, "AbsensiToolbar");
+assertIncludes(toolbarSource, "SearchIcon");
+assertIncludes(toolbarSource, "ChevronLeftIcon");
+assertIncludes(toolbarSource, "ChevronRightIcon");
+assertIncludes(toolbarSource, "URLSearchParams");
+assertIncludes(toolbarSource, 'type="search"');
+assertIncludes(toolbarSource, 'name="q"');
+assertIncludes(toolbarSource, 'autoComplete="off"');
+assertIncludes(toolbarSource, 'name="month"');
+assertIncludes(toolbarSource, 'name="role"');
+assertIncludes(toolbarSource, 'aria-label="Previous Month"');
+assertIncludes(toolbarSource, 'aria-label="Next Month"');
+assertIncludes(toolbarSource, 'aria-label="Absensi role groups"');
+assertIncludes(toolbarSource, "roleTabs.map");
+assertIncludes(toolbarSource, "previousMonthHref");
+assertIncludes(toolbarSource, "nextMonthHref");
+assertIncludes(toolbarSource, "getMonthHref");
+assertIncludes(toolbarSource, "Clear Filters");
+assertIncludes(toolbarSource, "visibleCount");
+assertIncludes(toolbarSource, "readableCount");
+assertIncludes(toolbarSource, "modeLabel");
 
 assert.match(dialogSource, /^"use client";/);
 assertIncludes(dialogSource, 'from "@/app/admin/(shell)/absensi/actions"');

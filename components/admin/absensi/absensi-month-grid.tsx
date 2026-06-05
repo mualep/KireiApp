@@ -20,6 +20,8 @@ import {
 type AbsensiMonthGridProps = {
   canCorrect: boolean;
   currentWibDate: string;
+  emptyDescription?: string;
+  emptyTitle?: string;
   month: AbsensiMonthRange;
   rows: AbsensiWorkerRowDTO[];
 };
@@ -38,6 +40,8 @@ const emptyCellClasses =
 export function AbsensiMonthGrid({
   canCorrect,
   currentWibDate,
+  emptyDescription = "Read-only attendance appears after worker profiles and attendance rows are available.",
+  emptyTitle = "No workers available.",
   month,
   rows,
 }: AbsensiMonthGridProps) {
@@ -48,10 +52,9 @@ export function AbsensiMonthGrid({
     return (
       <Card className="tracker-glass-panel rounded-2xl border">
         <CardContent className="p-6">
-          <p className="text-sm font-semibold">No workers available.</p>
+          <p className="text-sm font-semibold">{emptyTitle}</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Read-only attendance appears after worker profiles and attendance rows are
-            available.
+            {emptyDescription}
           </p>
         </CardContent>
       </Card>
@@ -84,15 +87,26 @@ export function AbsensiMonthGrid({
                 <th className="sticky left-0 z-10 w-56 bg-card/95 px-3 py-2 font-semibold backdrop-blur">
                   Worker
                 </th>
-                {month.days.map((day) => (
-                  <th
-                    key={day}
-                    className="w-16 px-1.5 py-2 text-center font-mono font-semibold tabular-nums"
-                    translate="no"
-                  >
-                    {getAbsensiDayNumber(day)}
-                  </th>
-                ))}
+                {month.days.map((day) => {
+                  const dateState = getAbsensiDateState(day, currentWibDate);
+
+                  return (
+                    <th
+                      key={day}
+                      className={cn(
+                        "w-16 px-1.5 py-2 text-center font-mono font-semibold tabular-nums",
+                        dateState === "past" && "text-muted-foreground/75",
+                        dateState === "today" &&
+                          "bg-status-on/10 text-status-on ring-1 ring-inset ring-status-on/25",
+                        dateState === "future" && "text-muted-foreground/45",
+                      )}
+                      data-date-state={dateState}
+                      translate="no"
+                    >
+                      {getAbsensiDayNumber(day)}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -113,18 +127,31 @@ export function AbsensiMonthGrid({
                       <span className="truncate">{row.shift}</span>
                     </span>
                   </th>
-                  {month.days.map((day) => (
-                    <td key={`${row.userId}-${day}`} className="px-1.5 py-1.5">
-                      <AbsensiCell
-                        canCorrect={canCorrect}
-                        cell={row.cellsByDate[day]}
-                        currentWibDate={currentWibDate}
-                        day={day}
-                        onSelectCorrection={setSelectedCorrection}
-                        row={row}
-                      />
-                    </td>
-                  ))}
+                  {month.days.map((day) => {
+                    const dateState = getAbsensiDateState(day, currentWibDate);
+
+                    return (
+                      <td
+                        key={`${row.userId}-${day}`}
+                        className={cn(
+                          "px-1.5 py-1.5",
+                          dateState === "today" && "bg-status-on/5",
+                          dateState === "future" && "bg-muted/15",
+                        )}
+                        data-date-state={dateState}
+                      >
+                        <AbsensiCell
+                          canCorrect={canCorrect}
+                          cell={row.cellsByDate[day]}
+                          currentWibDate={currentWibDate}
+                          dateState={dateState}
+                          day={day}
+                          onSelectCorrection={setSelectedCorrection}
+                          row={row}
+                        />
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -147,6 +174,7 @@ function AbsensiCell({
   canCorrect,
   cell,
   currentWibDate,
+  dateState,
   day,
   onSelectCorrection,
   row,
@@ -154,6 +182,7 @@ function AbsensiCell({
   canCorrect: boolean;
   cell: AbsensiCellDTO | undefined;
   currentWibDate: string;
+  dateState: AbsensiDateState;
   day: string;
   onSelectCorrection: (correction: AbsensiCorrectionDraft) => void;
   row: AbsensiWorkerRowDTO;
@@ -171,6 +200,9 @@ function AbsensiCell({
     "flex h-8 w-full items-center justify-center rounded-md border px-1 font-mono font-black tabular-nums transition-colors",
     cell ? "text-[0.75rem]" : "text-sm",
     cell ? statusCellClasses[cell.status] : emptyCellClasses,
+    dateState === "past" && "opacity-80",
+    dateState === "today" && "ring-2 ring-status-on/40",
+    dateState === "future" && "opacity-55 grayscale",
   );
 
   if (!canOpenCorrection) {
@@ -251,4 +283,21 @@ function getCellTitle({
   }
 
   return cell ? `Correct ${cell.label} - ${cell.sourceAction}` : "Correct empty day";
+}
+
+type AbsensiDateState = "past" | "today" | "future";
+
+function getAbsensiDateState(
+  day: string,
+  currentWibDate: string,
+): AbsensiDateState {
+  if (day < currentWibDate) {
+    return "past";
+  }
+
+  if (day === currentWibDate) {
+    return "today";
+  }
+
+  return "future";
 }

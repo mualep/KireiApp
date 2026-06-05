@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CircleAlertIcon } from "lucide-react";
 
 import { AbsensiMonthGrid } from "@/components/admin/absensi/absensi-month-grid";
+import { AbsensiToolbar } from "@/components/admin/absensi/absensi-toolbar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { canAccessAdminAbsensi } from "@/lib/auth/redirects";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { getAbsensiData } from "@/lib/absensi/data";
+import {
+  filterAbsensiRows,
+  getAbsensiRoleTabs,
+  hasAbsensiFilters,
+  parseAbsensiFilters,
+  type AbsensiSearchParams,
+} from "@/lib/absensi/filters";
 import { getCurrentWibDateParam } from "@/lib/absensi/helpers";
 
 export const metadata: Metadata = {
@@ -19,8 +23,10 @@ export const metadata: Metadata = {
 };
 
 type AdminAbsensiPageProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<AbsensiSearchParams>;
 };
+
+const numberFormatter = new Intl.NumberFormat("id-ID");
 
 export default async function AdminAbsensiPage({
   searchParams,
@@ -37,59 +43,47 @@ export default async function AdminAbsensiPage({
 
   const params = await searchParams;
   const monthParam = typeof params.month === "string" ? params.month : undefined;
+  const filters = parseAbsensiFilters(params);
+  const hasFilters = hasAbsensiFilters(filters);
   const data = await getAbsensiData({ monthParam, staff });
+  const filteredRows = filterAbsensiRows(data.rows, filters);
+  const roleTabs = getAbsensiRoleTabs(data.rows);
   const canCorrectAbsensi = staff.profile.tier !== "member";
   const currentWibDate = getCurrentWibDateParam();
   const scopeLabel =
     staff.profile.tier === "member" ? "Self-only" : "All visible workers";
   const modeLabel = canCorrectAbsensi ? "Correction Controls" : "Read-only";
+  const emptyTitle = hasFilters
+    ? "No workers match these filters."
+    : "No workers available.";
+  const emptyDescription = hasFilters
+    ? "Clear filters to return to the full readable Absensi view."
+    : "Read-only attendance appears after worker profiles and attendance rows are available.";
 
   return (
     <div className="flex flex-col gap-2.5">
       {data.issues.length > 0 ? <AbsensiIssuePanel issues={data.issues} /> : null}
 
-      <Card className="tracker-glass-panel rounded-xl border">
-        <CardContent className="flex flex-wrap items-center justify-between gap-2 p-3">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Selected Month
-            </p>
-            <p className="mt-1 truncate text-sm font-black">
-              {data.month.monthLabel}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              variant="outline"
-              className="h-6 border-border bg-background/40 px-2 text-[0.65rem] text-muted-foreground"
-            >
-              {scopeLabel}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="h-6 border-border bg-background/30 px-2 text-[0.65rem] text-muted-foreground"
-            >
-              {modeLabel}
-            </Badge>
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/admin/absensi?month=${data.month.previousMonthParam}`}>
-                Previous
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/admin/absensi?month=${data.month.nextMonthParam}`}>
-                Next
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="sticky top-24 z-20">
+        <AbsensiToolbar
+          filters={filters}
+          hasFilters={hasFilters}
+          month={data.month}
+          readableCount={numberFormatter.format(data.rows.length)}
+          roleTabs={roleTabs}
+          modeLabel={modeLabel}
+          scopeLabel={scopeLabel}
+          visibleCount={numberFormatter.format(filteredRows.length)}
+        />
+      </div>
 
       <AbsensiMonthGrid
         canCorrect={canCorrectAbsensi}
         currentWibDate={currentWibDate}
+        emptyDescription={emptyDescription}
+        emptyTitle={emptyTitle}
         month={data.month}
-        rows={data.rows}
+        rows={filteredRows}
       />
     </div>
   );
