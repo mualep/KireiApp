@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDaysIcon, IdCardIcon } from "lucide-react";
+import { CalendarDaysIcon } from "lucide-react";
 
 import {
   AbsensiCorrectionDialog,
@@ -16,6 +16,7 @@ import {
   getAbsensiDayNumber,
   type AbsensiMonthRange,
 } from "@/lib/absensi/helpers";
+import { getAbsensiRoleShortLabel } from "@/lib/absensi/filters";
 
 type AbsensiMonthGridProps = {
   canCorrect: boolean;
@@ -119,12 +120,11 @@ export function AbsensiMonthGrid({
                     <span className="block truncate font-bold" translate="no">
                       {row.name}
                     </span>
-                    <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[0.65rem] text-muted-foreground">
-                      <IdCardIcon data-icon="inline-start" aria-hidden="true" />
-                      <span className="truncate font-mono" translate="no">
-                        {row.gid}
-                      </span>
-                      <span className="truncate">{row.shift}</span>
+                    <span
+                      className="mt-1 block truncate font-mono text-[0.65rem] text-muted-foreground"
+                      translate="no"
+                    >
+                      {getAbsensiWorkerMetaLabel(row)}
                     </span>
                   </th>
                   {month.days.map((day) => {
@@ -201,7 +201,6 @@ function AbsensiCell({
     cell ? "text-[0.75rem]" : "text-sm",
     cell ? statusCellClasses[cell.status] : emptyCellClasses,
     dateState === "past" && "opacity-80",
-    dateState === "today" && "ring-2 ring-status-on/40",
     dateState === "future" && "opacity-55 grayscale",
   );
 
@@ -283,6 +282,10 @@ function getCellTitle({
   }
 
   return cell ? `Correct ${cell.label} - ${cell.sourceAction}` : "Correct empty day";
+}
+
+function getAbsensiWorkerMetaLabel(row: AbsensiWorkerRowDTO): string {
+  return `${getAbsensiRoleShortLabel(row.employeeRole)} - ${row.shift || "-"}`;
 }
 
 type AbsensiDateState = "past" | "today" | "future";

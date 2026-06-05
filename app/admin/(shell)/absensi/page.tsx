@@ -67,7 +67,6 @@ export default async function AdminAbsensiPage({
       <div className="sticky top-24 z-20">
         <AbsensiToolbar
           filters={filters}
-          hasFilters={hasFilters}
           month={data.month}
           readableCount={numberFormatter.format(data.rows.length)}
           roleTabs={roleTabs}

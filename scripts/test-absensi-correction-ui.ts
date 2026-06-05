@@ -113,14 +113,26 @@ assert.deepEqual(
   ["Sari Wangi"],
 );
 assert.deepEqual(getAbsensiRoleTabs(filterRows).slice(0, 3), [
-  { count: 2, label: "All", value: null },
-  { count: 1, label: "Professional Player", value: "Professional Player" },
-  { count: 0, label: "Expert Player", value: "Expert Player" },
+  { count: 2, label: "All", shortLabel: "All", value: null },
+  {
+    count: 1,
+    label: "Professional Player",
+    shortLabel: "PP",
+    value: "Professional Player",
+  },
+  { count: 0, label: "Expert Player", shortLabel: "EP", value: "Expert Player" },
 ]);
 assert.ok(
   getAbsensiRoleTabs(filterRows).some(
-    (tab) => tab.label === "Cleaning" && tab.value === "Cleaning Service",
+    (tab) =>
+      tab.label === "Cleaning Service" &&
+      tab.shortLabel === "CL" &&
+      tab.value === "Cleaning Service",
   ),
+);
+assert.deepEqual(
+  getAbsensiRoleTabs(filterRows).map((tab) => tab.shortLabel),
+  ["All", "PP", "EP", "CS", "EX", "SC", "CL", "IN"],
 );
 
 assertIncludes(pageSource, "const canCorrectAbsensi");
@@ -146,6 +158,7 @@ assertIncludes(dataSource, '.eq("is_canceled", false)');
 assertIncludes(filtersSource, "export type AbsensiSearchParams");
 assertIncludes(filtersSource, "export type AbsensiFilters");
 assertIncludes(filtersSource, "export type AbsensiRoleTab");
+assertIncludes(filtersSource, "shortLabel");
 assertIncludes(filtersSource, "parseAbsensiFilters");
 assertIncludes(filtersSource, "filterAbsensiRows");
 assertIncludes(filtersSource, "getAbsensiRoleTabs");
@@ -160,7 +173,14 @@ assertNoPattern(
   "Absensi search must match worker name only, not GID.",
 );
 assertIncludes(filtersSource, 'label: "All"');
-assertIncludes(filtersSource, 'role === "Cleaning Service" ? "Cleaning" : role');
+assertIncludes(filtersSource, 'shortLabel: "All"');
+assertIncludes(filtersSource, 'shortLabel: "PP"');
+assertIncludes(filtersSource, 'shortLabel: "EP"');
+assertIncludes(filtersSource, 'shortLabel: "CS"');
+assertIncludes(filtersSource, 'shortLabel: "EX"');
+assertIncludes(filtersSource, 'shortLabel: "SC"');
+assertIncludes(filtersSource, 'shortLabel: "CL"');
+assertIncludes(filtersSource, 'shortLabel: "IN"');
 
 assertIncludes(helpersSource, "absensiAttendanceInitials");
 assertIncludes(helpersSource, 'hadir: "H"');
@@ -178,6 +198,10 @@ assertIncludes(gridSource, "emptyDescription");
 assertIncludes(gridSource, "getAbsensiDateState");
 assertIncludes(gridSource, "dateState");
 assertIncludes(gridSource, "data-date-state");
+assertIncludes(gridSource, "getAbsensiWorkerMetaLabel");
+assertIncludes(gridSource, "getAbsensiRoleShortLabel");
+assertIncludes(gridSource, "row.employeeRole");
+assertIncludes(gridSource, "row.shift");
 assertIncludes(gridSource, 'return "past"');
 assertIncludes(gridSource, 'return "today"');
 assertIncludes(gridSource, 'return "future"');
@@ -192,6 +216,16 @@ assertIncludes(gridSource, 'day < currentWibDate');
 assertNormalizedIncludes(gridSource, "const canOpenCorrection = canCorrect && isHistorical;");
 assertIncludes(gridSource, "Historical corrections only");
 assertIncludes(gridSource, "absensiAttendanceInitials");
+assertNoPattern(
+  gridSource,
+  /IdCardIcon|\{row\.gid\}/,
+  "Absensi grid secondary metadata must not show KRU/GID.",
+);
+assertNoPattern(
+  gridSource,
+  /dateState === "today" && "ring-[^"]*status-on/,
+  "Today column must not add green rings to individual status cells.",
+);
 assertNoPattern(
   gridSource,
   /cell\?\.status\s*!==\s*["']hadir["']|beforeStatus\s*===\s*["']hadir["']|HADIR correction is not available in v1/,
@@ -218,14 +252,28 @@ assertIncludes(toolbarSource, 'name="role"');
 assertIncludes(toolbarSource, 'aria-label="Previous Month"');
 assertIncludes(toolbarSource, 'aria-label="Next Month"');
 assertIncludes(toolbarSource, 'aria-label="Absensi role groups"');
+assertIncludes(toolbarSource, "shortLabel");
+assertIncludes(toolbarSource, "title={tab.label}");
+assertIncludes(toolbarSource, "aria-label={`${tab.label}: ${tab.count} workers`}");
 assertIncludes(toolbarSource, "roleTabs.map");
 assertIncludes(toolbarSource, "previousMonthHref");
 assertIncludes(toolbarSource, "nextMonthHref");
 assertIncludes(toolbarSource, "getMonthHref");
 assertIncludes(toolbarSource, "Clear Filters");
+assertIncludes(toolbarSource, 'filters: { q: "", role: null }');
 assertIncludes(toolbarSource, "visibleCount");
 assertIncludes(toolbarSource, "readableCount");
 assertIncludes(toolbarSource, "modeLabel");
+assertNoPattern(
+  toolbarSource,
+  />Reset</,
+  "Absensi toolbar should use Clear Filters as the only reset action.",
+);
+assertNoPattern(
+  toolbarSource,
+  /overflow-x-auto|min-w-max/,
+  "Absensi role tabs must wrap within the toolbar width instead of horizontal overflow.",
+);
 
 assert.match(dialogSource, /^"use client";/);
 assertIncludes(dialogSource, 'from "@/app/admin/(shell)/absensi/actions"');

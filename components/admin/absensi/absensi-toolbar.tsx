@@ -18,7 +18,6 @@ import type { AbsensiFilters, AbsensiRoleTab } from "@/lib/absensi/filters";
 
 type AbsensiToolbarProps = {
   filters: AbsensiFilters;
-  hasFilters: boolean;
   modeLabel: string;
   month: AbsensiMonthRange;
   readableCount: string;
@@ -29,7 +28,6 @@ type AbsensiToolbarProps = {
 
 export function AbsensiToolbar({
   filters,
-  hasFilters,
   modeLabel,
   month,
   readableCount,
@@ -140,8 +138,8 @@ export function AbsensiToolbar({
           </FieldGroup>
         </form>
 
-        <nav aria-label="Absensi role groups" className="-mx-1 overflow-x-auto px-1">
-          <div className="flex min-w-max items-center gap-1.5 pb-1">
+        <nav aria-label="Absensi role groups" className="w-full">
+          <div className="grid w-full grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-8">
             {roleTabs.map((tab) => {
               const isActive = filters.role === tab.value;
               const href = getMonthHref({
@@ -157,28 +155,26 @@ export function AbsensiToolbar({
                   key={tab.label}
                   href={href}
                   aria-current={isActive ? "page" : undefined}
+                  aria-label={`${tab.label}: ${tab.count} workers`}
+                  title={tab.label}
                   className={cn(
-                    "inline-flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                    "inline-flex h-7 min-w-0 items-center justify-center gap-1 rounded-lg border px-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                     isActive
                       ? "border-primary/45 bg-primary/15 text-primary shadow-sm shadow-primary/20"
                       : "border-border/75 bg-background/45 text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
-                  <span>{tab.label}</span>
+                  <span className="truncate sm:hidden">{tab.shortLabel}</span>
+                  <span className="hidden truncate sm:inline lg:hidden">
+                    {tab.shortLabel}
+                  </span>
+                  <span className="hidden truncate lg:inline">{tab.label}</span>
                   <span className="rounded-full border border-current/20 bg-background/45 px-1.5 py-0.5 font-mono text-[0.65rem] tabular-nums">
                     {tab.count}
                   </span>
                 </Link>
               );
             })}
-            {hasFilters ? (
-              <Link
-                href={clearFiltersHref}
-                className="inline-flex h-7 items-center rounded-lg border border-border/75 bg-background/35 px-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                Reset
-              </Link>
-            ) : null}
           </div>
         </nav>
       </CardContent>

@@ -11,18 +11,19 @@ export type AbsensiFilters = {
 export type AbsensiRoleTab = {
   count: number;
   label: string;
+  shortLabel: string;
   value: WorkerRole | null;
 };
 
-const absensiRoleTabOrder = [
-  "Professional Player",
-  "Expert Player",
-  "Customer Service",
-  "Explorer",
-  "Security",
-  "Cleaning Service",
-  "Internship",
-] satisfies WorkerRole[];
+const absensiRoleTabDefinitions = [
+  { label: "Professional Player", shortLabel: "PP", value: "Professional Player" },
+  { label: "Expert Player", shortLabel: "EP", value: "Expert Player" },
+  { label: "Customer Service", shortLabel: "CS", value: "Customer Service" },
+  { label: "Explorer", shortLabel: "EX", value: "Explorer" },
+  { label: "Security", shortLabel: "SC", value: "Security" },
+  { label: "Cleaning Service", shortLabel: "CL", value: "Cleaning Service" },
+  { label: "Internship", shortLabel: "IN", value: "Internship" },
+] satisfies Array<{ label: string; shortLabel: string; value: WorkerRole }>;
 
 export function parseAbsensiFilters(
   searchParams: AbsensiSearchParams,
@@ -70,14 +71,23 @@ export function getAbsensiRoleTabs(rows: AbsensiWorkerRowDTO[]): AbsensiRoleTab[
     {
       count: rows.length,
       label: "All",
+      shortLabel: "All",
       value: null,
     },
-    ...absensiRoleTabOrder.map((role) => ({
-      count: roleCounts.get(role) ?? 0,
-      label: role === "Cleaning Service" ? "Cleaning" : role,
-      value: role,
+    ...absensiRoleTabDefinitions.map((role) => ({
+      count: roleCounts.get(role.value) ?? 0,
+      label: role.label,
+      shortLabel: role.shortLabel,
+      value: role.value,
     })),
   ];
+}
+
+export function getAbsensiRoleShortLabel(role: WorkerRole): string {
+  return (
+    absensiRoleTabDefinitions.find((definition) => definition.value === role)
+      ?.shortLabel ?? role
+  );
 }
 
 function normalizeQueryParam(value: string | string[] | undefined): string {
