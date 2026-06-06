@@ -2,8 +2,9 @@
 
 import type React from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowDownAZIcon, SearchIcon, XIcon } from "lucide-react";
+import { ArrowDownAZIcon, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,57 +30,89 @@ export function TrackerFilterForm({
 }: TrackerFilterFormProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [queryDraft, setQueryDraft] = useState(filters.q);
+  const [shiftDraft, setShiftDraft] = useState(filters.shift ?? "");
+  const [statusDraft, setStatusDraft] = useState(filters.status ?? "");
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
-    const params = new URLSearchParams();
-
-    for (const key of ["q", "role", "shift", "status"] as const) {
-      const value = formData.get(key);
-
-      if (typeof value === "string" && value.trim() !== "") {
-        params.set(key, value.trim());
-      }
+  useEffect(() => {
+    if (normalizeQuery(queryDraft) === filters.q) {
+      return;
     }
 
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
-  }
+    const timeoutId = window.setTimeout(() => {
+      router.replace(
+        getTrackerHref({
+          filters: {
+            q: queryDraft,
+            role: filters.role,
+            shift: normalizeShift(shiftDraft),
+            status: normalizeStatus(statusDraft),
+          },
+          pathname,
+        }),
+        { scroll: false },
+      );
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [filters.q, filters.role, pathname, queryDraft, router, shiftDraft, statusDraft]);
 
   function getFilterHref({
     role = filters.role,
   }: {
     role?: TrackerFilters["role"];
   }) {
-    const params = new URLSearchParams();
+    return getTrackerHref({
+      filters: {
+        q: queryDraft,
+        role,
+        shift: normalizeShift(shiftDraft),
+        status: normalizeStatus(statusDraft),
+      },
+      pathname,
+    });
+  }
 
-    if (filters.q) {
-      params.set("q", filters.q);
-    }
+  function handleShiftChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const shift = event.currentTarget.value;
 
-    if (role) {
-      params.set("role", role);
-    }
+    setShiftDraft(shift);
+    router.replace(
+      getTrackerHref({
+        filters: {
+          q: queryDraft,
+          role: filters.role,
+          shift: normalizeShift(shift),
+          status: normalizeStatus(statusDraft),
+        },
+        pathname,
+      }),
+      { scroll: false },
+    );
+  }
 
-    if (filters.shift) {
-      params.set("shift", filters.shift);
-    }
+  function handleStatusChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const status = event.currentTarget.value;
 
-    if (filters.status) {
-      params.set("status", filters.status);
-    }
-
-    const query = params.toString();
-    return query ? `${pathname}?${query}` : pathname;
+    setStatusDraft(status);
+    router.replace(
+      getTrackerHref({
+        filters: {
+          q: queryDraft,
+          role: filters.role,
+          shift: normalizeShift(shiftDraft),
+          status: normalizeStatus(status),
+        },
+        pathname,
+      }),
+      { scroll: false },
+    );
   }
 
   return (
     <Card size="sm" className="tracker-glass-panel gap-0 rounded-xl border py-0">
       <CardContent className="flex flex-col gap-2 p-3">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <input type="hidden" name="role" value={filters.role ?? ""} />
+        <div className="flex flex-col gap-2">
           <FieldGroup className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.3fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_auto_auto]">
             <Field>
               <FieldLabel htmlFor="tracker-search" className="sr-only">
@@ -89,7 +122,8 @@ export function TrackerFilterForm({
                 id="tracker-search"
                 name="q"
                 type="search"
-                defaultValue={filters.q}
+                value={queryDraft}
+                onChange={(event) => setQueryDraft(event.currentTarget.value)}
                 placeholder="Search worker name…"
                 autoComplete="off"
                 className="h-9 bg-background/55"
@@ -103,7 +137,8 @@ export function TrackerFilterForm({
               <Select
                 id="tracker-shift"
                 name="shift"
-                defaultValue={filters.shift ?? ""}
+                value={shiftDraft}
+                onChange={handleShiftChange}
                 className="h-9 bg-background/55"
               >
                 <option value="">All Shifts</option>
@@ -122,7 +157,8 @@ export function TrackerFilterForm({
               <Select
                 id="tracker-status"
                 name="status"
-                defaultValue={filters.status ?? ""}
+                value={statusDraft}
+                onChange={handleStatusChange}
                 className="h-9 bg-background/55"
               >
                 <option value="">All Statuses</option>
@@ -150,10 +186,6 @@ export function TrackerFilterForm({
             </Field>
 
             <div className="flex items-center gap-2">
-              <Button type="submit" className="h-9 w-full sm:w-auto">
-                <SearchIcon data-icon="inline-start" aria-hidden="true" />
-                Apply
-              </Button>
               <Button asChild variant="outline" className="h-9 w-full sm:w-auto">
                 <Link href={pathname}>
                   <XIcon data-icon="inline-start" aria-hidden="true" />
@@ -170,7 +202,7 @@ export function TrackerFilterForm({
               <span className="hidden sm:inline">workers</span>
             </div>
           </FieldGroup>
-        </form>
+        </div>
 
         <nav aria-label="Tracker role groups" className="w-full">
           <div className="grid w-full grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-8">
@@ -207,4 +239,46 @@ export function TrackerFilterForm({
       </CardContent>
     </Card>
   );
+}
+
+function getTrackerHref({
+  filters,
+  pathname,
+}: {
+  filters: TrackerFilters;
+  pathname: string;
+}) {
+  const params = new URLSearchParams();
+  const q = normalizeQuery(filters.q);
+
+  if (q) {
+    params.set("q", q);
+  }
+
+  if (filters.role) {
+    params.set("role", filters.role);
+  }
+
+  if (filters.shift) {
+    params.set("shift", filters.shift);
+  }
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
+function normalizeQuery(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function normalizeShift(value: string): TrackerFilters["shift"] {
+  return value === "" ? null : (value as TrackerFilters["shift"]);
+}
+
+function normalizeStatus(value: string): TrackerFilters["status"] {
+  return value === "" ? null : (value as TrackerFilters["status"]);
 }

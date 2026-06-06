@@ -150,6 +150,17 @@ assertIncludes(pageSource, "rows={filteredRows}");
 assertIncludes(pageSource, "emptyTitle={emptyTitle}");
 assertIncludes(pageSource, "emptyDescription={emptyDescription}");
 assertIncludes(pageSource, "getAbsensiData({ monthParam, staff })");
+assertIncludes(pageSource, 'className="flex flex-col gap-6"');
+assertNoPattern(
+  pageSource,
+  /className="flex flex-col gap-4"/,
+  "Absensi toolbar-to-grid rhythm should use the larger D2-B gap-6 spacing.",
+);
+assertNoPattern(
+  pageSource,
+  /gap-2\.5/,
+  "Absensi toolbar-to-grid rhythm should use the shared gap-4 page rhythm.",
+);
 
 assertIncludes(dataSource, "attendanceUpdatedAt");
 assertIncludes(dataSource, "updated_at");
@@ -238,17 +249,24 @@ assertNoPattern(
   "Current/future correction gating must not be expanded.",
 );
 
-assert.match(toolbarSource, /^import Link from "next\/link";/);
+assert.match(toolbarSource, /^"use client";/);
+assertIncludes(toolbarSource, 'import Link from "next/link";');
 assertIncludes(toolbarSource, "AbsensiToolbar");
-assertIncludes(toolbarSource, "SearchIcon");
+assertIncludes(toolbarSource, "useEffect");
+assertIncludes(toolbarSource, "useState");
+assertIncludes(toolbarSource, "usePathname");
+assertIncludes(toolbarSource, "useRouter");
+assertIncludes(toolbarSource, "router.replace");
+assertIncludes(toolbarSource, "{ scroll: false }");
+assertIncludes(toolbarSource, "window.setTimeout");
+assertIncludes(toolbarSource, "window.clearTimeout");
+assertIncludes(toolbarSource, "300");
 assertIncludes(toolbarSource, "ChevronLeftIcon");
 assertIncludes(toolbarSource, "ChevronRightIcon");
 assertIncludes(toolbarSource, "URLSearchParams");
 assertIncludes(toolbarSource, 'type="search"');
 assertIncludes(toolbarSource, 'name="q"');
 assertIncludes(toolbarSource, 'autoComplete="off"');
-assertIncludes(toolbarSource, 'name="month"');
-assertIncludes(toolbarSource, 'name="role"');
 assertIncludes(toolbarSource, 'aria-label="Previous Month"');
 assertIncludes(toolbarSource, 'aria-label="Next Month"');
 assertIncludes(toolbarSource, 'aria-label="Absensi role groups"');
@@ -264,6 +282,21 @@ assertIncludes(toolbarSource, 'filters: { q: "", role: null }');
 assertIncludes(toolbarSource, "visibleCount");
 assertIncludes(toolbarSource, "readableCount");
 assertIncludes(toolbarSource, "modeLabel");
+assertNoPattern(
+  pageSource,
+  /sticky\s+top-24\s+z-20|fixed\s+top-|z-20/,
+  "Absensi filter section must scroll with page content; only the global Admin topbar is sticky.",
+);
+assertNoPattern(
+  toolbarSource,
+  /<form|type="submit"|>\s*Apply\s*</,
+  "Absensi filters should auto-apply without a form-driven Apply flow.",
+);
+assertNoPattern(
+  toolbarSource,
+  /useSearchParams|router\.push|new FormData|\bformData\b|name="month"|name="role"/,
+  "Absensi toolbar should auto-apply from server-provided props without submit-only form plumbing.",
+);
 assertNoPattern(
   toolbarSource,
   />Reset</,

@@ -9,7 +9,13 @@ const adminIconsPath = resolve(projectRoot, "components/admin/admin-icons.tsx");
 const shellPath = resolve(projectRoot, "components/admin/admin-shell.tsx");
 const sidebarPath = resolve(projectRoot, "components/admin/admin-sidebar.tsx");
 const topbarPath = resolve(projectRoot, "components/admin/admin-topbar.tsx");
+const topbarLiveStatusPath = resolve(
+  projectRoot,
+  "components/admin/admin-topbar-live-status.tsx",
+);
 const logoutButtonPath = resolve(projectRoot, "components/admin/logout-button.tsx");
+const trackerPagePath = resolve(projectRoot, "app/admin/(shell)/tracker/page.tsx");
+const absensiPagePath = resolve(projectRoot, "app/admin/(shell)/absensi/page.tsx");
 const appDir = resolve(projectRoot, "app");
 
 for (const path of [
@@ -19,7 +25,10 @@ for (const path of [
   shellPath,
   sidebarPath,
   topbarPath,
+  topbarLiveStatusPath,
   logoutButtonPath,
+  trackerPagePath,
+  absensiPagePath,
 ]) {
   assert.ok(existsSync(path), `${path} must exist for admin shell navigation.`);
 }
@@ -30,12 +39,16 @@ const adminIconsSource = readFileSync(adminIconsPath, "utf8");
 const shellSource = readFileSync(shellPath, "utf8");
 const sidebarSource = readFileSync(sidebarPath, "utf8");
 const topbarSource = readFileSync(topbarPath, "utf8");
+const topbarLiveStatusSource = readFileSync(topbarLiveStatusPath, "utf8");
 const logoutButtonSource = readFileSync(logoutButtonPath, "utf8");
+const trackerPageSource = readFileSync(trackerPagePath, "utf8");
+const absensiPageSource = readFileSync(absensiPagePath, "utf8");
 const shellUiSource = [
   adminIconsSource,
   shellSource,
   sidebarSource,
   topbarSource,
+  topbarLiveStatusSource,
   logoutButtonSource,
 ].join("\n");
 const adminShellSources = [
@@ -44,6 +57,7 @@ const adminShellSources = [
   shellSource,
   sidebarSource,
   topbarSource,
+  topbarLiveStatusSource,
   logoutButtonSource,
 ].join("\n");
 
@@ -52,6 +66,7 @@ assertIncludes(packageJsonSource, '"test:admin-shell-navigation"');
 assert.match(shellSource, /^"use client";/);
 assert.match(sidebarSource, /^"use client";/);
 assert.match(topbarSource, /^"use client";/);
+assert.match(topbarLiveStatusSource, /^"use client";/);
 assert.match(logoutButtonSource, /^"use client";/);
 
 assertIncludes(adminIconsSource, "export type AdminNavIconKey");
@@ -130,6 +145,18 @@ assertIncludes(shellSource, 'data-sidebar-state={desktopSidebarCollapsed ? "coll
 assertIncludes(shellSource, "activeIcon");
 assertIncludes(shellSource, "contentWidthClass");
 assertIncludes(shellSource, "max-w-[112rem]");
+assertIncludes(shellSource, 'const adminContentRhythmClass = "gap-4 py-4";');
+assertIncludes(shellSource, "adminContentRhythmClass");
+assertNoPattern(
+  shellSource,
+  /adminContentRhythmClass\s*=.*(?:gap-2\.5|gap-3|gap-5|gap-6|py-6)/,
+  "Dashboard reference rhythm must remain the shared gap-4 py-4 shell contract.",
+);
+assertNoPattern(
+  shellSource,
+  /isTrackerRoute\s*\?\s*["']gap-3 py-4["']\s*:\s*["']gap-6 py-6["']/,
+  "Admin shell should use one shared topbar-to-content rhythm across admin pages.",
+);
 assertNoPattern(
   shellSource,
   /isTrackerRoute\s*\?\s*["'][^"']*max-w-\[112rem\][^"']*["']\s*:\s*["'][^"']*max-w-6xl/,
@@ -145,6 +172,12 @@ assertIncludes(shellSource, 'aria-label="Close Admin Navigation"');
 assertIncludes(shellSource, "md:hidden");
 assertIncludes(shellSource, "md:max-lg");
 assertIncludes(shellSource, "lg:");
+assertIncludes(shellSource, "overflow-x-clip");
+assertNoPattern(
+  shellSource,
+  /overflow-x-hidden/,
+  "Admin shell must not create an overflow ancestor that breaks sticky topbar behavior.",
+);
 assertIncludes(shellSource, "pointer-events-none");
 assertIncludes(shellUiSource, "z-30");
 assertIncludes(shellUiSource, "z-40");
@@ -157,25 +190,36 @@ assert.ok(
 );
 
 assertIncludes(topbarSource, "MenuIcon");
-assertIncludes(topbarSource, "AdminLiveSignal");
-assertIncludes(topbarSource, 'status = "good"');
-assertIncludes(topbarSource, "signalStatusClasses");
-assertIncludes(topbarSource, "good:");
-assertIncludes(topbarSource, "warning:");
-assertIncludes(topbarSource, "slow:");
-assertIncludes(topbarSource, "bad:");
-assertIncludes(topbarSource, "disconnected:");
-assertIncludes(topbarSource, "bg-status-on");
-assertIncludes(topbarSource, "bg-yellow");
-assertIncludes(topbarSource, "bg-orange");
-assertIncludes(topbarSource, "bg-destructive");
-assertIncludes(topbarSource, "bg-muted-foreground");
-assertIncludes(topbarSource, "animate-ping");
+assertIncludes(topbarSource, "AdminTopbarLiveStatus");
+assertIncludes(topbarSource, "AdminTopbarClock");
+assertIncludes(topbarSource, "initialText={dateText}");
+assertIncludes(topbarSource, "sticky top-4 z-30");
+assertNoPattern(
+  `${trackerPageSource}\n${absensiPageSource}`,
+  /sticky\s+top-24\s+z-20|fixed\s+top-|z-20/,
+  "Tracker and Absensi filter sections must scroll normally; only AdminTopbar should be sticky.",
+);
+assertNoPattern(
+  topbarSource,
+  />\s*Signal\s*</,
+  'Admin topbar must not render the literal word "Signal".',
+);
 assertIncludes(topbarSource, "AdminNavIcon");
 assertIncludes(topbarSource, "iconKey");
+assertNoPattern(
+  topbarSource,
+  /hidden\s+size-7\s+shrink-0\s+items-center\s+justify-center\s+rounded-lg\s+border\s+border-primary\/20\s+bg-primary\/10/,
+  "Admin topbar page icon should be standalone, not inside a rounded rectangle box.",
+);
+assertNoPattern(
+  topbarSource,
+  /<span[^>]*rounded-lg[^>]*>[\s\S]*<AdminNavIcon iconKey=\{iconKey\}/,
+  "Admin topbar page icon wrapper must not use rounded box styling.",
+);
 assertIncludes(topbarSource, "onOpenNavigation");
 assertIncludes(topbarSource, 'aria-label="Open Admin Navigation"');
 assertIncludes(topbarSource, "md:hidden");
+assertIncludes(topbarSource, "[&_svg:not([class*='size-'])]:size-5");
 assertNoPattern(
   topbarSource,
   /lg:hidden/,
@@ -183,14 +227,51 @@ assertNoPattern(
 );
 assertNoPattern(
   topbarSource,
-  /RadioTowerIcon|ShieldCheckIcon|LIVE|max-w-6xl/,
-  "Admin topbar should use shared page icons, live signal dot, and full width.",
+  /AdminLiveSignal|RadioTowerIcon|ShieldCheckIcon|LIVE|max-w-6xl/,
+  "Admin topbar should use shared page icons, live status, and full width.",
+);
+
+assertIncludes(topbarLiveStatusSource, "AdminTopbarLiveStatus");
+assertIncludes(topbarLiveStatusSource, "AdminTopbarClock");
+assertIncludes(topbarLiveStatusSource, 'const LIVE_STATUS_PROBE_PATH = "/brand/kireiapp-mark.svg";');
+assertIncludes(topbarLiveStatusSource, "fetch(LIVE_STATUS_PROBE_PATH");
+assertIncludes(topbarLiveStatusSource, 'cache: "no-store"');
+assertIncludes(topbarLiveStatusSource, "performance.now()");
+assertIncludes(topbarLiveStatusSource, "AbortController");
+assertIncludes(topbarLiveStatusSource, "window.setInterval");
+assertIncludes(topbarLiveStatusSource, "window.clearInterval");
+assertIncludes(topbarLiveStatusSource, "controller.abort()");
+assertIncludes(topbarLiveStatusSource, "Offline");
+assertIncludes(topbarLiveStatusSource, "-- ms");
+assertIncludes(topbarLiveStatusSource, "Intl.DateTimeFormat");
+assertIncludes(topbarLiveStatusSource, 'second: "2-digit"');
+assertNoPattern(
+  topbarLiveStatusSource,
+  /https?:\/\//,
+  "Admin topbar live status must not use external network URLs.",
+);
+assertNoPattern(
+  topbarLiveStatusSource,
+  /\/api\//,
+  "Admin topbar live status must not use app API routes.",
+);
+assertNoPattern(
+  topbarLiveStatusSource,
+  /@\/lib\/supabase|createClient|\.rpc\s*\(|\.from\(|channel|subscribe|realtime|postgres_changes/i,
+  "Admin topbar live status must not use Supabase or realtime sync.",
 );
 
 assertIncludes(sidebarSource, "onToggleCollapse");
 assertIncludes(sidebarSource, "onClose");
 assertIncludes(sidebarSource, "onNavigate");
 assertIncludes(sidebarSource, 'aria-label="Expand Admin Navigation"');
+assertIncludes(sidebarSource, 'size="icon-lg"');
+assertIncludes(sidebarSource, "[&_svg:not([class*='size-'])]:size-5");
+assertNoPattern(
+  sidebarSource,
+  /\[&_svg\]:size-6/,
+  "Sidebar utility icons should inherit the same visual icon size as nav icons.",
+);
 assertIncludes(sidebarSource, 'aria-label="Collapse Admin Navigation"');
 assertIncludes(sidebarSource, "title={item.label}");
 assertIncludes(sidebarSource, "aria-label={item.label}");
@@ -212,6 +293,10 @@ assertIncludes(logoutButtonSource, "Are You Sure You Want To Log Out?");
 assertIncludes(logoutButtonSource, "Cancel");
 assertIncludes(logoutButtonSource, "Log Out");
 assertIncludes(logoutButtonSource, 'type="submit"');
+assertIncludes(logoutButtonSource, 'variant="destructive"');
+assertIncludes(logoutButtonSource, "bg-destructive");
+assertIncludes(logoutButtonSource, "text-destructive-foreground");
+assertIncludes(logoutButtonSource, "hover:bg-destructive/90");
 assertIncludes(logoutButtonSource, "asChild");
 
 assertNoPattern(

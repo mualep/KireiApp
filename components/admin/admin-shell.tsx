@@ -47,6 +47,7 @@ export function AdminShell({
   const isTrackerRoute =
     pathname === "/admin/tracker" || pathname.startsWith("/admin/tracker/");
   const contentWidthClass = "mx-auto w-full max-w-[112rem]";
+  const adminContentRhythmClass = "gap-4 py-4";
   const contentOffset = cn(
     "relative z-10 flex min-h-svh flex-col px-4 py-4 md:max-lg:pl-[6.75rem] md:max-lg:pr-5 lg:pr-6",
     desktopSidebarCollapsed ? "lg:pl-[7.5rem]" : "lg:pl-[19rem]",
@@ -55,7 +56,7 @@ export function AdminShell({
 
   return (
     <div
-      className="relative min-h-svh overflow-x-hidden bg-background text-foreground"
+      className="relative min-h-svh overflow-x-clip bg-background text-foreground"
       data-admin-route={isTrackerRoute ? "tracker" : undefined}
       data-sidebar-state={desktopSidebarCollapsed ? "collapsed" : "expanded"}
     >
@@ -137,7 +138,7 @@ export function AdminShell({
           className={cn(
             contentWidthClass,
             "flex flex-1 flex-col focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-            isTrackerRoute ? "gap-3 py-4" : "gap-6 py-6",
+            adminContentRhythmClass,
           )}
           tabIndex={-1}
         >

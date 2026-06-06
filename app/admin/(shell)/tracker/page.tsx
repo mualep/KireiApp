@@ -64,22 +64,21 @@ export default async function AdminTrackerPage({
       : "No tracker cards are available yet.";
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-6">
       {data.issues.length > 0 ? <TrackerIssuePanel issues={data.issues} /> : null}
 
-      <div className="sticky top-24 z-20">
-        <TrackerFilterForm
-          filters={filters}
-          readableCount={numberFormatter.format(data.cards.length)}
-          roleTabs={roleTabs}
-          visibleCount={numberFormatter.format(cards.length)}
-        />
-      </div>
+      <TrackerFilterForm
+        key={`${filters.q}:${filters.role ?? ""}:${filters.shift ?? ""}:${filters.status ?? ""}`}
+        filters={filters}
+        readableCount={numberFormatter.format(data.cards.length)}
+        roleTabs={roleTabs}
+        visibleCount={numberFormatter.format(cards.length)}
+      />
 
       {cards.length > 0 ? (
         <section
           aria-label="Worker tracker cards"
-          className="tracker-card-grid mt-1.5 gap-3"
+          className="tracker-card-grid gap-3"
         >
           {cards.map((card) => (
             <TrackerCard

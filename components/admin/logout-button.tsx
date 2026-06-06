@@ -35,7 +35,11 @@ export function LogoutButton({ children }: LogoutButtonProps) {
             </Button>
           </DialogClose>
           <form action={signOutStaff}>
-            <Button type="submit" variant="destructive">
+            <Button
+              type="submit"
+              variant="destructive"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Log Out
             </Button>
           </form>

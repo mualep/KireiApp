@@ -95,10 +95,10 @@ export function AdminSidebar({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
+                size="icon-lg"
                 aria-label="Expand Admin Navigation"
                 title="Expand Admin Navigation"
-                className="absolute inset-0 opacity-0 transition-opacity group-hover/brand:opacity-100 group-focus-within/brand:opacity-100"
+                className="absolute inset-0 size-11 opacity-0 transition-opacity group-hover/brand:opacity-100 group-focus-within/brand:opacity-100 [&_svg:not([class*='size-'])]:size-5"
                 onClick={onToggleCollapse}
               >
                 <SidebarOpenIcon data-icon="icon" aria-hidden="true" />
@@ -111,6 +111,7 @@ export function AdminSidebar({
               variant="ghost"
               size="icon-sm"
               aria-label="Close Admin Navigation"
+              className="[&_svg:not([class*='size-'])]:size-5"
               onClick={onClose}
             >
               <XIcon data-icon="icon" aria-hidden="true" />
@@ -122,6 +123,7 @@ export function AdminSidebar({
               size="icon-sm"
               aria-label="Collapse Admin Navigation"
               title="Collapse Admin Navigation"
+              className="[&_svg:not([class*='size-'])]:size-5"
               onClick={onToggleCollapse}
             >
               <SidebarCloseIcon data-icon="icon" aria-hidden="true" />
