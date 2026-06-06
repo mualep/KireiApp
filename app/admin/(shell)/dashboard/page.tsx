@@ -6,7 +6,7 @@ import { canAccessAdminDashboard } from "@/lib/auth/redirects";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 
 export const metadata: Metadata = {
-  title: "Dashboard Placeholder | Kireiku",
+  title: "Dashboard Placeholder | KireiApp",
   description: "Release 1 owner and admin placeholder destination.",
 };
 

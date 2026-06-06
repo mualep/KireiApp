@@ -15,8 +15,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kireiku App",
-  description: "Kireiku App foundation shell",
+  title: "KireiApp",
+  description: "KireiApp foundation shell",
 };
 
 export default function RootLayout({

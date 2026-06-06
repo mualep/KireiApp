@@ -1,4 +1,4 @@
--- Release 1 local/dev seed baseline for Kireiku App.
+-- Release 1 local/dev seed baseline for KireiApp.
 -- Seed files run after migrations during `supabase db reset`.
 -- Owner bootstrap note: do not insert real users or auth.users rows here.
 -- Create the first Owner via a privileged local/admin flow, then add the matching public.users row.

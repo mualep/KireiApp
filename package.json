@@ -25,6 +25,7 @@
     "test:absensi-correction-server-action": "tsx scripts/test-absensi-correction-server-action.ts",
     "test:absensi-correction-ui": "tsx scripts/test-absensi-correction-ui.ts",
     "test:admin-shell-navigation": "tsx scripts/test-admin-shell-navigation.ts",
+    "test:brand-identity": "tsx scripts/test-brand-identity.ts",
     "test:tracker-readonly": "tsx scripts/test-tracker-readonly.ts",
     "test:worker-helpers": "tsx scripts/test-worker-helpers.ts"
   },

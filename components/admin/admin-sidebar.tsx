@@ -9,6 +9,7 @@ import {
   SidebarOpenIcon,
 } from "@/components/admin/admin-icons";
 import { LogoutButton } from "@/components/admin/logout-button";
+import { KireiAppLogo } from "@/components/brand/kireiapp-logo";
 import type { AdminShellNavItem } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -76,27 +77,17 @@ export function AdminSidebar({
                 collapsed &&
                   "justify-center transition-opacity group-hover/brand:opacity-0 group-focus-within/brand:opacity-0",
               )}
-              aria-label="Kireiku Admin Home"
+              aria-label="KireiApp Admin Home"
               onClick={onNavigate}
             >
-              <span
-                aria-hidden="true"
-                className="flex size-11 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-lg font-black italic tracking-tighter text-primary shadow-lg shadow-primary/15"
-                translate="no"
-              >
-                [K]
-              </span>
-              <span className={cn("min-w-0", collapsed ? "sr-only" : "block")}>
-                <span
-                  className="block truncate text-sm font-bold"
-                  translate="no"
-                >
-                  Kireiku
-                </span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  Admin Shell
-                </span>
-              </span>
+              <KireiAppLogo
+                variant={collapsed ? "compact" : "horizontal"}
+                className={cn(
+                  "text-foreground",
+                  collapsed ? "size-11" : "min-w-0",
+                )}
+                textClassName="text-sm"
+              />
             </Link>
             {collapsed && !isMobile ? (
               <Button

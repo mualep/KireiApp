@@ -4,12 +4,13 @@ import { ArrowLeftIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/admin/login-form";
+import { KireiAppLogo } from "@/components/brand/kireiapp-logo";
 import { Card, CardContent } from "@/components/ui/card";
 import { getStaffRedirectPath } from "@/lib/auth/redirects";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 
 export const metadata: Metadata = {
-  title: "Staff Login | Kireiku",
+  title: "Staff Login | KireiApp",
   description: "Restricted area for Kireiku staff.",
 };
 
@@ -61,9 +62,7 @@ export default async function AdminLoginPage({
         <section className="flex flex-1 items-center justify-center py-12">
           <div className="flex w-full max-w-md flex-col items-center text-center">
             <div className="mb-6 flex size-16 items-center justify-center rounded-[1.4rem] border border-border/70 bg-card/80 shadow-2xl shadow-primary/20 backdrop-blur">
-              <span className="font-heading text-4xl font-black italic tracking-tighter text-primary">
-                [K]
-              </span>
+              <KireiAppLogo variant="mark" priority markClassName="size-14" />
             </div>
 
             <h1 className="font-heading text-5xl font-black tracking-tight text-foreground sm:text-6xl">
@@ -105,7 +104,7 @@ export default async function AdminLoginPage({
             ))}
           </nav>
           <p className="text-xs uppercase tracking-widest text-muted-foreground/80">
-            © {currentYear} Kireiku Admin. Elite Performance Guaranteed.
+            © {currentYear} KireiApp Admin. Elite Performance Guaranteed.
           </p>
         </footer>
       </div>
