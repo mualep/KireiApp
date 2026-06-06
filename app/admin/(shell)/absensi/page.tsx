@@ -61,7 +61,7 @@ export default async function AdminAbsensiPage({
     : "Read-only attendance appears after worker profiles and attendance rows are available.";
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-4">
       {data.issues.length > 0 ? <AbsensiIssuePanel issues={data.issues} /> : null}
 
       <div className="sticky top-24 z-20">

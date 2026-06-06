@@ -150,6 +150,12 @@ assertIncludes(pageSource, "rows={filteredRows}");
 assertIncludes(pageSource, "emptyTitle={emptyTitle}");
 assertIncludes(pageSource, "emptyDescription={emptyDescription}");
 assertIncludes(pageSource, "getAbsensiData({ monthParam, staff })");
+assertIncludes(pageSource, 'className="flex flex-col gap-4"');
+assertNoPattern(
+  pageSource,
+  /gap-2\.5/,
+  "Absensi toolbar-to-grid rhythm should use the shared gap-4 page rhythm.",
+);
 
 assertIncludes(dataSource, "attendanceUpdatedAt");
 assertIncludes(dataSource, "updated_at");

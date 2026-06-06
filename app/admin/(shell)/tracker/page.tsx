@@ -64,7 +64,7 @@ export default async function AdminTrackerPage({
       : "No tracker cards are available yet.";
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-4">
       {data.issues.length > 0 ? <TrackerIssuePanel issues={data.issues} /> : null}
 
       <div className="sticky top-24 z-20">
@@ -79,7 +79,7 @@ export default async function AdminTrackerPage({
       {cards.length > 0 ? (
         <section
           aria-label="Worker tracker cards"
-          className="tracker-card-grid mt-1.5 gap-3"
+          className="tracker-card-grid gap-3"
         >
           {cards.map((card) => (
             <TrackerCard

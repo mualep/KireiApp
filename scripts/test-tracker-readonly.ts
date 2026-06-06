@@ -257,7 +257,16 @@ assertIncludes(trackerFilterFormSource, "Apply");
 assertIncludes(trackerFilterFormSource, "Clear");
 assertIncludes(
   trackerPageSource,
-  'className="tracker-card-grid mt-1.5 gap-3"',
+  'className="flex flex-col gap-4"',
+);
+assertIncludes(
+  trackerPageSource,
+  'className="tracker-card-grid gap-3"',
+);
+assertNoPattern(
+  trackerPageSource,
+  /tracker-card-grid\s+mt-1\.5|gap-2\.5/,
+  "Tracker toolbar-to-grid rhythm should use the shared gap-4 page rhythm.",
 );
 assertNoPattern(
   trackerPageSource,

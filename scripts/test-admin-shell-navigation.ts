@@ -9,6 +9,10 @@ const adminIconsPath = resolve(projectRoot, "components/admin/admin-icons.tsx");
 const shellPath = resolve(projectRoot, "components/admin/admin-shell.tsx");
 const sidebarPath = resolve(projectRoot, "components/admin/admin-sidebar.tsx");
 const topbarPath = resolve(projectRoot, "components/admin/admin-topbar.tsx");
+const topbarLiveStatusPath = resolve(
+  projectRoot,
+  "components/admin/admin-topbar-live-status.tsx",
+);
 const logoutButtonPath = resolve(projectRoot, "components/admin/logout-button.tsx");
 const appDir = resolve(projectRoot, "app");
 
@@ -19,6 +23,7 @@ for (const path of [
   shellPath,
   sidebarPath,
   topbarPath,
+  topbarLiveStatusPath,
   logoutButtonPath,
 ]) {
   assert.ok(existsSync(path), `${path} must exist for admin shell navigation.`);
@@ -30,12 +35,14 @@ const adminIconsSource = readFileSync(adminIconsPath, "utf8");
 const shellSource = readFileSync(shellPath, "utf8");
 const sidebarSource = readFileSync(sidebarPath, "utf8");
 const topbarSource = readFileSync(topbarPath, "utf8");
+const topbarLiveStatusSource = readFileSync(topbarLiveStatusPath, "utf8");
 const logoutButtonSource = readFileSync(logoutButtonPath, "utf8");
 const shellUiSource = [
   adminIconsSource,
   shellSource,
   sidebarSource,
   topbarSource,
+  topbarLiveStatusSource,
   logoutButtonSource,
 ].join("\n");
 const adminShellSources = [
@@ -44,6 +51,7 @@ const adminShellSources = [
   shellSource,
   sidebarSource,
   topbarSource,
+  topbarLiveStatusSource,
   logoutButtonSource,
 ].join("\n");
 
@@ -52,6 +60,7 @@ assertIncludes(packageJsonSource, '"test:admin-shell-navigation"');
 assert.match(shellSource, /^"use client";/);
 assert.match(sidebarSource, /^"use client";/);
 assert.match(topbarSource, /^"use client";/);
+assert.match(topbarLiveStatusSource, /^"use client";/);
 assert.match(logoutButtonSource, /^"use client";/);
 
 assertIncludes(adminIconsSource, "export type AdminNavIconKey");
@@ -134,6 +143,11 @@ assertIncludes(shellSource, 'const adminContentRhythmClass = "gap-4 py-4";');
 assertIncludes(shellSource, "adminContentRhythmClass");
 assertNoPattern(
   shellSource,
+  /adminContentRhythmClass\s*=.*(?:gap-2\.5|gap-3|gap-5|gap-6|py-6)/,
+  "Dashboard reference rhythm must remain the shared gap-4 py-4 shell contract.",
+);
+assertNoPattern(
+  shellSource,
   /isTrackerRoute\s*\?\s*["']gap-3 py-4["']\s*:\s*["']gap-6 py-6["']/,
   "Admin shell should use one shared topbar-to-content rhythm across admin pages.",
 );
@@ -164,20 +178,15 @@ assert.ok(
 );
 
 assertIncludes(topbarSource, "MenuIcon");
-assertIncludes(topbarSource, "AdminLiveSignal");
-assertIncludes(topbarSource, 'status = "good"');
-assertIncludes(topbarSource, "signalStatusClasses");
-assertIncludes(topbarSource, "good:");
-assertIncludes(topbarSource, "warning:");
-assertIncludes(topbarSource, "slow:");
-assertIncludes(topbarSource, "bad:");
-assertIncludes(topbarSource, "disconnected:");
-assertIncludes(topbarSource, "bg-status-on");
-assertIncludes(topbarSource, "bg-yellow");
-assertIncludes(topbarSource, "bg-orange");
-assertIncludes(topbarSource, "bg-destructive");
-assertIncludes(topbarSource, "bg-muted-foreground");
-assertIncludes(topbarSource, "animate-ping");
+assertIncludes(topbarSource, "AdminTopbarLiveStatus");
+assertIncludes(topbarSource, "AdminTopbarClock");
+assertIncludes(topbarSource, "initialText={dateText}");
+assertIncludes(topbarSource, "sticky top-4 z-30");
+assertNoPattern(
+  topbarSource,
+  />\s*Signal\s*</,
+  'Admin topbar must not render the literal word "Signal".',
+);
 assertIncludes(topbarSource, "AdminNavIcon");
 assertIncludes(topbarSource, "iconKey");
 assertNoPattern(
@@ -200,8 +209,38 @@ assertNoPattern(
 );
 assertNoPattern(
   topbarSource,
-  /RadioTowerIcon|ShieldCheckIcon|LIVE|max-w-6xl/,
-  "Admin topbar should use shared page icons, live signal dot, and full width.",
+  /AdminLiveSignal|RadioTowerIcon|ShieldCheckIcon|LIVE|max-w-6xl/,
+  "Admin topbar should use shared page icons, live status, and full width.",
+);
+
+assertIncludes(topbarLiveStatusSource, "AdminTopbarLiveStatus");
+assertIncludes(topbarLiveStatusSource, "AdminTopbarClock");
+assertIncludes(topbarLiveStatusSource, 'const LIVE_STATUS_PROBE_PATH = "/brand/kireiapp-mark.svg";');
+assertIncludes(topbarLiveStatusSource, "fetch(LIVE_STATUS_PROBE_PATH");
+assertIncludes(topbarLiveStatusSource, 'cache: "no-store"');
+assertIncludes(topbarLiveStatusSource, "performance.now()");
+assertIncludes(topbarLiveStatusSource, "AbortController");
+assertIncludes(topbarLiveStatusSource, "window.setInterval");
+assertIncludes(topbarLiveStatusSource, "window.clearInterval");
+assertIncludes(topbarLiveStatusSource, "controller.abort()");
+assertIncludes(topbarLiveStatusSource, "Offline");
+assertIncludes(topbarLiveStatusSource, "-- ms");
+assertIncludes(topbarLiveStatusSource, "Intl.DateTimeFormat");
+assertIncludes(topbarLiveStatusSource, 'second: "2-digit"');
+assertNoPattern(
+  topbarLiveStatusSource,
+  /https?:\/\//,
+  "Admin topbar live status must not use external network URLs.",
+);
+assertNoPattern(
+  topbarLiveStatusSource,
+  /\/api\//,
+  "Admin topbar live status must not use app API routes.",
+);
+assertNoPattern(
+  topbarLiveStatusSource,
+  /@\/lib\/supabase|createClient|\.rpc\s*\(|\.from\(|channel|subscribe|realtime|postgres_changes/i,
+  "Admin topbar live status must not use Supabase or realtime sync.",
 );
 
 assertIncludes(sidebarSource, "onToggleCollapse");
@@ -209,7 +248,11 @@ assertIncludes(sidebarSource, "onClose");
 assertIncludes(sidebarSource, "onNavigate");
 assertIncludes(sidebarSource, 'aria-label="Expand Admin Navigation"');
 assertIncludes(sidebarSource, 'size="icon-lg"');
-assertIncludes(sidebarSource, "[&_svg]:size-6");
+assertNoPattern(
+  sidebarSource,
+  /\[&_svg\]:size-6/,
+  "Sidebar utility icons should inherit the same visual icon size as nav icons.",
+);
 assertIncludes(sidebarSource, 'aria-label="Collapse Admin Navigation"');
 assertIncludes(sidebarSource, "title={item.label}");
 assertIncludes(sidebarSource, "aria-label={item.label}");
