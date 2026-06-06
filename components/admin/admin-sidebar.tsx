@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ActivityIcon,
-  LayoutDashboardIcon,
-  LogOutIcon,
-  NewspaperIcon,
-  UserRoundIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { LogOutIcon, XIcon } from "lucide-react";
 
+import {
+  AdminNavIcon,
+  SidebarCloseIcon,
+  SidebarOpenIcon,
+} from "@/components/admin/admin-icons";
 import { LogoutButton } from "@/components/admin/logout-button";
 import type { AdminShellNavItem } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
@@ -19,77 +17,163 @@ import { cn } from "@/lib/utils";
 import type { StaffTier } from "@/lib/auth/tiers";
 
 type AdminSidebarProps = {
+  collapsed: boolean;
   navItems: AdminShellNavItem[];
+  onClose?: () => void;
+  onNavigate?: () => void;
+  onToggleCollapse: () => void;
   pathname: string;
   staff: {
     name: string;
     email: string;
     tier: StaffTier;
   };
+  variant: "desktop" | "mobile" | "tablet";
 };
 
 export function AdminSidebar({
+  collapsed,
   navItems,
+  onClose,
+  onNavigate,
+  onToggleCollapse,
   pathname,
   staff,
+  variant,
 }: AdminSidebarProps) {
   const initials = getInitials(staff.name, staff.email);
+  const isMobile = variant === "mobile";
 
   return (
-    <aside className="relative px-4 pt-4 lg:fixed lg:inset-y-4 lg:left-4 lg:w-64 lg:px-0 lg:pt-0">
-      <Card className="flex min-h-0 flex-col gap-5 rounded-[2rem] border-border/80 bg-card/75 p-4 shadow-2xl shadow-primary/5 backdrop-blur-xl lg:h-full">
+    <aside
+      className={cn(
+        "fixed inset-y-4 left-4 z-30",
+        variant === "desktop" && "hidden lg:block",
+        variant === "tablet" && "hidden md:max-lg:block",
+        isMobile && "z-50 w-[min(18rem,calc(100vw-2rem))] md:hidden",
+        !isMobile && (collapsed ? "w-20" : "w-64"),
+      )}
+      data-admin-sidebar={variant}
+      data-collapsed={collapsed}
+    >
+      <Card
+        className={cn(
+          "flex h-full min-h-0 flex-col gap-5 rounded-xl border-border/80 bg-card/75 p-4 shadow-2xl shadow-primary/5 backdrop-blur-xl",
+          collapsed && "items-center px-3",
+        )}
+      >
         <div className="flex items-center justify-between px-1">
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-3 rounded-2xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            aria-label="Kireiku Admin Home"
+          <div
+            className={cn(
+              "group/brand relative inline-flex min-w-0 items-center gap-3 rounded-lg",
+              collapsed && "justify-center",
+            )}
           >
-            <span
-              aria-hidden="true"
-              className="flex size-11 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-lg font-black italic tracking-tighter text-primary shadow-lg shadow-primary/15"
-              translate="no"
+            <Link
+              href="/admin"
+              className={cn(
+                "inline-flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                collapsed &&
+                  "justify-center transition-opacity group-hover/brand:opacity-0 group-focus-within/brand:opacity-0",
+              )}
+              aria-label="Kireiku Admin Home"
+              onClick={onNavigate}
             >
-              [K]
-            </span>
-            <span className="hidden min-w-0 lg:block">
               <span
-                className="block truncate text-sm font-bold"
+                aria-hidden="true"
+                className="flex size-11 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-lg font-black italic tracking-tighter text-primary shadow-lg shadow-primary/15"
                 translate="no"
               >
-                Kireiku
+                [K]
               </span>
-              <span className="block truncate text-xs text-muted-foreground">
-                Admin Shell
+              <span className={cn("min-w-0", collapsed ? "sr-only" : "block")}>
+                <span
+                  className="block truncate text-sm font-bold"
+                  translate="no"
+                >
+                  Kireiku
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  Admin Shell
+                </span>
               </span>
-            </span>
-          </Link>
+            </Link>
+            {collapsed && !isMobile ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Expand Admin Navigation"
+                title="Expand Admin Navigation"
+                className="absolute inset-0 opacity-0 transition-opacity group-hover/brand:opacity-100 group-focus-within/brand:opacity-100"
+                onClick={onToggleCollapse}
+              >
+                <SidebarOpenIcon data-icon="icon" aria-hidden="true" />
+              </Button>
+            ) : null}
+          </div>
+          {isMobile ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Close Admin Navigation"
+              onClick={onClose}
+            >
+              <XIcon data-icon="icon" aria-hidden="true" />
+            </Button>
+          ) : collapsed ? null : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Collapse Admin Navigation"
+              title="Collapse Admin Navigation"
+              onClick={onToggleCollapse}
+            >
+              <SidebarCloseIcon data-icon="icon" aria-hidden="true" />
+            </Button>
+          )}
         </div>
 
         <Separator />
 
-        <nav aria-label="Admin navigation" className="flex flex-col gap-3">
-          <p className="px-2 text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
+        <nav
+          aria-label="Admin navigation"
+          className={cn("flex flex-col gap-3", collapsed && "items-center")}
+        >
+          <p
+            className={cn(
+              "px-2 text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground",
+              collapsed && "sr-only",
+            )}
+          >
             Menu
           </p>
-          <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+          <div className="flex w-full flex-col gap-2">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
-              const Icon = adminNavIcons[item.icon];
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-label={item.label}
                   aria-current={isActive ? "page" : undefined}
+                  title={item.label}
+                  onClick={onNavigate}
                   className={cn(
-                    "group inline-flex min-w-max items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors transition-transform focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:min-w-0",
+                    "group inline-flex min-w-0 items-center gap-3 rounded-lg border py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                    collapsed ? "size-11 justify-center p-0" : "px-4",
                     isActive
                       ? "border-primary/35 bg-primary/15 text-primary shadow-lg shadow-primary/10"
                       : "border-transparent text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
                   )}
                 >
-                  <Icon aria-hidden="true" />
-                  <span className="truncate">{item.label}</span>
+                  <AdminNavIcon iconKey={item.icon} />
+                  <span className={collapsed ? "sr-only" : "truncate"}>
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -98,15 +182,29 @@ export function AdminSidebar({
 
         <div className="mt-auto flex flex-col gap-3">
           <Separator />
-          <div className="rounded-2xl border border-border bg-background/45 p-3">
-            <div className="flex min-w-0 items-center gap-3">
+          <Link
+            href="/admin/profile"
+            aria-label="View Staff Profile"
+            title="View Staff Profile"
+            onClick={onNavigate}
+            className={cn(
+              "rounded-lg border border-border bg-background/45 p-3 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              collapsed && "p-2",
+            )}
+          >
+            <div
+              className={cn(
+                "flex min-w-0 items-center gap-3",
+                collapsed && "justify-center",
+              )}
+            >
               <span
-                className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-bold text-primary"
+                className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-xs font-bold text-primary"
                 translate="no"
               >
                 {initials}
               </span>
-              <span className="min-w-0">
+              <span className={cn("min-w-0", collapsed && "sr-only")}>
                 <span
                   className="block truncate text-sm font-bold"
                   translate="no"
@@ -118,15 +216,18 @@ export function AdminSidebar({
                 </span>
               </span>
             </div>
-          </div>
+          </Link>
           <LogoutButton>
             <Button
               type="submit"
               variant="ghost"
-              className="w-full rounded-2xl text-muted-foreground transition-colors hover:text-primary"
+              className={cn(
+                "w-full rounded-lg text-muted-foreground hover:text-primary",
+                collapsed && "px-0",
+              )}
             >
               <LogOutIcon data-icon="inline-start" aria-hidden="true" />
-              Logout
+              <span className={collapsed ? "sr-only" : undefined}>Logout</span>
             </Button>
           </LogoutButton>
         </div>
@@ -134,13 +235,6 @@ export function AdminSidebar({
     </aside>
   );
 }
-
-const adminNavIcons: Record<AdminShellNavItem["icon"], LucideIcon> = {
-  content: NewspaperIcon,
-  dashboard: LayoutDashboardIcon,
-  profile: UserRoundIcon,
-  tracker: ActivityIcon,
-};
 
 function getInitials(name: string, email: string): string {
   const fallback = email.slice(0, 2);

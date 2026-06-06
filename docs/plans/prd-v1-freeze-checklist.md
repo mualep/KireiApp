@@ -78,6 +78,7 @@ Purpose: a short, decision-focused checklist for making the current PRD ready to
 | F-2 | Future-dated attendance scheduling adds time-travel logic. Tied to `UD-06`. | It complicates attendance truth and cron interaction. | Move future scheduling to `Future Version`; keep v1 to present/past correction only. | `§3.5`, `§12.1` | Product decision, API change | Approved for Future Version |
 | F-3 | Configurable Access Manager UI may be unnecessary for launch. Tied to `UD-04`. | Hardcoded defaults are safer if freeze scope remains unstable. | Defer configurable Access Manager UI from v1 and use a documented static permission matrix. | `§3.8`, `§6.11`, `§7.6`, `§14` | Product decision, technical decision | Approved for Future Version |
 | F-4 | Hard delete UI is high risk for a first release. Tied to `UD-03`. | Archive/deactivate is usually safer operationally. | Remove hard delete UI from v1 and keep archive/deactivate-first. | `§3.7`, `§6.1`, `§7.4`, `§12.2` | Product decision, schema change, API change | Approved for Future Version |
+| F-5 | Absensi/Tracker sync plus current/future Absensi scheduling changes the v1 mutation model. | It requires separate product, database, RPC, audit, and state-machine design. | Track in `docs/plans/absensi-tracker-sync-deferred-requests.md`; keep R3D-C to historical correction UI polish. | `§3.4-3.5`, `§5.2-5.3`, `§12.1-12.3` | Product decision, API change, schema change | Deferred for R3E / v1.x |
 
 ## Unresolved Decision Register
 

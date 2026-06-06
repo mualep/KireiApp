@@ -10,6 +10,14 @@ export const absensiAttendanceLabels = {
 
 export type AbsensiAttendanceStatus = keyof typeof absensiAttendanceLabels;
 
+export const absensiAttendanceInitials = {
+  alpha: "A",
+  cuti: "C",
+  hadir: "H",
+  pending: "P",
+  sakit: "S",
+} as const satisfies Record<AbsensiAttendanceStatus, string>;
+
 export type AbsensiMonthRange = {
   days: string[];
   monthLabel: string;
@@ -70,6 +78,15 @@ export function getAbsensiDayNumber(date: string): string {
   return String(Number(date.slice(-2)));
 }
 
+export function getCurrentWibDateParam(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+  }).format(new Date());
+}
+
 function parseMonthParam(value: string | undefined): string | null {
   const match = monthParamPattern.exec(value ?? "");
 
@@ -87,11 +104,7 @@ function parseMonthParam(value: string | undefined): string | null {
 }
 
 function getCurrentWibMonthParam(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    month: "2-digit",
-    timeZone: "Asia/Jakarta",
-    year: "numeric",
-  }).format(new Date());
+  return getCurrentWibDateParam().slice(0, 7);
 }
 
 function formatDateParam(date: Date): string {

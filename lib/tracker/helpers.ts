@@ -26,6 +26,7 @@ export type TrackerSearchParams = Record<string, string | string[] | undefined>;
 export type TrackerRoleTab = {
   count: number;
   label: string;
+  shortLabel: string;
   value: WorkerRole | null;
 };
 
@@ -51,15 +52,15 @@ const criticalStatusRanks = new Map(
   criticalStatusOrder.map((status, index) => [status, index]),
 );
 
-const trackerRoleTabOrder = [
-  "Professional Player",
-  "Expert Player",
-  "Customer Service",
-  "Explorer",
-  "Security",
-  "Cleaning Service",
-  "Internship",
-] satisfies WorkerRole[];
+const trackerRoleTabDefinitions = [
+  { label: "Professional Player", shortLabel: "PP", value: "Professional Player" },
+  { label: "Expert Player", shortLabel: "EP", value: "Expert Player" },
+  { label: "Customer Service", shortLabel: "CS", value: "Customer Service" },
+  { label: "Explorer", shortLabel: "EX", value: "Explorer" },
+  { label: "Security", shortLabel: "SC", value: "Security" },
+  { label: "Cleaning Service", shortLabel: "CL", value: "Cleaning Service" },
+  { label: "Internship", shortLabel: "IN", value: "Internship" },
+] satisfies Array<{ label: string; shortLabel: string; value: WorkerRole }>;
 
 const trackerStatusTabOrder = [
   "OFF",
@@ -170,12 +171,14 @@ export function getTrackerRoleTabs(cards: TrackerCardDTO[]): TrackerRoleTab[] {
     {
       count: cards.length,
       label: "All",
+      shortLabel: "All",
       value: null,
     },
-    ...trackerRoleTabOrder.map((role) => ({
-      count: roleCounts.get(role) ?? 0,
-      label: role === "Cleaning Service" ? "Cleaning" : role,
-      value: role,
+    ...trackerRoleTabDefinitions.map((role) => ({
+      count: roleCounts.get(role.value) ?? 0,
+      label: role.label,
+      shortLabel: role.shortLabel,
+      value: role.value,
     })),
   ];
 }

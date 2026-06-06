@@ -74,6 +74,8 @@ assertIncludes(pageSource, "AbsensiMonthGrid");
 assertIncludes(pageSource, "scopeLabel");
 assertIncludes(pageSource, "Self-only");
 assertIncludes(pageSource, "All visible workers");
+assertIncludes(pageSource, "canCorrectAbsensi");
+assertIncludes(pageSource, 'staff.profile.tier !== "member"');
 assertIncludes(pageSource, "Read-only");
 assertNoPattern(pageSource, /redirect\(["']\/admin\/profile["']\)/);
 assertNoPattern(pageSource, /<h1[^>]*>\s*Absensi\s*<\/h1>/);
@@ -129,7 +131,6 @@ assertNoPattern(absensiAllSource, /\b(use server|revalidatePath)\b/);
 assertNoPattern(absensiAllSource, /\.rpc\s*\(/);
 assertNoPattern(absensiAllSource, /\.(insert|update|upsert|delete)\s*\(/);
 assertNoPattern(absensiAllSource, /\b(service_role|SERVICE_ROLE|createAdminClient)\b/);
-assertNoPattern(absensiAllSource, /\b(BATAL|Correction|Koreksi|Edit|Save|Reset)\b/i);
 assertNoPattern(absensiAllSource, /["'](?:LATE|LEMBUR|OFF|ON|BREAK)["']/);
 assertNoPattern(absensiAllSource, /\bstatus\s*=\s*["']late["']/i);
 

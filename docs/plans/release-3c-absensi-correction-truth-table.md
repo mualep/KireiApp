@@ -5,12 +5,13 @@
 - Release 3C is a truth-table documentation and static guardrail test slice.
 - R3A Absensi remains read-only.
 - R3B Absensi correction contract remains the high-level contract.
-- No correction UI, RPC, Server Action, migration, or mutation path is introduced in this release.
+- No correction UI, RPC, Server Action, migration, or mutation path was introduced in the original release.
+- R3D-C amends this truth table before exposing the Owner/Admin UI.
 - PRD v1 remains frozen.
 
 ## Purpose
 
-Release 3C locks the smallest safe first Absensi/Admin correction mutation shape before any DB/RPC foundation work. The future mutation must be historical-day-only, must keep `alpha` controlled by Absensi/Admin only, and must avoid live tracker state and `hadir` reversal until those semantics are separately approved.
+Release 3C locks the smallest safe first Absensi/Admin correction mutation shape before any DB/RPC foundation work. The future mutation must be historical-day-only, must keep `alpha` controlled by Absensi/Admin only, and must avoid live tracker state mutation. R3D-C amends the contract to allow historical active `hadir` rows to be corrected to controlled absence statuses.
 
 ## Actor And Date Boundary
 
@@ -55,6 +56,10 @@ Custom typed Absensi statuses are out of scope v1. v1 uses controlled status voc
 | `none` | `sakit` | Insert or revive active `absensi.correct_sakit` row. | `sakit_days_delta = +1`. |
 | `none` | `pending` | Insert or revive active `absensi.correct_pending` row. | `pending_days_delta = +1`. |
 | `none` | `alpha` | Insert or revive active `absensi.correct_alpha` row. | `alpha_count_delta = +1`. |
+| `hadir` | `cuti` | Update active row to `source = 'absensi'` and `source_action = 'absensi.correct_cuti'`. | `cuti_stock_delta = -1`; require stock > 0. |
+| `hadir` | `sakit` | Update active row to `source = 'absensi'` and `source_action = 'absensi.correct_sakit'`. | `sakit_days_delta = +1`. |
+| `hadir` | `pending` | Update active row to `source = 'absensi'` and `source_action = 'absensi.correct_pending'`. | `pending_days_delta = +1`. |
+| `hadir` | `alpha` | Update active row to `source = 'absensi'` and `source_action = 'absensi.correct_alpha'`. | `alpha_count_delta = +1`. |
 | `cuti` | `hadir` | Update active row to `source = 'absensi'` and `source_action = 'absensi.correct_hadir'`. | Restore cuti stock. |
 | `cuti` | `sakit` | Update active row to `source = 'absensi'` and `source_action = 'absensi.correct_sakit'`. | Restore cuti stock, then apply `sakit_days_delta = +1`. |
 | `cuti` | `pending` | Update active row to `source = 'absensi'` and `source_action = 'absensi.correct_pending'`. | Restore cuti stock, then apply `pending_days_delta = +1`. |
@@ -77,7 +82,7 @@ Custom typed Absensi statuses are out of scope v1. v1 uses controlled status voc
 - Same-status no-op is rejected.
 - `alpha` is a controlled Absensi/Admin correction status.
 - `alpha` is set manually from Absensi/Admin, not from Tracker.
-- Active `hadir -> cuti`, `hadir -> sakit`, `hadir -> pending`, and `hadir -> alpha` are deferred because late/work-late reversal is not locked.
+- Active historical `hadir -> cuti`, `hadir -> sakit`, `hadir -> pending`, and `hadir -> alpha` are allowed.
 - Tracker must not create, correct, or recover `alpha`.
 - Current-day correction is deferred.
 - Future-date correction is rejected.
@@ -96,7 +101,7 @@ Custom typed Absensi statuses are out of scope v1. v1 uses controlled status voc
 - Rows must not be physically deleted.
 - Canceled rows remain historical and ignored by the read-only Absensi grid.
 - Tracker-origin active `cuti`, `sakit`, and `pending` rows may be corrected only for historical dates.
-- Tracker-origin active `hadir` rows are deferred from the first Absensi correction mutation slice.
+- Tracker-origin active `hadir` rows may be corrected only for historical dates.
 - Future Tracker displays may derive historical ALPHA/absence display from `worker_attendance` where appropriate.
 - Absensi correction must not mutate live `worker_status` and must not require realtime sync in v1.
 - Realtime synchronization between Absensi correction and live Tracker state is out of scope v1.
@@ -145,7 +150,7 @@ The ledger must record:
 - `alpha_count_delta`.
 - `cuti_stock_delta`.
 - Cuti stock before and after when affected.
-- Human-readable reason.
+- Reason is optional, stored as null when blank, and capped at 20 trimmed characters.
 - Timestamp.
 
 Audit must be written in the same transaction as attendance, records, profile, and ledger changes. Audit failure must fail closed and roll back all side effects.
@@ -209,7 +214,9 @@ Before DB/RPC implementation, add:
 
 - Static migration test for ledger shape, RPC signatures, permissions, empty `search_path`, no dynamic SQL, no service-role string, and no tracker ALPHA.
 - Behavior test using a local Supabase rollback probe for allowed transitions.
-- Behavior test for rejected transitions: same-status no-op, `hadir -> absence`, current/future date, hidden worker, deleted user, missing profile, Member unauthorized, stale expected id/timestamp, and cuti stock exhaustion.
+- Behavior test for rejected transitions: same-status no-op, over-20 reason, current/future date, hidden worker, deleted user, missing profile, Member unauthorized, stale expected id/timestamp, and cuti stock exhaustion.
+- Behavior test proving empty reason stores a null ledger reason.
+- Behavior test proving historical active `hadir -> cuti/sakit/pending/alpha` applies deterministic deltas.
 - Behavior test for controlled `alpha` transitions and `alpha_count_delta` reversal.
 - Behavior test for canceled-slot revival.
 - Behavior test proving audit failure rolls back attendance, records, profile, ledger, and cuti stock.
@@ -219,10 +226,9 @@ Before DB/RPC implementation, add:
 
 - No Absensi correction UI in R3C.
 - No Absensi edit, save, reset, or correction controls in R3C.
-- No Server Action in R3C.
-- No RPC mutation in R3C.
+- No direct client mutation in R3C.
 - No insert, update, upsert, or delete path in R3C.
-- No schema or migration in R3C.
+- R3D-C backend amendment uses an additive migration.
 - No `worker_records` query from the read-only Absensi grid.
 - Tracker must not gain ALPHA correction.
 - ALPHA correction is not from tracker.

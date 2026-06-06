@@ -52,6 +52,7 @@ for (const required of [
   "Actor user id",
   "Target worker user id",
   "Before and after attendance status",
+  "Optional human-readable reason or note capped at 20 characters",
   "Worker record deltas",
   "No service-role or admin Supabase client in app code",
   "RLS remains restrictive for direct table access",
@@ -68,7 +69,6 @@ assertNoPattern(absensiSources, /\b(use server|revalidatePath)\b/);
 assertNoPattern(absensiSources, /\.rpc\s*\(/);
 assertNoPattern(absensiSources, /\.(insert|update|upsert|delete)\s*\(/);
 assertNoPattern(absensiSources, /\b(service_role|SERVICE_ROLE|createAdminClient)\b/);
-assertNoPattern(absensiSources, /\b(BATAL|Correction|Koreksi|Edit|Save|Reset)\b/i);
 
 console.log("Absensi correction contract tests passed.");
 

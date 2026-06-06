@@ -6,7 +6,6 @@ import { CircleAlertIcon } from "lucide-react";
 import { TrackerCard } from "@/components/admin/tracker/tracker-card";
 import { TrackerFilterForm } from "@/components/admin/tracker/tracker-filter-form";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +19,6 @@ import { getTrackerData } from "@/lib/tracker/data";
 import {
   filterAndSortTrackerCards,
   getTrackerRoleTabs,
-  getTrackerStatusTabs,
   hasTrackerFilters,
   parseTrackerFilters,
   type TrackerSearchParams,
@@ -58,10 +56,7 @@ export default async function AdminTrackerPage({
   const data = await getTrackerData(staff);
   const cards = filterAndSortTrackerCards(data.cards, filters);
   const roleTabs = getTrackerRoleTabs(data.cards);
-  const statusTabs = getTrackerStatusTabs(data.cards);
   const canApplyTrackerActions = canStaffTierPerformTrackerAction(staff.profile.tier);
-  const scopeLabel =
-    staff.profile.tier === "member" ? "Self-only" : "All visible workers";
   const emptyTitle = hasFilters
     ? "No workers match these filters."
     : staff.profile.tier === "member"
@@ -70,35 +65,13 @@ export default async function AdminTrackerPage({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <section className="tracker-glass-panel flex min-h-10 items-center justify-between gap-3 rounded-xl border px-3 py-2">
-        <div className="flex min-w-0 items-center gap-3">
-          <h1 className="truncate font-heading text-lg font-black">
-            Tracker
-          </h1>
-          <Badge
-            variant="outline"
-            className="h-5 border-border bg-background/40 px-2 text-[0.65rem] text-muted-foreground"
-          >
-            {scopeLabel}
-          </Badge>
-        </div>
-        <Badge
-          variant="outline"
-          className="h-5 border-border bg-background/30 px-2 text-[0.65rem] text-muted-foreground"
-        >
-          {canApplyTrackerActions ? "Actions enabled" : "Read-only"}
-        </Badge>
-      </section>
-
       {data.issues.length > 0 ? <TrackerIssuePanel issues={data.issues} /> : null}
 
       <div className="sticky top-24 z-20">
         <TrackerFilterForm
           filters={filters}
-          hasFilters={hasFilters}
           readableCount={numberFormatter.format(data.cards.length)}
           roleTabs={roleTabs}
-          statusTabs={statusTabs}
           visibleCount={numberFormatter.format(cards.length)}
         />
       </div>
@@ -106,7 +79,7 @@ export default async function AdminTrackerPage({
       {cards.length > 0 ? (
         <section
           aria-label="Worker tracker cards"
-          className="tracker-card-grid gap-3"
+          className="tracker-card-grid mt-1.5 gap-3"
         >
           {cards.map((card) => (
             <TrackerCard
