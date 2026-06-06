@@ -56,7 +56,7 @@ export function AdminShell({
 
   return (
     <div
-      className="relative min-h-svh overflow-x-hidden bg-background text-foreground"
+      className="relative min-h-svh overflow-x-clip bg-background text-foreground"
       data-admin-route={isTrackerRoute ? "tracker" : undefined}
       data-sidebar-state={desktopSidebarCollapsed ? "collapsed" : "expanded"}
     >

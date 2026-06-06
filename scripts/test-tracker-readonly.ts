@@ -257,7 +257,12 @@ assertIncludes(trackerFilterFormSource, "Apply");
 assertIncludes(trackerFilterFormSource, "Clear");
 assertIncludes(
   trackerPageSource,
-  'className="flex flex-col gap-4"',
+  'className="flex flex-col gap-6"',
+);
+assertNoPattern(
+  trackerPageSource,
+  /className="flex flex-col gap-4"/,
+  "Tracker toolbar-to-grid rhythm should use the larger D2-B gap-6 spacing.",
 );
 assertIncludes(
   trackerPageSource,

@@ -166,6 +166,12 @@ assertIncludes(shellSource, 'aria-label="Close Admin Navigation"');
 assertIncludes(shellSource, "md:hidden");
 assertIncludes(shellSource, "md:max-lg");
 assertIncludes(shellSource, "lg:");
+assertIncludes(shellSource, "overflow-x-clip");
+assertNoPattern(
+  shellSource,
+  /overflow-x-hidden/,
+  "Admin shell must not create an overflow ancestor that breaks sticky topbar behavior.",
+);
 assertIncludes(shellSource, "pointer-events-none");
 assertIncludes(shellUiSource, "z-30");
 assertIncludes(shellUiSource, "z-40");
@@ -202,6 +208,7 @@ assertNoPattern(
 assertIncludes(topbarSource, "onOpenNavigation");
 assertIncludes(topbarSource, 'aria-label="Open Admin Navigation"');
 assertIncludes(topbarSource, "md:hidden");
+assertIncludes(topbarSource, "[&_svg:not([class*='size-'])]:size-5");
 assertNoPattern(
   topbarSource,
   /lg:hidden/,
@@ -248,6 +255,7 @@ assertIncludes(sidebarSource, "onClose");
 assertIncludes(sidebarSource, "onNavigate");
 assertIncludes(sidebarSource, 'aria-label="Expand Admin Navigation"');
 assertIncludes(sidebarSource, 'size="icon-lg"');
+assertIncludes(sidebarSource, "[&_svg:not([class*='size-'])]:size-5");
 assertNoPattern(
   sidebarSource,
   /\[&_svg\]:size-6/,

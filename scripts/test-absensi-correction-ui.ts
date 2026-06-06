@@ -150,7 +150,12 @@ assertIncludes(pageSource, "rows={filteredRows}");
 assertIncludes(pageSource, "emptyTitle={emptyTitle}");
 assertIncludes(pageSource, "emptyDescription={emptyDescription}");
 assertIncludes(pageSource, "getAbsensiData({ monthParam, staff })");
-assertIncludes(pageSource, 'className="flex flex-col gap-4"');
+assertIncludes(pageSource, 'className="flex flex-col gap-6"');
+assertNoPattern(
+  pageSource,
+  /className="flex flex-col gap-4"/,
+  "Absensi toolbar-to-grid rhythm should use the larger D2-B gap-6 spacing.",
+);
 assertNoPattern(
   pageSource,
   /gap-2\.5/,

@@ -31,7 +31,7 @@ export function AdminTopbar({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="shrink-0 md:hidden"
+            className="shrink-0 md:hidden [&_svg:not([class*='size-'])]:size-5"
             aria-label="Open Admin Navigation"
             onClick={onOpenNavigation}
           >
