@@ -217,8 +217,26 @@ assertIncludes(
 assertIncludes(trackerPageSource, "canApplyTrackerActions={canApplyTrackerActions}");
 assertIncludes(trackerCardSource, "canApplyTrackerActions");
 assertIncludes(trackerCardSource, "TrackerActionControls");
+assertIncludes(trackerCardSource, "TrackerStatusBadge");
+assertIncludes(trackerCardSource, 'data-slot="tracker-card-identity"');
+assertIncludes(trackerCardSource, 'aria-label="Worker Identity"');
+assertIncludes(trackerCardSource, 'data-slot="tracker-card-metadata"');
+assertIncludes(trackerCardSource, 'aria-label="Worker Metadata"');
+assertIncludes(trackerCardSource, 'data-slot="tracker-card-activity"');
+assertIncludes(trackerCardSource, 'aria-label="Worker Activity"');
+assertIncludes(trackerCardSource, 'data-slot="tracker-card-actions"');
+assertIncludes(trackerCardSource, 'aria-label="Tracker action footer"');
+assertIncludes(trackerCardSource, "CardFooter");
+assertIncludes(trackerCardSource, "roleShiftLabel");
+assertIncludes(trackerCardSource, "updatedAtText");
+assertIncludes(trackerCardSource, "breakAccumulatedSecs");
 assertIncludes(trackerCardSource, "Self View");
 assertIncludes(trackerCardSource, "R2C");
+assertNoPattern(
+  trackerCardSource,
+  /from\s+["']@\/app\/admin\/\(shell\)\/tracker\/actions["']|applyTrackerAction\(|applyTrackerCorrection\(|@\/lib\/supabase|createClient|\.rpc\s*\(|fetch\(|\/api\/|Absensi|absensi|worker_status/i,
+  "TrackerCard redesign must remain presentational and avoid data mutations, API calls, Supabase, or Absensi sync.",
+);
 assertNoPattern(
   trackerPageSource,
   /tracker-glass-panel flex min-h-10 items-center justify-between/,
