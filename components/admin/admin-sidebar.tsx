@@ -43,6 +43,7 @@ export function AdminSidebar({
   variant,
 }: AdminSidebarProps) {
   const initials = getInitials(staff.name, staff.email);
+  const tierAvatarClassName = getTierAvatarClassName(staff.tier);
   const isMobile = variant === "mobile";
 
   return (
@@ -86,6 +87,7 @@ export function AdminSidebar({
                   "text-foreground",
                   collapsed ? "size-11" : "min-w-0",
                 )}
+                markClassName="size-11"
                 textClassName="text-sm"
               />
             </Link>
@@ -190,7 +192,10 @@ export function AdminSidebar({
               )}
             >
               <span
-                className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-xs font-bold text-primary"
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-lg border text-sm font-bold shadow-lg",
+                  tierAvatarClassName,
+                )}
                 translate="no"
               >
                 {initials}
@@ -237,4 +242,15 @@ function getInitials(name: string, email: string): string {
     .join("");
 
   return (initials || fallback).toUpperCase();
+}
+
+function getTierAvatarClassName(tier: StaffTier): string {
+  switch (tier) {
+    case "owner":
+      return "border-primary/35 bg-primary/10 text-primary shadow-primary/10";
+    case "admin":
+      return "border-status-break/35 bg-status-break/10 text-status-break shadow-status-break/10";
+    case "member":
+      return "border-status-cuti/35 bg-status-cuti/10 text-status-cuti shadow-status-cuti/10";
+  }
 }

@@ -62,6 +62,8 @@ assertIncludes(packageJsonSource, '"test:brand-identity"');
 assertIncludes(logoSource, 'from "next/image"');
 assertIncludes(logoSource, '"/brand/kireiapp-mark.svg"');
 assertIncludes(logoSource, 'type KireiAppLogoVariant = "compact" | "horizontal" | "mark"');
+assertIncludes(logoSource, "decorative?: boolean");
+assertIncludes(logoSource, "ariaLabel?: string");
 assertIncludes(logoSource, 'variant = "horizontal"');
 assertIncludes(logoSource, "KireiApp");
 assertIncludes(logoSource, 'translate="no"');
@@ -69,6 +71,7 @@ assertIncludes(logoSource, 'alt=""');
 assertIncludes(logoSource, "width={markSize}");
 assertIncludes(logoSource, "height={markSize}");
 assertIncludes(logoSource, "sr-only");
+assertIncludes(logoSource, 'aria-hidden={decorative ? true : undefined}');
 assertNoPattern(
   logoSource,
   /horizontal[^"']*\.(?:svg|png|webp|jpg|jpeg)|kireiapp-logo\.(?:svg|png|webp|jpg|jpeg)/i,
@@ -92,6 +95,16 @@ assertIncludes(adminSidebarSource, 'import { KireiAppLogo } from "@/components/b
 assertIncludes(adminSidebarSource, "<KireiAppLogo");
 assertIncludes(adminSidebarSource, 'aria-label="KireiApp Admin Home"');
 assertIncludes(adminSidebarSource, 'variant={collapsed ? "compact" : "horizontal"}');
+assertIncludes(adminSidebarSource, 'markClassName="size-11"');
+assertIncludes(adminSidebarSource, "getTierAvatarClassName");
+assertIncludes(adminSidebarSource, 'case "owner"');
+assertIncludes(adminSidebarSource, 'case "admin"');
+assertIncludes(adminSidebarSource, 'case "member"');
+assertIncludes(adminSidebarSource, "border-primary/35");
+assertIncludes(adminSidebarSource, "border-status-break/35");
+assertIncludes(adminSidebarSource, "border-status-cuti/35");
+assertIncludes(adminSidebarSource, "size-11");
+assertIncludes(adminSidebarSource, "text-sm");
 assertNoPattern(
   adminSidebarSource,
   /Admin Shell|\[K\]|Kireiku Admin Home/,
@@ -100,13 +113,19 @@ assertNoPattern(
 
 assertIncludes(adminLoginSource, 'import { KireiAppLogo } from "@/components/brand/kireiapp-logo"');
 assertIncludes(adminLoginSource, "<KireiAppLogo");
+assertIncludes(adminLoginSource, 'variant="horizontal"');
 assertIncludes(adminLoginSource, 'title: "Staff Login | KireiApp"');
 assertIncludes(adminLoginSource, "KireiApp Admin");
-assertIncludes(adminLoginSource, "Restricted area for Kireiku staff");
+assertIncludes(adminLoginSource, "Welcome back");
+assertIncludes(adminLoginSource, "Sign in to");
+assertIncludes(adminLoginSource, "KireiApp");
+assertIncludes(adminLoginSource, "to continue.");
+assertIncludes(adminLoginSource, "LoginForm");
+assertIncludes(adminLoginSource, "Card");
 assertNoPattern(
   adminLoginSource,
-  /\[K\]|Staff Login \| Kireiku/,
-  "Admin login should use the KireiApp mark and platform metadata.",
+  /\[K\]|Staff Login \| Kireiku|Kireiku App|variant="mark"|Restricted area for Kireiku staff/,
+  "Admin login should use the horizontal KireiApp lockup and platform-facing copy.",
 );
 
 for (const [path, expectedTitle] of [
@@ -122,7 +141,12 @@ for (const [path, expectedTitle] of [
 assertIncludes(seedSource, "Release 1 local/dev seed baseline for KireiApp.");
 assertIncludes(seedSource, "Kireiku Game Boosting");
 assertIncludes(bulkUsersPlanSource, "KireiApp v1 staff accounts");
+assertIncludes(landingHeaderSource, 'import { KireiAppLogo } from "@/components/brand/kireiapp-logo"');
+assertIncludes(landingHeaderSource, "<KireiAppLogo");
+assertIncludes(landingHeaderSource, 'variant="mark"');
+assertIncludes(landingHeaderSource, "decorative");
 assertIncludes(landingHeaderSource, "Kireiku");
+assertIncludes(landingHeaderSource, 'aria-label="Kireiku home"');
 assertIncludes(landingDataSource, "Kireiku Game Boosting");
 
 const scannedSources = walkTextFiles(projectRoot, [

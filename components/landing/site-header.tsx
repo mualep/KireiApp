@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { KireiAppLogo } from "@/components/brand/kireiapp-logo";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
@@ -26,9 +27,15 @@ export function SiteHeader({ orderHref, orderLabel }: SiteHeaderProps) {
       <div className="mx-auto flex h-12 max-w-5xl items-center justify-between gap-4 rounded-full border border-border/70 bg-card/70 px-4 shadow-2xl shadow-primary/10 backdrop-blur-xl sm:h-14 sm:px-5">
         <Link
           href="/"
-          className="group flex items-center gap-1 rounded-full text-sm font-extrabold tracking-tight text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="group flex items-center gap-2 rounded-full text-sm font-extrabold tracking-tight text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
           aria-label="Kireiku home"
         >
+          <KireiAppLogo
+            variant="mark"
+            decorative
+            className="size-6 text-primary sm:size-7"
+            markClassName="size-6 sm:size-7"
+          />
           <span translate="no">Kireiku</span>
           <span className="text-primary" aria-hidden="true">
             .
