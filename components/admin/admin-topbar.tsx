@@ -41,7 +41,10 @@ export function AdminTopbar({
           >
             <MenuIcon data-icon="icon" aria-hidden="true" />
           </Button>
-          <span className="hidden size-7 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary sm:flex">
+          <span
+            className="hidden shrink-0 items-center justify-center text-primary sm:flex"
+            aria-hidden="true"
+          >
             <AdminNavIcon iconKey={iconKey} />
           </span>
           <p className="truncate font-heading text-base font-bold sm:text-lg">

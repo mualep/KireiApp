@@ -130,6 +130,13 @@ assertIncludes(shellSource, 'data-sidebar-state={desktopSidebarCollapsed ? "coll
 assertIncludes(shellSource, "activeIcon");
 assertIncludes(shellSource, "contentWidthClass");
 assertIncludes(shellSource, "max-w-[112rem]");
+assertIncludes(shellSource, 'const adminContentRhythmClass = "gap-4 py-4";');
+assertIncludes(shellSource, "adminContentRhythmClass");
+assertNoPattern(
+  shellSource,
+  /isTrackerRoute\s*\?\s*["']gap-3 py-4["']\s*:\s*["']gap-6 py-6["']/,
+  "Admin shell should use one shared topbar-to-content rhythm across admin pages.",
+);
 assertNoPattern(
   shellSource,
   /isTrackerRoute\s*\?\s*["'][^"']*max-w-\[112rem\][^"']*["']\s*:\s*["'][^"']*max-w-6xl/,
@@ -173,6 +180,16 @@ assertIncludes(topbarSource, "bg-muted-foreground");
 assertIncludes(topbarSource, "animate-ping");
 assertIncludes(topbarSource, "AdminNavIcon");
 assertIncludes(topbarSource, "iconKey");
+assertNoPattern(
+  topbarSource,
+  /hidden\s+size-7\s+shrink-0\s+items-center\s+justify-center\s+rounded-lg\s+border\s+border-primary\/20\s+bg-primary\/10/,
+  "Admin topbar page icon should be standalone, not inside a rounded rectangle box.",
+);
+assertNoPattern(
+  topbarSource,
+  /<span[^>]*rounded-lg[^>]*>[\s\S]*<AdminNavIcon iconKey=\{iconKey\}/,
+  "Admin topbar page icon wrapper must not use rounded box styling.",
+);
 assertIncludes(topbarSource, "onOpenNavigation");
 assertIncludes(topbarSource, 'aria-label="Open Admin Navigation"');
 assertIncludes(topbarSource, "md:hidden");
@@ -191,6 +208,8 @@ assertIncludes(sidebarSource, "onToggleCollapse");
 assertIncludes(sidebarSource, "onClose");
 assertIncludes(sidebarSource, "onNavigate");
 assertIncludes(sidebarSource, 'aria-label="Expand Admin Navigation"');
+assertIncludes(sidebarSource, 'size="icon-lg"');
+assertIncludes(sidebarSource, "[&_svg]:size-6");
 assertIncludes(sidebarSource, 'aria-label="Collapse Admin Navigation"');
 assertIncludes(sidebarSource, "title={item.label}");
 assertIncludes(sidebarSource, "aria-label={item.label}");

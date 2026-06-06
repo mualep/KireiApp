@@ -95,10 +95,10 @@ export function AdminSidebar({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
+                size="icon-lg"
                 aria-label="Expand Admin Navigation"
                 title="Expand Admin Navigation"
-                className="absolute inset-0 opacity-0 transition-opacity group-hover/brand:opacity-100 group-focus-within/brand:opacity-100"
+                className="absolute inset-0 size-11 opacity-0 transition-opacity group-hover/brand:opacity-100 group-focus-within/brand:opacity-100 [&_svg]:size-6"
                 onClick={onToggleCollapse}
               >
                 <SidebarOpenIcon data-icon="icon" aria-hidden="true" />
