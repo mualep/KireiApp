@@ -26,7 +26,7 @@ import {
 import { canStaffTierPerformTrackerAction } from "@/lib/workers/tracker-actions";
 
 export const metadata: Metadata = {
-  title: "Tracker | Kireiku",
+  title: "Tracker | KireiApp",
   description: "Read-only worker tracker overview.",
 };
 

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 
 export const metadata: Metadata = {
-  title: "Profile Placeholder | Kireiku",
+  title: "Profile Placeholder | KireiApp",
   description: "Release 1 staff profile placeholder destination.",
 };
 

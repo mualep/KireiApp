@@ -9,6 +9,7 @@ import {
   SidebarOpenIcon,
 } from "@/components/admin/admin-icons";
 import { LogoutButton } from "@/components/admin/logout-button";
+import { KireiAppLogo } from "@/components/brand/kireiapp-logo";
 import type { AdminShellNavItem } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,6 +43,7 @@ export function AdminSidebar({
   variant,
 }: AdminSidebarProps) {
   const initials = getInitials(staff.name, staff.email);
+  const tierAvatarClassName = getTierAvatarClassName(staff.tier);
   const isMobile = variant === "mobile";
 
   return (
@@ -76,27 +78,18 @@ export function AdminSidebar({
                 collapsed &&
                   "justify-center transition-opacity group-hover/brand:opacity-0 group-focus-within/brand:opacity-0",
               )}
-              aria-label="Kireiku Admin Home"
+              aria-label="KireiApp Admin Home"
               onClick={onNavigate}
             >
-              <span
-                aria-hidden="true"
-                className="flex size-11 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-lg font-black italic tracking-tighter text-primary shadow-lg shadow-primary/15"
-                translate="no"
-              >
-                [K]
-              </span>
-              <span className={cn("min-w-0", collapsed ? "sr-only" : "block")}>
-                <span
-                  className="block truncate text-sm font-bold"
-                  translate="no"
-                >
-                  Kireiku
-                </span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  Admin Shell
-                </span>
-              </span>
+              <KireiAppLogo
+                variant={collapsed ? "compact" : "horizontal"}
+                className={cn(
+                  "text-foreground",
+                  collapsed ? "size-11" : "min-w-0",
+                )}
+                markClassName="size-11"
+                textClassName="text-sm"
+              />
             </Link>
             {collapsed && !isMobile ? (
               <Button
@@ -199,7 +192,10 @@ export function AdminSidebar({
               )}
             >
               <span
-                className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-xs font-bold text-primary"
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-lg border text-sm font-bold shadow-lg",
+                  tierAvatarClassName,
+                )}
                 translate="no"
               >
                 {initials}
@@ -246,4 +242,15 @@ function getInitials(name: string, email: string): string {
     .join("");
 
   return (initials || fallback).toUpperCase();
+}
+
+function getTierAvatarClassName(tier: StaffTier): string {
+  switch (tier) {
+    case "owner":
+      return "border-primary/35 bg-primary/10 text-primary shadow-primary/10";
+    case "admin":
+      return "border-status-break/35 bg-status-break/10 text-status-break shadow-status-break/10";
+    case "member":
+      return "border-status-cuti/35 bg-status-cuti/10 text-status-cuti shadow-status-cuti/10";
+  }
 }

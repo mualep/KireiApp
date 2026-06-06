@@ -12,7 +12,7 @@
 
 ## 1. Purpose
 
-This document captures the approved bulk user bootstrap plan in a sanitized, commit-safe form. It defines counts, mappings, CSV shape, validation rules, and the later import flow for Kireiku App v1 staff accounts.
+This document captures the approved bulk user bootstrap plan in a sanitized, commit-safe form. It defines counts, mappings, CSV shape, validation rules, and the later import flow for KireiApp v1 staff accounts.
 
 The approved plaintext CSV preview exists locally at `.local/bulk-user-bootstrap-preview.csv`. That file contains initial passwords and must remain local-only.
 

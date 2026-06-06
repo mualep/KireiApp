@@ -37,7 +37,7 @@ import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Content CMS | Kireiku",
+  title: "Content CMS | KireiApp",
   description: "Release 1 content CMS mutation baseline.",
 };
 
