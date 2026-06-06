@@ -253,11 +253,30 @@ assertIncludes(trackerFilterFormSource, 'id="tracker-shift"');
 assertIncludes(trackerFilterFormSource, 'id="tracker-status"');
 assertIncludes(trackerFilterFormSource, 'id="tracker-sort"');
 assertIncludes(trackerFilterFormSource, "visibleCount}/{readableCount");
-assertIncludes(trackerFilterFormSource, "Apply");
 assertIncludes(trackerFilterFormSource, "Clear");
+assertIncludes(trackerFilterFormSource, "router.replace");
+assertIncludes(trackerFilterFormSource, "{ scroll: false }");
+assertIncludes(trackerFilterFormSource, "window.setTimeout");
+assertIncludes(trackerFilterFormSource, "window.clearTimeout");
+assertIncludes(trackerFilterFormSource, "300");
+assertNoPattern(
+  trackerFilterFormSource,
+  /onSubmit=|handleSubmit|type="submit"|>\s*Apply\s*</,
+  "Tracker filters should auto-apply without a form-driven Apply flow.",
+);
+assertNoPattern(
+  trackerFilterFormSource,
+  /router\.push|new FormData|<form|\bformData\b|name="role"/,
+  "Tracker filter UI should use URL-backed router.replace state, not submit-only form plumbing.",
+);
 assertIncludes(
   trackerPageSource,
   'className="flex flex-col gap-6"',
+);
+assertNoPattern(
+  trackerPageSource,
+  /sticky\s+top-24\s+z-20|fixed\s+top-|z-20/,
+  "Tracker filter section must scroll with page content; only the global Admin topbar is sticky.",
 );
 assertNoPattern(
   trackerPageSource,

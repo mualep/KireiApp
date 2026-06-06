@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDaysIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  SearchIcon,
   XIcon,
 } from "lucide-react";
 
@@ -35,17 +38,43 @@ export function AbsensiToolbar({
   scopeLabel,
   visibleCount,
 }: AbsensiToolbarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [queryDraft, setQueryDraft] = useState(filters.q);
+
+  useEffect(() => {
+    if (normalizeQuery(queryDraft) === filters.q) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      router.replace(
+        getMonthHref({
+          filters: { q: queryDraft, role: filters.role },
+          monthParam: month.monthParam,
+          pathname,
+        }),
+        { scroll: false },
+      );
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [filters.q, filters.role, month.monthParam, pathname, queryDraft, router]);
+
   const previousMonthHref = getMonthHref({
     filters,
     monthParam: month.previousMonthParam,
+    pathname,
   });
   const nextMonthHref = getMonthHref({
     filters,
     monthParam: month.nextMonthParam,
+    pathname,
   });
   const clearFiltersHref = getMonthHref({
     filters: { q: "", role: null },
     monthParam: month.monthParam,
+    pathname,
   });
 
   return (
@@ -97,9 +126,7 @@ export function AbsensiToolbar({
           </div>
         </div>
 
-        <form action="/admin/absensi" className="flex flex-col gap-2">
-          <input type="hidden" name="month" value={month.monthParam} />
-          <input type="hidden" name="role" value={filters.role ?? ""} />
+        <div className="flex flex-col gap-2">
           <FieldGroup className="grid gap-2 md:grid-cols-[minmax(13rem,1fr)_auto_auto]">
             <Field>
               <FieldLabel htmlFor="absensi-search" className="sr-only">
@@ -109,7 +136,8 @@ export function AbsensiToolbar({
                 id="absensi-search"
                 name="q"
                 type="search"
-                defaultValue={filters.q}
+                value={queryDraft}
+                onChange={(event) => setQueryDraft(event.currentTarget.value)}
                 placeholder="Search worker name…"
                 autoComplete="off"
                 className="h-9 bg-background/55"
@@ -117,10 +145,6 @@ export function AbsensiToolbar({
             </Field>
 
             <div className="flex items-center gap-2">
-              <Button type="submit" className="h-9 w-full sm:w-auto">
-                <SearchIcon data-icon="inline-start" aria-hidden="true" />
-                Apply
-              </Button>
               <Button asChild variant="outline" className="h-9 w-full sm:w-auto">
                 <Link href={clearFiltersHref}>
                   <XIcon data-icon="inline-start" aria-hidden="true" />
@@ -136,7 +160,7 @@ export function AbsensiToolbar({
               <span className="hidden sm:inline">workers</span>
             </div>
           </FieldGroup>
-        </form>
+        </div>
 
         <nav aria-label="Absensi role groups" className="w-full">
           <div className="grid w-full grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-8">
@@ -144,10 +168,11 @@ export function AbsensiToolbar({
               const isActive = filters.role === tab.value;
               const href = getMonthHref({
                 filters: {
-                  q: filters.q,
+                  q: queryDraft,
                   role: tab.value,
                 },
                 monthParam: month.monthParam,
+                pathname,
               });
 
               return (
@@ -185,20 +210,27 @@ export function AbsensiToolbar({
 function getMonthHref({
   filters,
   monthParam,
+  pathname,
 }: {
   filters: AbsensiFilters;
   monthParam: string;
+  pathname: string;
 }) {
   const params = new URLSearchParams();
   params.set("month", monthParam);
+  const q = normalizeQuery(filters.q);
 
-  if (filters.q) {
-    params.set("q", filters.q);
+  if (q) {
+    params.set("q", q);
   }
 
   if (filters.role) {
     params.set("role", filters.role);
   }
 
-  return `/admin/absensi?${params.toString()}`;
+  return `${pathname}?${params.toString()}`;
+}
+
+function normalizeQuery(value: string) {
+  return value.trim().replace(/\s+/g, " ");
 }

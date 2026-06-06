@@ -64,17 +64,16 @@ export default async function AdminAbsensiPage({
     <div className="flex flex-col gap-6">
       {data.issues.length > 0 ? <AbsensiIssuePanel issues={data.issues} /> : null}
 
-      <div className="sticky top-24 z-20">
-        <AbsensiToolbar
-          filters={filters}
-          month={data.month}
-          readableCount={numberFormatter.format(data.rows.length)}
-          roleTabs={roleTabs}
-          modeLabel={modeLabel}
-          scopeLabel={scopeLabel}
-          visibleCount={numberFormatter.format(filteredRows.length)}
-        />
-      </div>
+      <AbsensiToolbar
+        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}`}
+        filters={filters}
+        month={data.month}
+        readableCount={numberFormatter.format(data.rows.length)}
+        roleTabs={roleTabs}
+        modeLabel={modeLabel}
+        scopeLabel={scopeLabel}
+        visibleCount={numberFormatter.format(filteredRows.length)}
+      />
 
       <AbsensiMonthGrid
         canCorrect={canCorrectAbsensi}

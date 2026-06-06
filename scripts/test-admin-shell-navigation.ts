@@ -14,6 +14,8 @@ const topbarLiveStatusPath = resolve(
   "components/admin/admin-topbar-live-status.tsx",
 );
 const logoutButtonPath = resolve(projectRoot, "components/admin/logout-button.tsx");
+const trackerPagePath = resolve(projectRoot, "app/admin/(shell)/tracker/page.tsx");
+const absensiPagePath = resolve(projectRoot, "app/admin/(shell)/absensi/page.tsx");
 const appDir = resolve(projectRoot, "app");
 
 for (const path of [
@@ -25,6 +27,8 @@ for (const path of [
   topbarPath,
   topbarLiveStatusPath,
   logoutButtonPath,
+  trackerPagePath,
+  absensiPagePath,
 ]) {
   assert.ok(existsSync(path), `${path} must exist for admin shell navigation.`);
 }
@@ -37,6 +41,8 @@ const sidebarSource = readFileSync(sidebarPath, "utf8");
 const topbarSource = readFileSync(topbarPath, "utf8");
 const topbarLiveStatusSource = readFileSync(topbarLiveStatusPath, "utf8");
 const logoutButtonSource = readFileSync(logoutButtonPath, "utf8");
+const trackerPageSource = readFileSync(trackerPagePath, "utf8");
+const absensiPageSource = readFileSync(absensiPagePath, "utf8");
 const shellUiSource = [
   adminIconsSource,
   shellSource,
@@ -189,6 +195,11 @@ assertIncludes(topbarSource, "AdminTopbarClock");
 assertIncludes(topbarSource, "initialText={dateText}");
 assertIncludes(topbarSource, "sticky top-4 z-30");
 assertNoPattern(
+  `${trackerPageSource}\n${absensiPageSource}`,
+  /sticky\s+top-24\s+z-20|fixed\s+top-|z-20/,
+  "Tracker and Absensi filter sections must scroll normally; only AdminTopbar should be sticky.",
+);
+assertNoPattern(
   topbarSource,
   />\s*Signal\s*</,
   'Admin topbar must not render the literal word "Signal".',
@@ -282,6 +293,10 @@ assertIncludes(logoutButtonSource, "Are You Sure You Want To Log Out?");
 assertIncludes(logoutButtonSource, "Cancel");
 assertIncludes(logoutButtonSource, "Log Out");
 assertIncludes(logoutButtonSource, 'type="submit"');
+assertIncludes(logoutButtonSource, 'variant="destructive"');
+assertIncludes(logoutButtonSource, "bg-destructive");
+assertIncludes(logoutButtonSource, "text-destructive-foreground");
+assertIncludes(logoutButtonSource, "hover:bg-destructive/90");
 assertIncludes(logoutButtonSource, "asChild");
 
 assertNoPattern(

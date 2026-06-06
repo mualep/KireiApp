@@ -67,14 +67,13 @@ export default async function AdminTrackerPage({
     <div className="flex flex-col gap-6">
       {data.issues.length > 0 ? <TrackerIssuePanel issues={data.issues} /> : null}
 
-      <div className="sticky top-24 z-20">
-        <TrackerFilterForm
-          filters={filters}
-          readableCount={numberFormatter.format(data.cards.length)}
-          roleTabs={roleTabs}
-          visibleCount={numberFormatter.format(cards.length)}
-        />
-      </div>
+      <TrackerFilterForm
+        key={`${filters.q}:${filters.role ?? ""}:${filters.shift ?? ""}:${filters.status ?? ""}`}
+        filters={filters}
+        readableCount={numberFormatter.format(data.cards.length)}
+        roleTabs={roleTabs}
+        visibleCount={numberFormatter.format(cards.length)}
+      />
 
       {cards.length > 0 ? (
         <section
