@@ -81,3 +81,22 @@ This registry is durable project memory for KireiApp agent skills and workflow t
 - Use Graphify for context mapping, dependency exploration, PRD-to-code relationship checks, and focused architecture questions.
 - Do not install Graphify project hooks or project-scoped skill files without explicit approval.
 - Do not commit generated `graphify-out/` artifacts unless a future task explicitly asks for a graph artifact.
+
+## Graphify Baseline Notes
+
+First baseline run: `graphify extract .` stopped safely because docs and images require an LLM API key for semantic extraction. Use `graphify update .` for safe no-key structural audits when the goal is code relationship mapping.
+
+Baseline shape: 144 files, about 113,186 words, 1,496 nodes, 2,368 links, and 101 communities. No import cycles were detected.
+
+Graphify was useful for larger audits and relationship tracing, especially tracker/RPC/auth/component mapping:
+
+- `applyTrackerAction()` calls `getCurrentStaffUser()`.
+- `applyTrackerAction()` calls `mapTrackerRpcError()`.
+- `applyAbsensiCorrection()` calls `applyAbsensiCorrectionMutation()`.
+- `computeWorkerDisplayStatus()` connects through `helpers.ts` to `workerStatusDisplayLabels`.
+
+Do not run Graphify by default for every small change. Use it when repeated context reads, cross-file tracing, or scope-risk review would cost more than refreshing the graph.
+
+Generated output stays local under ignored `graphify-out/`. Do not commit graph output unless a future task explicitly requests a graph artifact.
+
+Community labels are generic without LLM semantic extraction, and legacy planning docs can dominate top communities. Always prioritize the current PRD, freeze checklist, state-machine truth table, auth/RLS matrix, release-sliced plan, and repo source over generated graph suggestions.
