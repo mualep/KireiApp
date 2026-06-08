@@ -102,8 +102,9 @@ assertIncludes(trackerActionControlsSource, 'label: "BATAL SAKIT"');
 assertIncludes(trackerActionControlsSource, 'label: "BATAL PENDING"');
 assertIncludes(trackerActionControlsSource, "attendanceId: card.activeTrackerAttendanceId");
 assertIncludes(trackerActionControlsSource, "window.prompt");
-assertIncludes(trackerActionControlsSource, "Ends break and returns to active work.");
-assertIncludes(trackerActionControlsSource, "Break Timer");
+assertNoPattern(trackerActionControlsSource, /"BREAK TIMER"|BREAK TIMER|Break Timer/, "Break timer area does not contain BREAK TIMER");
+assertNoPattern(trackerActionControlsSource, /Ends break|returns to active/, "Break timer area does not contain Ends break");
+assertIncludes(trackerActionControlsSource, "tracker-break-timer-large");
 assertIncludes(trackerActionControlsSource, "formatBreakRemainingSeconds");
 assertIncludes(trackerActionControlsSource, "getBreakRemainingSeconds");
 assertIncludes(trackerActionControlsSource, "breakAccumulatedSecs");
@@ -222,9 +223,10 @@ assertIncludes(trackerCardSource, 'data-slot="tracker-card-identity"');
 assertIncludes(trackerCardSource, 'aria-label="Worker Identity"');
 assertIncludes(trackerCardSource, 'data-slot="tracker-card-actions"');
 assertIncludes(trackerCardSource, 'aria-label="Tracker action footer"');
-assertIncludes(trackerCardSource, "CardFooter");
-assertIncludes(trackerCardSource, "roleShiftLabel");
-assertIncludes(trackerCardSource, "Self View");
+assertNoPattern(trackerCardSource, /"Self View"|Self View/, "Card no longer renders Self View");
+assertNoPattern(trackerCardSource, /ShieldIcon|Shield/, "Card no longer renders shield icon for member visual label");
+assertIncludes(trackerCardSource, "<TrackerStatusBadge status={card.displayStatus} prominent />");
+assertIncludes(readFileSync(resolve(projectRoot, "app/globals.css"), "utf8"), "tracker-status-badge-prominent");
 assertIncludes(trackerCardSource, "R2C");
 
 // ── D3 Refinement: removed UI elements ─────────────────────────────────────

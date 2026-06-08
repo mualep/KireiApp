@@ -170,12 +170,9 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   return (
     <>
       {isBreakCard ? (
-        <div className="rounded-lg border border-status-break/25 bg-status-break/8 px-3 py-3">
-          <div className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-muted-foreground">
-            <TimerIcon data-icon="inline-start" aria-hidden="true" />
-            Break Timer
-          </div>
-          <div className="tracker-break-timer-large text-status-break">
+        <div className="rounded-lg border border-status-break/25 bg-status-break/8 px-3 py-3.5 flex items-center justify-center gap-2.5">
+          <TimerIcon className="size-6 text-status-break shrink-0" data-icon="inline-start" aria-hidden="true" />
+          <div className="tracker-break-timer-large text-status-break font-black">
             {formatBreakRemainingSeconds(
               getBreakRemainingSeconds({
                 accumulatedSeconds: card.breakAccumulatedSecs,
@@ -185,9 +182,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
               }),
             )}
           </div>
-          <p className="mt-1.5 text-[0.65rem] text-muted-foreground">
-            Ends break and returns to active work.
-          </p>
         </div>
       ) : null}
 

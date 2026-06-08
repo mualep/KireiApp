@@ -32,6 +32,12 @@ type AdminSidebarProps = {
   variant: "desktop" | "mobile" | "tablet";
 };
 
+const tierTextColorClasses: Record<StaffTier, string> = {
+  owner: "text-status-alpha",
+  admin: "text-status-break",
+  member: "text-status-cuti",
+};
+
 export function AdminSidebar({
   collapsed,
   navItems,
@@ -209,7 +215,7 @@ export function AdminSidebar({
                 >
                   {staff.name}
                 </span>
-                <span className="block truncate text-[0.65rem] font-semibold uppercase tracking-widest text-primary">
+                <span className={cn("block truncate text-[0.65rem] font-semibold uppercase tracking-widest", tierTextColorClasses[staff.tier])}>
                   {staff.tier}
                 </span>
               </span>

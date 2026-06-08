@@ -1,5 +1,3 @@
-import { ShieldIcon } from "lucide-react";
-
 import { TrackerActionControls } from "@/components/admin/tracker/tracker-action-controls";
 import { TrackerStatusBadge } from "@/components/admin/tracker/tracker-status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -111,14 +109,16 @@ export function TrackerCard({
         </section>
       </CardContent>
 
-      <CardFooter className="relative z-10 flex flex-col items-stretch gap-2 border-t border-border/70 bg-background/25 p-3">
-        <div aria-label="Tracker action footer" data-slot="tracker-card-actions">
-          <TrackerControlZone
-            card={card}
-            canApplyTrackerActions={canApplyTrackerActions}
-          />
-        </div>
-      </CardFooter>
+      {canApplyTrackerActions ? (
+        <CardFooter className="relative z-10 flex flex-col items-stretch gap-2 border-t border-border/70 bg-background/25 p-3">
+          <div aria-label="Tracker action footer" data-slot="tracker-card-actions">
+            <TrackerControlZone
+              card={card}
+              canApplyTrackerActions={canApplyTrackerActions}
+            />
+          </div>
+        </CardFooter>
+      ) : null}
     </Card>
   );
 }
@@ -153,12 +153,7 @@ function TrackerControlZone({
   canApplyTrackerActions: boolean;
 }) {
   if (!canApplyTrackerActions) {
-    return (
-      <div className="rounded-lg border border-border/75 bg-background/35 px-2 py-1.5 text-xs font-medium text-muted-foreground">
-        <ShieldIcon data-icon="inline-start" aria-hidden="true" />
-        Self View
-      </div>
-    );
+    return null;
   }
 
   return (

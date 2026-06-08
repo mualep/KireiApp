@@ -380,14 +380,17 @@
     }
 
   .tracker-status-badge-prominent {
-    padding: 5px 12px;
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    border-color: color-mix(in oklch, var(--tracker-status-color) 44%, transparent);
-    background: color-mix(in oklch, var(--tracker-status-color) 14%, var(--card));
-    color: var(--tracker-status-color);
-    box-shadow: 0 0 10px color-mix(in oklch, var(--tracker-status-color) 12%, transparent);
+    height: auto !important;
+    padding: 5.5px 13px !important;
+    font-size: 0.82rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.06em !important;
+    border-width: 1.5px !important;
+    border-color: color-mix(in oklch, var(--tracker-status-color) 65%, transparent) !important;
+    background: color-mix(in oklch, var(--tracker-status-color) 16%, var(--card)) !important;
+    color: var(--tracker-status-color) !important;
+    box-shadow: 0 0 12px 1.5px color-mix(in oklch, var(--tracker-status-color) 22%, transparent) !important;
+    text-transform: uppercase;
     }
 
   .tracker-record-badge {
@@ -402,10 +405,10 @@
     }
 
   .tracker-break-timer-large {
-    font-size: 1.75rem;
-    font-weight: 700;
+    font-size: 2.2rem;
+    font-weight: 800;
     font-family: var(--font-mono);
-    letter-spacing: 0.12em;
+    letter-spacing: 0.06em;
     line-height: 1;
     }
 }

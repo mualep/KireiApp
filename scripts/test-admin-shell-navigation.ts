@@ -325,6 +325,13 @@ assertNoPattern(
   "Admin shell navigation must not add backend contract, RPC, or scheduling behavior.",
 );
 
+// Verify sidebar tier text has tier-based color mapping
+assertIncludes(sidebarSource, "tierTextColorClasses");
+assertIncludes(sidebarSource, 'owner: "text-status-alpha"');
+assertIncludes(sidebarSource, 'admin: "text-status-break"');
+assertIncludes(sidebarSource, 'member: "text-status-cuti"');
+assertIncludes(sidebarSource, "tierTextColorClasses[staff.tier]");
+
 console.log("Admin shell navigation tests passed.");
 
 function getBetween(source: string, start: string, end: string): string {
