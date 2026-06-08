@@ -385,11 +385,12 @@
     font-size: 0.82rem !important;
     font-weight: 800 !important;
     letter-spacing: 0.06em !important;
+    border-radius: var(--radius-lg) !important;
     border-width: 1.5px !important;
     border-color: color-mix(in oklch, var(--tracker-status-color) 65%, transparent) !important;
     background: color-mix(in oklch, var(--tracker-status-color) 16%, var(--card)) !important;
     color: var(--tracker-status-color) !important;
-    box-shadow: 0 0 12px 1.5px color-mix(in oklch, var(--tracker-status-color) 22%, transparent) !important;
+    box-shadow: none !important;
     text-transform: uppercase;
     }
 
@@ -410,5 +411,25 @@
     font-family: var(--font-mono);
     letter-spacing: 0.06em;
     line-height: 1;
+    }
+
+  .tracker-timer-normal {
+    color: var(--status-break);
+    }
+
+  .tracker-timer-warning {
+    color: oklch(0.82 0.17 85);
+    }
+
+  .tracker-timer-overdue {
+    color: var(--status-alpha);
+    }
+
+  .tracker-action-btn {
+    transition: opacity 0.15s ease;
+    }
+
+  .tracker-action-btn:hover:not(:disabled) {
+    opacity: 0.85;
     }
 }

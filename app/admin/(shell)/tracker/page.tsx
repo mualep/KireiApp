@@ -63,7 +63,7 @@ export default async function AdminTrackerPage({
       {data.issues.length > 0 ? <TrackerIssuePanel issues={data.issues} /> : null}
 
       <TrackerFilterForm
-        key={`${filters.q}:${filters.role ?? ""}:${filters.shift ?? ""}:${filters.status ?? ""}`}
+        key={`${filters.q}:${filters.role ?? ""}:${filters.shift ?? ""}:${filters.status ?? ""}:${filters.sort}`}
         filters={filters}
         readableCount={numberFormatter.format(data.cards.length)}
         roleTabs={roleTabs}

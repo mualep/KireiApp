@@ -9,10 +9,19 @@ import {
   type WorkerShift,
 } from "@/lib/workers";
 
+export type TrackerSortOption = "critical-name" | "name-asc";
+
+const trackerSortOptions = new Set<TrackerSortOption>(["critical-name", "name-asc"]);
+
+function isTrackerSortOption(value: string): value is TrackerSortOption {
+  return trackerSortOptions.has(value as TrackerSortOption);
+}
+
 export type TrackerFilters = {
   q: string;
   role: WorkerRole | null;
   shift: WorkerShift | null;
+  sort: TrackerSortOption;
   status: WorkerDisplayStatus | null;
 };
 
@@ -78,18 +87,20 @@ export function parseTrackerFilters(searchParams: TrackerSearchParams): TrackerF
   const q = normalizeQueryParam(searchParams.q);
   const role = normalizeSingleParam(searchParams.role);
   const shift = normalizeSingleParam(searchParams.shift);
+  const sort = normalizeSingleParam(searchParams.sort);
   const status = normalizeSingleParam(searchParams.status);
 
   return {
     q: q.slice(0, 80),
     role: isWorkerRole(role) ? role : null,
     shift: isWorkerShift(shift) ? shift : null,
+    sort: isTrackerSortOption(sort) ? sort : "critical-name",
     status: isWorkerDisplayStatus(status) ? status : null,
   };
 }
 
 export function hasTrackerFilters(filters: TrackerFilters): boolean {
-  return Boolean(filters.q || filters.role || filters.shift || filters.status);
+  return Boolean(filters.q || filters.role || filters.shift || filters.status || filters.sort !== "critical-name");
 }
 
 export function scopeTrackerCards(
@@ -149,11 +160,23 @@ export function sortTrackerCards(cards: TrackerCardDTO[]): TrackerCardDTO[] {
   });
 }
 
+export function sortTrackerCardsByName(cards: TrackerCardDTO[]): TrackerCardDTO[] {
+  return [...cards].sort((left, right) =>
+    left.name.localeCompare(right.name, "id-ID", { sensitivity: "base" }),
+  );
+}
+
 export function filterAndSortTrackerCards(
   cards: TrackerCardDTO[],
   filters: TrackerFilters,
 ): TrackerCardDTO[] {
-  return sortTrackerCards(filterTrackerCards(cards, filters));
+  const filtered = filterTrackerCards(cards, filters);
+
+  if (filters.sort === "name-asc") {
+    return sortTrackerCardsByName(filtered);
+  }
+
+  return sortTrackerCards(filtered);
 }
 
 export function getCriticalStatusRank(status: WorkerDisplayStatus): number {

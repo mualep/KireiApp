@@ -29,6 +29,20 @@ import type { TrackerAction } from "@/lib/workers/tracker-actions";
 import type { TrackerCorrectionAction } from "@/lib/workers/tracker-corrections";
 import type { TrackerCardDTO } from "@/lib/workers";
 
+const BREAK_WARNING_THRESHOLD_SECONDS = 600;
+
+function getBreakTimerColorClass(remainingSeconds: number): string {
+  if (remainingSeconds < 0) {
+    return "tracker-timer-overdue";
+  }
+
+  if (remainingSeconds <= BREAK_WARNING_THRESHOLD_SECONDS) {
+    return "tracker-timer-warning";
+  }
+
+  return "tracker-timer-normal";
+}
+
 type TrackerActionControlsProps = {
   card: TrackerCardDTO;
 };
@@ -170,19 +184,24 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   return (
     <>
       {isBreakCard ? (
-        <div className="rounded-lg border border-status-break/25 bg-status-break/8 px-3 py-3.5 flex items-center justify-center gap-2.5">
-          <TimerIcon className="size-6 text-status-break shrink-0" data-icon="inline-start" aria-hidden="true" />
-          <div className="tracker-break-timer-large text-status-break font-black">
-            {formatBreakRemainingSeconds(
-              getBreakRemainingSeconds({
-                accumulatedSeconds: card.breakAccumulatedSecs,
-                nowMs,
-                startedAt: card.breakStartedAt,
-                timerRunning: card.breakTimerRunning,
-              }),
-            )}
-          </div>
-        </div>
+        (() => {
+          const remaining = getBreakRemainingSeconds({
+            accumulatedSeconds: card.breakAccumulatedSecs,
+            nowMs,
+            startedAt: card.breakStartedAt,
+            timerRunning: card.breakTimerRunning,
+          });
+          const timerColorClass = getBreakTimerColorClass(remaining);
+
+          return (
+            <div className="rounded-lg border border-status-break/25 bg-status-break/8 px-3 py-3.5 flex items-center justify-center gap-2.5">
+              <TimerIcon className={cn("size-6 shrink-0", timerColorClass)} data-icon="inline-start" aria-hidden="true" />
+              <div className={cn("tracker-break-timer-large font-black", timerColorClass)}>
+                {formatBreakRemainingSeconds(remaining)}
+              </div>
+            </div>
+          );
+        })()
       ) : null}
 
       {controlGroups.map((group, index) => (
@@ -200,7 +219,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
               disabled={isPending}
               variant="outline"
               className={cn(
-                "h-8 min-w-0 rounded-md px-2 text-xs font-bold",
+                "tracker-action-btn h-8 min-w-0 rounded-md px-2 text-xs font-bold",
                 control.tone === "on" &&
                   "border-status-on/35 bg-status-on/10 text-status-on shadow-sm shadow-status-on/15",
                 control.tone === "break" &&

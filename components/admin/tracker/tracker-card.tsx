@@ -47,7 +47,8 @@ export function TrackerCard({
   card,
   canApplyTrackerActions,
 }: TrackerCardProps) {
-  const roleShiftLabel = getRoleShiftLabel(card);
+  const roleShiftLabel = getFullRoleShiftLabel(card);
+  const compactRoleShiftLabel = getCompactRoleShiftLabel(card);
   const shiftTimeLabel = getShiftTimeLabel(card);
 
   return (
@@ -58,7 +59,7 @@ export function TrackerCard({
         cardToneClasses[card.displayStatus],
       )}
     >
-      <CardHeader className="relative z-10 p-3 pb-2">
+      <CardHeader className="relative z-10 p-4 pb-2">
         <div
           aria-label="Worker Identity"
           className="flex min-w-0 items-start justify-between gap-3"
@@ -66,7 +67,7 @@ export function TrackerCard({
         >
           <div className="min-w-0">
             <CardTitle
-              className="truncate text-base font-black leading-tight text-foreground"
+              className="truncate text-lg font-black leading-tight text-foreground"
               translate="no"
             >
               {card.name}
@@ -74,10 +75,11 @@ export function TrackerCard({
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="h-5 max-w-[9rem] border-border/80 bg-background/45 px-1.5 text-[0.65rem] text-muted-foreground"
+                className="h-5 max-w-[12rem] border-border/80 bg-background/45 px-1.5 text-[0.65rem] text-muted-foreground"
                 translate="no"
               >
-                <span className="truncate">{roleShiftLabel}</span>
+                <span className="hidden truncate @[14rem]:inline">{roleShiftLabel}</span>
+                <span className="truncate @[14rem]:hidden">{compactRoleShiftLabel}</span>
               </Badge>
               {shiftTimeLabel ? (
                 <span
@@ -95,7 +97,7 @@ export function TrackerCard({
         </div>
       </CardHeader>
 
-      <CardContent className="relative z-10 flex flex-col gap-2.5 p-3 pt-0">
+      <CardContent className="relative z-10 flex flex-col gap-2.5 p-4 pt-0">
         <section
           aria-label="Monthly Records"
           className="flex flex-wrap gap-1.5"
@@ -110,7 +112,7 @@ export function TrackerCard({
       </CardContent>
 
       {canApplyTrackerActions ? (
-        <CardFooter className="relative z-10 flex flex-col items-stretch gap-2 border-t border-border/70 bg-background/25 p-3">
+        <CardFooter className="relative z-10 flex flex-col items-stretch gap-2 border-t border-border/70 bg-background/25 p-4">
           <div aria-label="Tracker action footer" data-slot="tracker-card-actions">
             <TrackerControlZone
               card={card}
@@ -169,7 +171,17 @@ function TrackerControlZone({
   );
 }
 
-function getRoleShiftLabel(card: TrackerCardDTO): string {
+function getFullRoleShiftLabel(card: TrackerCardDTO): string {
+  const role = card.employeeRole;
+
+  if (card.isFlexible) {
+    return `${role} • Flexible`;
+  }
+
+  return `${role}-${card.shift}`;
+}
+
+function getCompactRoleShiftLabel(card: TrackerCardDTO): string {
   const role = compactRoleLabels[card.employeeRole];
 
   if (card.isFlexible) {

@@ -12,7 +12,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { TrackerFilters, TrackerRoleTab } from "@/lib/tracker/helpers";
+import type { TrackerFilters, TrackerRoleTab, TrackerSortOption } from "@/lib/tracker/helpers";
 import { workerDisplayStatuses, workerShifts } from "@/lib/workers";
 
 type TrackerFilterFormProps = {
@@ -33,6 +33,7 @@ export function TrackerFilterForm({
   const [queryDraft, setQueryDraft] = useState(filters.q);
   const [shiftDraft, setShiftDraft] = useState(filters.shift ?? "");
   const [statusDraft, setStatusDraft] = useState(filters.status ?? "");
+  const [sortDraft, setSortDraft] = useState<TrackerSortOption>(filters.sort);
 
   useEffect(() => {
     if (normalizeQuery(queryDraft) === filters.q) {
@@ -46,6 +47,7 @@ export function TrackerFilterForm({
             q: queryDraft,
             role: filters.role,
             shift: normalizeShift(shiftDraft),
+            sort: sortDraft,
             status: normalizeStatus(statusDraft),
           },
           pathname,
@@ -55,7 +57,7 @@ export function TrackerFilterForm({
     }, 300);
 
     return () => window.clearTimeout(timeoutId);
-  }, [filters.q, filters.role, pathname, queryDraft, router, shiftDraft, statusDraft]);
+  }, [filters.q, filters.role, pathname, queryDraft, router, shiftDraft, sortDraft, statusDraft]);
 
   function getFilterHref({
     role = filters.role,
@@ -67,6 +69,7 @@ export function TrackerFilterForm({
         q: queryDraft,
         role,
         shift: normalizeShift(shiftDraft),
+        sort: sortDraft,
         status: normalizeStatus(statusDraft),
       },
       pathname,
@@ -83,6 +86,7 @@ export function TrackerFilterForm({
           q: queryDraft,
           role: filters.role,
           shift: normalizeShift(shift),
+          sort: sortDraft,
           status: normalizeStatus(statusDraft),
         },
         pathname,
@@ -101,7 +105,27 @@ export function TrackerFilterForm({
           q: queryDraft,
           role: filters.role,
           shift: normalizeShift(shiftDraft),
+          sort: sortDraft,
           status: normalizeStatus(status),
+        },
+        pathname,
+      }),
+      { scroll: false },
+    );
+  }
+
+  function handleSortChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const sort = event.currentTarget.value as TrackerSortOption;
+
+    setSortDraft(sort);
+    router.replace(
+      getTrackerHref({
+        filters: {
+          q: queryDraft,
+          role: filters.role,
+          shift: normalizeShift(shiftDraft),
+          sort,
+          status: normalizeStatus(statusDraft),
         },
         pathname,
       }),
@@ -170,18 +194,19 @@ export function TrackerFilterForm({
               </Select>
             </Field>
 
-            <Field data-disabled>
+            <Field>
               <FieldLabel htmlFor="tracker-sort" className="sr-only">
                 Sort
               </FieldLabel>
               <Select
                 id="tracker-sort"
                 aria-label="Sort order"
-                defaultValue="critical-name"
-                disabled
+                value={sortDraft}
+                onChange={handleSortChange}
                 className="h-9 bg-background/55"
               >
                 <option value="critical-name">Critical → A-Z</option>
+                <option value="name-asc">Name A → Z</option>
               </Select>
             </Field>
 
@@ -265,6 +290,10 @@ function getTrackerHref({
 
   if (filters.status) {
     params.set("status", filters.status);
+  }
+
+  if (filters.sort && filters.sort !== "critical-name") {
+    params.set("sort", filters.sort);
   }
 
   const query = params.toString();

@@ -377,6 +377,7 @@ assert.deepEqual(parseTrackerFilters({ q: "  KRU-001  " }), {
   q: "KRU-001",
   role: null,
   shift: null,
+  sort: "critical-name",
   status: null,
 });
 
@@ -391,6 +392,7 @@ assert.deepEqual(
     q: "x".repeat(80),
     role: null,
     shift: null,
+    sort: "critical-name",
     status: null,
   },
 );
@@ -405,6 +407,7 @@ assert.deepEqual(
     q: "",
     role: "Customer Service",
     shift: "flexible",
+    sort: "critical-name",
     status: "ALPHA",
   },
 );
@@ -524,6 +527,56 @@ assert.deepEqual(
     ["LATE", 1],
     ["ALPHA", 1],
   ],
+);
+
+// ── D3-B: Sorting must work ────────────────────────────────────────────────
+assertNoPattern(
+  trackerFilterFormSource,
+  /id="tracker-sort"[^>]*disabled/,
+  "Tracker sort select must not be disabled (D3-B sorting fix).",
+);
+assertIncludes(trackerFilterFormSource, "handleSortChange");
+assertIncludes(trackerFilterFormSource, "critical-name");
+assertIncludes(trackerFilterFormSource, "name-asc");
+
+const trackerHelpersPath = resolve(projectRoot, "lib/tracker/helpers.ts");
+const trackerHelpersSource = readFileSync(trackerHelpersPath, "utf8");
+assertIncludes(trackerHelpersSource, "sort:");
+assertIncludes(trackerHelpersSource, "TrackerSortOption");
+
+// ── D3-B: Status badge shape (rounded rectangle, not pill) ─────────────────
+const globalsSource = readFileSync(resolve(projectRoot, "app/globals.css"), "utf8");
+assertIncludes(globalsSource, "tracker-status-badge-prominent");
+assertNoPattern(
+  globalsSource,
+  /tracker-status-badge-prominent[\s\S]*?box-shadow:\s*0\s+0\s+12px/,
+  "Status badge prominent must not have excessive glow (D3-B).",
+);
+assertIncludes(trackerCardSource, "rounded-lg");
+
+// ── D3-B: Worker name size ─────────────────────────────────────────────────
+assertIncludes(trackerCardSource, "text-lg");
+
+// ── D3-B: Responsive role label ────────────────────────────────────────────
+assertIncludes(trackerCardSource, "card.employeeRole");
+assertIncludes(trackerCardSource, "compactRoleLabels");
+
+// ── D3-B: Break timer contextual colour ────────────────────────────────────
+assertIncludes(trackerActionControlsSource, "getBreakTimerColorClass");
+assertIncludes(trackerActionControlsSource, "tracker-timer-normal");
+assertIncludes(trackerActionControlsSource, "tracker-timer-warning");
+assertIncludes(trackerActionControlsSource, "tracker-timer-overdue");
+assertIncludes(globalsSource, "tracker-timer-normal");
+assertIncludes(globalsSource, "tracker-timer-warning");
+assertIncludes(globalsSource, "tracker-timer-overdue");
+
+// ── D3-B: Action button monochrome styling ─────────────────────────────────
+assertIncludes(trackerActionControlsSource, "tracker-action-btn");
+assertIncludes(globalsSource, "tracker-action-btn");
+assertNoPattern(
+  trackerActionControlsSource,
+  /\bLEMBUR\b/,
+  "Tracker controls must not render LEMBUR action (D3-B guardrail).",
 );
 
 console.log("Tracker read-only tests passed.");
