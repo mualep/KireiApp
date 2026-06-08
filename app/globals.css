@@ -378,4 +378,34 @@
   .tracker-status-sakit {
     --tracker-status-color: var(--status-sakit);
     }
+
+  .tracker-status-badge-prominent {
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    border-color: color-mix(in oklch, var(--tracker-status-color) 44%, transparent);
+    background: color-mix(in oklch, var(--tracker-status-color) 14%, var(--card));
+    color: var(--tracker-status-color);
+    box-shadow: 0 0 10px color-mix(in oklch, var(--tracker-status-color) 12%, transparent);
+    }
+
+  .tracker-record-badge {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 0.6rem;
+    border: 1px solid color-mix(in oklch, var(--record-color, var(--muted-foreground)) 18%, transparent);
+    background: color-mix(in oklch, var(--record-color, var(--muted-foreground)) 6%, transparent);
+    }
+
+  .tracker-break-timer-large {
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    letter-spacing: 0.12em;
+    line-height: 1;
+    }
 }

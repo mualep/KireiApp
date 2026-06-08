@@ -33,6 +33,9 @@ assert.deepEqual(trackerActions, expectedTrackerActions);
 assert.equal(isTrackerAction("START"), true);
 assert.equal(isTrackerAction("ALPHA"), false);
 assert.equal(isTrackerAction("LEMBUR"), false);
+assert.equal(isTrackerAction("PAUSE"), false);
+assert.equal(isTrackerAction("RESUME"), false);
+assert.equal(isTrackerAction("STOP"), false);
 assert.equal(trackerActions.includes("ALPHA" as never), false);
 
 assert.deepEqual(trackerActionTargetStatuses, {

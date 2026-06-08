@@ -4,6 +4,7 @@ import type { WorkerDisplayStatus } from "@/lib/workers";
 
 type TrackerStatusBadgeProps = {
   compact?: boolean;
+  prominent?: boolean;
   status: WorkerDisplayStatus;
 };
 
@@ -21,6 +22,7 @@ const statusClasses: Record<WorkerDisplayStatus, string> = {
 
 export function TrackerStatusBadge({
   compact = false,
+  prominent = false,
   status,
 }: TrackerStatusBadgeProps) {
   return (
@@ -29,6 +31,7 @@ export function TrackerStatusBadge({
       className={cn(
         "tracker-status-badge font-semibold",
         compact && "h-5 px-1.5 text-[0.65rem]",
+        prominent && "tracker-status-badge-prominent",
         statusClasses[status],
       )}
       translate="no"

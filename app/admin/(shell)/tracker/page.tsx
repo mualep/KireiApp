@@ -34,11 +34,6 @@ type AdminTrackerPageProps = {
   searchParams: Promise<TrackerSearchParams>;
 };
 
-const dateFormatter = new Intl.DateTimeFormat("id-ID", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "Asia/Jakarta",
-});
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
 
@@ -81,11 +76,10 @@ export default async function AdminTrackerPage({
           className="tracker-card-grid gap-3"
         >
           {cards.map((card) => (
-            <TrackerCard
+          <TrackerCard
               key={card.userId}
               card={card}
               canApplyTrackerActions={canApplyTrackerActions}
-              updatedAtText={formatDate(card.statusUpdatedAt)}
             />
           ))}
         </section>
@@ -142,8 +136,4 @@ function TrackerEmptyState({
       ) : null}
     </Card>
   );
-}
-
-function formatDate(value: string): string {
-  return dateFormatter.format(new Date(value));
 }

@@ -170,24 +170,22 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   return (
     <>
       {isBreakCard ? (
-        <div className="rounded-md border border-status-break/25 bg-status-break/10 px-2 py-1.5 text-xs">
-          <div className="flex min-w-0 items-center justify-between gap-2">
-            <span className="inline-flex min-w-0 items-center gap-1 font-medium text-muted-foreground">
-              <TimerIcon data-icon="inline-start" aria-hidden="true" />
-              <span className="truncate">Break Remaining</span>
-            </span>
-            <span className="shrink-0 font-mono font-black text-status-break">
-              {formatBreakRemainingSeconds(
-                getBreakRemainingSeconds({
-                  accumulatedSeconds: card.breakAccumulatedSecs,
-                  nowMs,
-                  startedAt: card.breakStartedAt,
-                  timerRunning: card.breakTimerRunning,
-                }),
-              )}
-            </span>
+        <div className="rounded-lg border border-status-break/25 bg-status-break/8 px-3 py-3">
+          <div className="mb-1 text-[0.6rem] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            <TimerIcon data-icon="inline-start" aria-hidden="true" />
+            Break Timer
           </div>
-          <p className="mt-1 text-[0.65rem] text-muted-foreground">
+          <div className="tracker-break-timer-large text-status-break">
+            {formatBreakRemainingSeconds(
+              getBreakRemainingSeconds({
+                accumulatedSeconds: card.breakAccumulatedSecs,
+                nowMs,
+                startedAt: card.breakStartedAt,
+                timerRunning: card.breakTimerRunning,
+              }),
+            )}
+          </div>
+          <p className="mt-1.5 text-[0.65rem] text-muted-foreground">
             Ends break and returns to active work.
           </p>
         </div>

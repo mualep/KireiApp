@@ -1,10 +1,4 @@
-import {
-  Clock3Icon,
-  IdCardIcon,
-  ShieldIcon,
-  TimerResetIcon,
-  UserRoundIcon,
-} from "lucide-react";
+import { ShieldIcon } from "lucide-react";
 
 import { TrackerActionControls } from "@/components/admin/tracker/tracker-action-controls";
 import { TrackerStatusBadge } from "@/components/admin/tracker/tracker-status-badge";
@@ -17,16 +11,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type {
-  TrackerCardDTO,
-  WorkerDisplayStatus,
-  WorkerRole,
+import {
+  getShiftDefinition,
+  type TrackerCardDTO,
+  type WorkerDisplayStatus,
+  type WorkerRole,
 } from "@/lib/workers";
 
 type TrackerCardProps = {
   card: TrackerCardDTO;
   canApplyTrackerActions: boolean;
-  updatedAtText: string;
 };
 
 const cardToneClasses: Record<WorkerDisplayStatus, string> = {
@@ -54,9 +48,9 @@ const compactRoleLabels: Record<WorkerRole, string> = {
 export function TrackerCard({
   card,
   canApplyTrackerActions,
-  updatedAtText,
 }: TrackerCardProps) {
   const roleShiftLabel = getRoleShiftLabel(card);
+  const shiftTimeLabel = getShiftTimeLabel(card);
 
   return (
     <Card
@@ -72,76 +66,48 @@ export function TrackerCard({
           className="flex min-w-0 items-start justify-between gap-3"
           data-slot="tracker-card-identity"
         >
-          <div className="flex min-w-0 items-start gap-2.5">
-            <span className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-[color-mix(in_oklch,var(--tracker-status-color)_22%,var(--border))] bg-background/50 text-[color-mix(in_oklch,var(--tracker-status-color)_78%,var(--foreground))] shadow-sm shadow-background/30">
-              <UserRoundIcon aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <CardTitle
-                className="truncate text-base font-black leading-tight text-foreground"
+          <div className="min-w-0">
+            <CardTitle
+              className="truncate text-base font-black leading-tight text-foreground"
+              translate="no"
+            >
+              {card.name}
+            </CardTitle>
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+              <Badge
+                variant="outline"
+                className="h-5 max-w-[9rem] border-border/80 bg-background/45 px-1.5 text-[0.65rem] text-muted-foreground"
                 translate="no"
               >
-                {card.name}
-              </CardTitle>
-              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
-                <Badge
-                  variant="outline"
-                  className="h-5 max-w-[9rem] border-border/80 bg-background/45 px-1.5 text-[0.65rem] text-muted-foreground"
+                <span className="truncate">{roleShiftLabel}</span>
+              </Badge>
+              {shiftTimeLabel ? (
+                <span
+                  className="text-[0.6rem] font-medium text-muted-foreground/70"
                   translate="no"
                 >
-                  <span className="truncate">{roleShiftLabel}</span>
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="h-5 max-w-[7rem] border-border/70 bg-background/35 px-1.5 font-mono text-[0.65rem] text-muted-foreground"
-                  translate="no"
-                >
-                  <IdCardIcon data-icon="inline-start" aria-hidden="true" />
-                  <span className="truncate">{card.gid}</span>
-                </Badge>
-              </div>
+                  {shiftTimeLabel}
+                </span>
+              ) : null}
             </div>
           </div>
           <div className="shrink-0 pt-0.5">
-            <TrackerStatusBadge status={card.displayStatus} />
+            <TrackerStatusBadge status={card.displayStatus} prominent />
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="relative z-10 flex flex-col gap-2.5 p-3 pt-0">
         <section
-          aria-label="Worker Metadata"
-          className="grid grid-cols-2 gap-1.5"
-          data-slot="tracker-card-metadata"
+          aria-label="Monthly Records"
+          className="flex flex-wrap gap-1.5"
+          data-slot="tracker-card-records"
         >
-          <MetricChip label="Role" tone="muted" value={roleShiftLabel} />
-          <MetricChip label="Cuti" tone="cuti" value={`${card.cutiStock}x`} />
-          <MetricChip
-            label="Stored"
-            tone="status"
-            value={card.storedStatus.toUpperCase()}
+          <RecordBadge
+            color="var(--status-cuti)"
+            label="Cuti"
+            value={`${card.cutiStock}x`}
           />
-          <MetricChip label="Version" tone="muted" value={`v${card.version}`} />
-        </section>
-
-        <section
-          aria-label="Worker Activity"
-          className="rounded-lg border border-border/70 bg-background/30 p-2"
-          data-slot="tracker-card-activity"
-        >
-          <div className="grid gap-1.5 text-[0.68rem] sm:grid-cols-2">
-            <ActivityDetail
-              icon={<Clock3Icon data-icon="inline-start" aria-hidden="true" />}
-              label="Updated"
-              translateValue={false}
-              value={updatedAtText}
-            />
-            <ActivityDetail
-              icon={<TimerResetIcon data-icon="inline-start" aria-hidden="true" />}
-              label="Break Used"
-              value={formatDuration(card.breakAccumulatedSecs)}
-            />
-          </div>
         </section>
       </CardContent>
 
@@ -157,76 +123,26 @@ export function TrackerCard({
   );
 }
 
-function MetricChip({
+function RecordBadge({
+  color,
   label,
-  tone,
-  translateValue = true,
   value,
 }: {
+  color: string;
   label: string;
-  tone: "cuti" | "muted" | "status";
-  translateValue?: boolean;
   value: string;
 }) {
   return (
     <span
-      className={cn(
-        "inline-flex h-6 min-w-0 max-w-full items-center justify-between gap-1 rounded-md border px-1.5 text-[0.65rem] text-muted-foreground",
-        tone === "cuti" && "border-status-cuti/20 bg-status-cuti/5",
-        tone === "status" &&
-          "border-[color-mix(in_oklch,var(--tracker-status-color)_18%,var(--border))] bg-background/45",
-        tone === "muted" && "border-border/75 bg-background/45",
-      )}
+      className="tracker-record-badge"
+      style={{ "--record-color": color } as React.CSSProperties}
     >
-      <span className="truncate">{label}</span>
-      <span
-        className="truncate font-mono font-bold text-foreground"
-        translate={translateValue ? "no" : undefined}
-        title={value}
-      >
+      <span className="text-muted-foreground/60">{label}</span>
+      <span className="font-mono font-bold" style={{ color }}>
         {value}
       </span>
     </span>
   );
-}
-
-function ActivityDetail({
-  icon,
-  label,
-  translateValue = true,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  translateValue?: boolean;
-  value: string;
-}) {
-  return (
-    <div className="flex min-w-0 items-center justify-between gap-2 text-muted-foreground">
-      <span className="inline-flex min-w-0 items-center gap-1">
-        {icon}
-        <span className="truncate">{label}</span>
-      </span>
-      <span
-        className="truncate text-right font-mono font-bold text-foreground"
-        translate={translateValue ? "no" : undefined}
-        title={value}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function formatDuration(seconds: number): string {
-  const safeSeconds = Math.max(0, Math.floor(seconds));
-  const hours = Math.floor(safeSeconds / 3600);
-  const minutes = Math.floor((safeSeconds % 3600) / 60);
-  const remainingSeconds = safeSeconds % 60;
-
-  return [hours, minutes, remainingSeconds]
-    .map((part) => String(part).padStart(2, "0"))
-    .join(":");
 }
 
 function TrackerControlZone({
@@ -266,4 +182,17 @@ function getRoleShiftLabel(card: TrackerCardDTO): string {
   }
 
   return `${role}-${card.shift}`;
+}
+
+function getShiftTimeLabel(card: TrackerCardDTO): string | null {
+  const shift = getShiftDefinition(card.shift);
+
+  if (shift.isFlexible || shift.startHour === null || shift.endHour === null) {
+    return null;
+  }
+
+  const start = `${String(shift.startHour).padStart(2, "0")}:${String(shift.startMinute ?? 0).padStart(2, "0")}`;
+  const end = `${String(shift.endHour).padStart(2, "0")}:${String(shift.endMinute ?? 0).padStart(2, "0")}`;
+
+  return `${start}\u2013${end}`;
 }

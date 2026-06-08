@@ -103,7 +103,7 @@ assertIncludes(trackerActionControlsSource, 'label: "BATAL PENDING"');
 assertIncludes(trackerActionControlsSource, "attendanceId: card.activeTrackerAttendanceId");
 assertIncludes(trackerActionControlsSource, "window.prompt");
 assertIncludes(trackerActionControlsSource, "Ends break and returns to active work.");
-assertIncludes(trackerActionControlsSource, "Break Remaining");
+assertIncludes(trackerActionControlsSource, "Break Timer");
 assertIncludes(trackerActionControlsSource, "formatBreakRemainingSeconds");
 assertIncludes(trackerActionControlsSource, "getBreakRemainingSeconds");
 assertIncludes(trackerActionControlsSource, "breakAccumulatedSecs");
@@ -220,18 +220,73 @@ assertIncludes(trackerCardSource, "TrackerActionControls");
 assertIncludes(trackerCardSource, "TrackerStatusBadge");
 assertIncludes(trackerCardSource, 'data-slot="tracker-card-identity"');
 assertIncludes(trackerCardSource, 'aria-label="Worker Identity"');
-assertIncludes(trackerCardSource, 'data-slot="tracker-card-metadata"');
-assertIncludes(trackerCardSource, 'aria-label="Worker Metadata"');
-assertIncludes(trackerCardSource, 'data-slot="tracker-card-activity"');
-assertIncludes(trackerCardSource, 'aria-label="Worker Activity"');
 assertIncludes(trackerCardSource, 'data-slot="tracker-card-actions"');
 assertIncludes(trackerCardSource, 'aria-label="Tracker action footer"');
 assertIncludes(trackerCardSource, "CardFooter");
 assertIncludes(trackerCardSource, "roleShiftLabel");
-assertIncludes(trackerCardSource, "updatedAtText");
-assertIncludes(trackerCardSource, "breakAccumulatedSecs");
 assertIncludes(trackerCardSource, "Self View");
 assertIncludes(trackerCardSource, "R2C");
+
+// ── D3 Refinement: removed UI elements ─────────────────────────────────────
+assertNoPattern(
+  trackerCardSource,
+  /UserRoundIcon/,
+  "Tracker card must no longer render avatar/person icon (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /IdCardIcon/,
+  "Tracker card must no longer render GID icon (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /card\.gid/,
+  "Tracker card must no longer render worker GID/profile ID (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /MetricChip/,
+  "Tracker card must no longer render Role/Cuti/Stored/Version metadata boxes (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /data-slot="tracker-card-metadata"/,
+  "Tracker card must no longer have metadata data-slot (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /data-slot="tracker-card-activity"/,
+  "Tracker card must no longer have activity data-slot (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /"Updated"/,
+  "Tracker card must no longer render Updated at section (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /"Break Used"/,
+  "Tracker card must no longer render Break Used section (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /formatDuration/,
+  "Tracker card must no longer use formatDuration helper (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /updatedAtText/,
+  "Tracker card must no longer accept or render updatedAtText (D3 removal).",
+);
+
+// ── D3 Refinement: added/improved UI elements ──────────────────────────────
+assertIncludes(trackerCardSource, 'data-slot="tracker-card-records"');
+assertIncludes(trackerCardSource, 'aria-label="Monthly Records"');
+assertIncludes(trackerCardSource, "getShiftDefinition");
+assertIncludes(trackerCardSource, "cutiStock");
+assertIncludes(trackerCardSource, "TrackerActionControls");
+assertIncludes(trackerCardSource, "TrackerStatusBadge");
+assertIncludes(trackerCardSource, "card.name");
 assertNoPattern(
   trackerCardSource,
   /from\s+["']@\/app\/admin\/\(shell\)\/tracker\/actions["']|applyTrackerAction\(|applyTrackerCorrection\(|@\/lib\/supabase|createClient|\.rpc\s*\(|fetch\(|\/api\/|Absensi|absensi|worker_status/i,
