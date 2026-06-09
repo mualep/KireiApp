@@ -220,22 +220,9 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
               variant="outline"
               className={cn(
                 "tracker-action-btn h-8 min-w-0 rounded-md px-2 text-xs font-bold",
-                control.tone === "on" &&
-                  "border-status-on/35 bg-status-on/10 text-status-on shadow-sm shadow-status-on/15",
-                control.tone === "break" &&
-                  "border-status-break/35 bg-status-break/10 text-status-break shadow-sm shadow-status-break/15",
-                control.tone === "danger" &&
-                  "border-status-alpha/35 bg-status-alpha/10 text-status-alpha shadow-sm shadow-status-alpha/15",
-                control.tone === "cuti" &&
-                  "border-status-cuti/35 bg-status-cuti/10 text-status-cuti shadow-sm shadow-status-cuti/15",
-                control.tone === "sakit" &&
-                  "border-status-sakit/35 bg-status-sakit/10 text-status-sakit shadow-sm shadow-status-sakit/15",
-                control.tone === "pending" &&
-                  "border-status-pending/35 bg-status-pending/10 text-status-pending shadow-sm shadow-status-pending/15",
-                control.tone === "muted" &&
-                  "border-border bg-muted/35 text-muted-foreground",
                 control.className,
               )}
+              data-tone={control.tone}
               onClick={() =>
                 "action" in control
                   ? runTrackerAction(control.action)
@@ -282,7 +269,6 @@ function getActiveControlGroups(card: TrackerCardDTO): TrackerControlConfig[][] 
       [
         {
           action: "START",
-          className: "pr-12",
           icon: <PlayIcon data-icon="inline-start" aria-hidden="true" />,
           label: "START",
           tone: "on",

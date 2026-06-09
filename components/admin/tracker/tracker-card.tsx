@@ -59,7 +59,7 @@ export function TrackerCard({
         cardToneClasses[card.displayStatus],
       )}
     >
-      <CardHeader className="relative z-10 p-4 pb-2">
+      <CardHeader className="relative z-10 px-4 pt-3 pb-2">
         <div
           aria-label="Worker Identity"
           className="flex min-w-0 items-start justify-between gap-3"
@@ -97,7 +97,7 @@ export function TrackerCard({
         </div>
       </CardHeader>
 
-      <CardContent className="relative z-10 flex flex-col gap-2.5 p-4 pt-0">
+      <CardContent className="relative z-10 flex flex-col gap-2.5 px-4 pt-0 pb-3">
         <section
           aria-label="Monthly Records"
           className="flex flex-wrap gap-1.5"
@@ -112,12 +112,17 @@ export function TrackerCard({
       </CardContent>
 
       {canApplyTrackerActions ? (
-        <CardFooter className="relative z-10 flex flex-col items-stretch gap-2 border-t border-border/70 bg-background/25 p-4">
+        <CardFooter className="relative z-10 flex flex-col items-stretch gap-1.5 border-t border-border/70 bg-background/25 px-4 py-3">
           <div aria-label="Tracker action footer" data-slot="tracker-card-actions">
             <TrackerControlZone
               card={card}
               canApplyTrackerActions={canApplyTrackerActions}
             />
+          </div>
+          <div className="flex justify-end">
+            <span className="select-none text-[0.55rem] font-bold tracking-widest text-muted-foreground/30">
+              R2C
+            </span>
           </div>
         </CardFooter>
       ) : null}
@@ -158,17 +163,7 @@ function TrackerControlZone({
     return null;
   }
 
-  return (
-    <div
-      aria-label="Tracker controls"
-      className="relative grid gap-1.5 rounded-lg border border-border/80 bg-background/30 p-1.5"
-    >
-      <span className="pointer-events-none absolute right-2 top-2 rounded border border-border bg-background/65 px-1.5 py-0.5 text-[0.58rem] font-bold text-muted-foreground">
-        R2C
-      </span>
-      <TrackerActionControls card={card} />
-    </div>
-  );
+  return <TrackerActionControls card={card} />;
 }
 
 function getFullRoleShiftLabel(card: TrackerCardDTO): string {

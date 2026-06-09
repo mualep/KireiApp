@@ -377,7 +377,7 @@ assert.deepEqual(parseTrackerFilters({ q: "  KRU-001  " }), {
   q: "KRU-001",
   role: null,
   shift: null,
-  sort: "critical-name",
+  sort: "status-urgent",
   status: null,
 });
 
@@ -392,7 +392,7 @@ assert.deepEqual(
     q: "x".repeat(80),
     role: null,
     shift: null,
-    sort: "critical-name",
+    sort: "status-urgent",
     status: null,
   },
 );
@@ -407,7 +407,7 @@ assert.deepEqual(
     q: "",
     role: "Customer Service",
     shift: "flexible",
-    sort: "critical-name",
+    sort: "status-urgent",
     status: "ALPHA",
   },
 );
@@ -536,7 +536,7 @@ assertNoPattern(
   "Tracker sort select must not be disabled (D3-B sorting fix).",
 );
 assertIncludes(trackerFilterFormSource, "handleSortChange");
-assertIncludes(trackerFilterFormSource, "critical-name");
+assertIncludes(trackerFilterFormSource, "status-urgent");
 assertIncludes(trackerFilterFormSource, "name-asc");
 
 const trackerHelpersPath = resolve(projectRoot, "lib/tracker/helpers.ts");
@@ -552,7 +552,7 @@ assertNoPattern(
   /tracker-status-badge-prominent[\s\S]*?box-shadow:\s*0\s+0\s+12px/,
   "Status badge prominent must not have excessive glow (D3-B).",
 );
-assertIncludes(trackerCardSource, "rounded-lg");
+assertIncludes(trackerCardSource, "rounded-xl");
 
 // ── D3-B: Worker name size ─────────────────────────────────────────────────
 assertIncludes(trackerCardSource, "text-lg");
@@ -578,6 +578,73 @@ assertNoPattern(
   /\bLEMBUR\b/,
   "Tracker controls must not render LEMBUR action (D3-B guardrail).",
 );
+
+// ── D3-C: Sort options (4 options, labels and values) ──────────────────────
+assertIncludes(trackerFilterFormSource, "Name &#x2192; A-Z");
+assertIncludes(trackerFilterFormSource, "Name &#x2192; Z-A");
+assertIncludes(trackerFilterFormSource, "Status &#x2192; Urgent");
+assertIncludes(trackerFilterFormSource, "Status &#x2192; Tidak Urgent");
+assertIncludes(trackerFilterFormSource, "name-asc");
+assertIncludes(trackerFilterFormSource, "name-desc");
+assertIncludes(trackerFilterFormSource, "status-urgent");
+assertIncludes(trackerFilterFormSource, "status-not-urgent");
+assertNoPattern(
+  trackerFilterFormSource,
+  /Critical[^"]*A-Z|critical-name/,
+  "Old Critical \u2192 A-Z option and critical-name value must be removed (D3-C).",
+);
+assertIncludes(trackerHelpersSource, "name-desc");
+assertIncludes(trackerHelpersSource, "status-urgent");
+assertIncludes(trackerHelpersSource, "status-not-urgent");
+
+// ── D3-C: Sort functional tests ──────────────────────────────────────────────
+assert.deepEqual(
+  filterAndSortTrackerCards(cards, parseTrackerFilters({ sort: "name-desc" })).map((c) => c.name),
+  ["Citra", "Bima", "Alya"],
+);
+assert.deepEqual(
+  filterAndSortTrackerCards(cards, parseTrackerFilters({ sort: "status-urgent" })).map(
+    (c) => c.displayStatus,
+  ),
+  ["ALPHA", "LATE", "OFF"],
+);
+assert.deepEqual(
+  filterAndSortTrackerCards(cards, parseTrackerFilters({ sort: "status-not-urgent" })).map(
+    (c) => c.displayStatus,
+  ),
+  ["OFF", "LATE", "ALPHA"],
+);
+
+// ── D3-C: Backward compat — critical-name falls back to status-urgent ─────────
+assert.deepEqual(parseTrackerFilters({ sort: "critical-name" }), {
+  q: "",
+  role: null,
+  shift: null,
+  sort: "status-urgent",
+  status: null,
+});
+
+// ── D3-C: Action controls outer bordered container removed ────────────────────
+assertNoPattern(
+  trackerCardSource,
+  /aria-label="Tracker controls"/,
+  "Outer action controls bordered wrapper must be removed (D3-C).",
+);
+
+// ── D3-C: Card balanced padding (larger side, smaller top) ───────────────────
+assertIncludes(trackerCardSource, "pt-3");
+assertIncludes(trackerCardSource, "px-4");
+
+// ── D3-C: Status badge rectangular (radius-sm, not radius-lg, not pill) ───────
+assertNoPattern(
+  globalsSource,
+  /tracker-status-badge-prominent[\s\S]*?border-radius:\s*var\(--radius-lg\)/,
+  "Status badge prominent must not use radius-lg — should use radius-sm for rect shape (D3-C).",
+);
+
+// ── D3-C: Action button data-tone (monochrome normal, colour on hover) ─────────
+assertIncludes(trackerActionControlsSource, "data-tone");
+assertIncludes(globalsSource, "data-tone");
 
 console.log("Tracker read-only tests passed.");
 

@@ -205,8 +205,10 @@ export function TrackerFilterForm({
                 onChange={handleSortChange}
                 className="h-9 bg-background/55"
               >
-                <option value="critical-name">Critical → A-Z</option>
-                <option value="name-asc">Name A → Z</option>
+                <option value="name-asc">Name &#x2192; A-Z</option>
+                <option value="name-desc">Name &#x2192; Z-A</option>
+                <option value="status-urgent">Status &#x2192; Urgent</option>
+                <option value="status-not-urgent">Status &#x2192; Tidak Urgent</option>
               </Select>
             </Field>
 
@@ -292,7 +294,7 @@ function getTrackerHref({
     params.set("status", filters.status);
   }
 
-  if (filters.sort && filters.sort !== "critical-name") {
+  if (filters.sort && filters.sort !== "status-urgent") {
     params.set("sort", filters.sort);
   }
 

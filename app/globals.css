@@ -385,10 +385,10 @@
     font-size: 0.82rem !important;
     font-weight: 800 !important;
     letter-spacing: 0.06em !important;
-    border-radius: var(--radius-lg) !important;
+    border-radius: var(--radius-sm) !important;
     border-width: 1.5px !important;
-    border-color: color-mix(in oklch, var(--tracker-status-color) 65%, transparent) !important;
-    background: color-mix(in oklch, var(--tracker-status-color) 16%, var(--card)) !important;
+    border-color: color-mix(in oklch, var(--tracker-status-color) 75%, transparent) !important;
+    background: color-mix(in oklch, var(--tracker-status-color) 20%, var(--card)) !important;
     color: var(--tracker-status-color) !important;
     box-shadow: none !important;
     text-transform: uppercase;
@@ -426,10 +426,25 @@
     }
 
   .tracker-action-btn {
-    transition: opacity 0.15s ease;
+    color: var(--muted-foreground);
+    border-color: color-mix(in oklch, var(--border) 70%, transparent);
+    background-color: transparent;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
     }
 
-  .tracker-action-btn:hover:not(:disabled) {
-    opacity: 0.85;
+  .tracker-action-btn[data-tone="on"]      { --btn-action-color: var(--status-on); }
+  .tracker-action-btn[data-tone="break"]   { --btn-action-color: var(--status-break); }
+  .tracker-action-btn[data-tone="danger"]  { --btn-action-color: var(--status-alpha); }
+  .tracker-action-btn[data-tone="cuti"]    { --btn-action-color: var(--status-cuti); }
+  .tracker-action-btn[data-tone="sakit"]   { --btn-action-color: var(--status-sakit); }
+  .tracker-action-btn[data-tone="pending"] { --btn-action-color: var(--status-pending); }
+  .tracker-action-btn[data-tone="muted"]   { --btn-action-color: var(--muted-foreground); opacity: 0.55; }
+
+  .tracker-action-btn:hover:not(:disabled),
+  .tracker-action-btn:focus-visible:not(:disabled) {
+    background-color: color-mix(in oklch, var(--btn-action-color, var(--primary)) 10%, transparent);
+    color: var(--btn-action-color, var(--primary));
+    border-color: color-mix(in oklch, var(--btn-action-color, var(--primary)) 38%, transparent);
+    opacity: 1;
     }
 }
