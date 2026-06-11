@@ -8,7 +8,7 @@ import {
   type AbsensiCorrectionDraft,
 } from "@/components/admin/absensi/absensi-correction-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { AbsensiCellDTO, AbsensiWorkerRowDTO } from "@/lib/absensi/data";
 import {
@@ -16,7 +16,6 @@ import {
   getAbsensiDayNumber,
   type AbsensiMonthRange,
 } from "@/lib/absensi/helpers";
-import { getAbsensiRoleShortLabel } from "@/lib/absensi/filters";
 
 type AbsensiMonthGridProps = {
   canCorrect: boolean;
@@ -85,7 +84,7 @@ export function AbsensiMonthGrid({
           <table className="w-full min-w-[72rem] border-collapse text-left text-xs">
             <thead>
               <tr className="border-b border-border/75 bg-background/35 text-muted-foreground">
-                <th className="sticky left-0 z-10 w-56 bg-card/95 px-3 py-2 font-semibold backdrop-blur">
+                <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 font-semibold backdrop-blur">
                   Worker
                 </th>
                 {month.days.map((day) => {
@@ -116,16 +115,37 @@ export function AbsensiMonthGrid({
                   key={row.userId}
                   className="border-b border-border/55 last:border-b-0"
                 >
-                  <th className="sticky left-0 z-10 bg-card/95 px-3 py-2 backdrop-blur">
-                    <span className="block truncate font-bold" translate="no">
-                      {row.name}
-                    </span>
-                    <span
-                      className="mt-1 block truncate font-mono text-[0.65rem] text-muted-foreground"
-                      translate="no"
-                    >
-                      {getAbsensiWorkerMetaLabel(row)}
-                    </span>
+                  <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 backdrop-blur">
+                    <div className="min-w-0">
+                      <CardTitle
+                        className="tracker-worker-name min-w-0 truncate font-bold leading-tight text-foreground"
+                        translate="no"
+                      >
+                        {row.name}
+                      </CardTitle>
+                      <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+                        <Badge
+                          variant="outline"
+                          className="tracker-role-shift-badge h-6 max-w-[14rem] rounded-sm border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground"
+                          translate="no"
+                        >
+                          <span className="hidden truncate @[14rem]:inline">
+                            {row.roleShiftLabel}
+                          </span>
+                          <span className="truncate @[14rem]:hidden">
+                            {row.compactRoleShiftLabel}
+                          </span>
+                        </Badge>
+                        {row.shiftTimeLabel ? (
+                          <span
+                            className="text-[0.6rem] font-medium text-muted-foreground/70"
+                            translate="no"
+                          >
+                            {row.shiftTimeLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
                   </th>
                   {month.days.map((day) => {
                     const dateState = getAbsensiDateState(day, currentWibDate);
@@ -282,10 +302,6 @@ function getCellTitle({
   }
 
   return cell ? `Correct ${cell.label} - ${cell.sourceAction}` : "Correct empty day";
-}
-
-function getAbsensiWorkerMetaLabel(row: AbsensiWorkerRowDTO): string {
-  return `${getAbsensiRoleShortLabel(row.employeeRole)} - ${row.shift || "-"}`;
 }
 
 type AbsensiDateState = "past" | "today" | "future";

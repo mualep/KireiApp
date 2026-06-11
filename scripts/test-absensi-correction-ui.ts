@@ -77,18 +77,24 @@ assertIncludes(packageJsonSource, '"test:absensi-correction-ui"');
 const filterRows: AbsensiWorkerRowDTO[] = [
   {
     cellsByDate: {},
+    compactRoleShiftLabel: "PP-A",
     employeeRole: "Professional Player",
     gid: "KRU-001",
     name: "Budi Santoso",
+    roleShiftLabel: "Professional Player-A",
     shift: "A",
+    shiftTimeLabel: "06:00\u201314:00",
     userId: "10000000-0000-4000-8000-000000000001",
   },
   {
     cellsByDate: {},
+    compactRoleShiftLabel: "CL-B",
     employeeRole: "Cleaning Service",
     gid: "BUDI-999",
     name: "Sari Wangi",
+    roleShiftLabel: "Cleaning Service-B",
     shift: "B",
+    shiftTimeLabel: "08:00\u201316:00",
     userId: "10000000-0000-4000-8000-000000000002",
   },
 ];
@@ -216,10 +222,14 @@ assertIncludes(gridSource, "emptyDescription");
 assertIncludes(gridSource, "getAbsensiDateState");
 assertIncludes(gridSource, "dateState");
 assertIncludes(gridSource, "data-date-state");
-assertIncludes(gridSource, "getAbsensiWorkerMetaLabel");
-assertIncludes(gridSource, "getAbsensiRoleShortLabel");
-assertIncludes(gridSource, "row.employeeRole");
-assertIncludes(gridSource, "row.shift");
+assertIncludes(gridSource, "tracker-worker-name");
+assertIncludes(gridSource, "tracker-role-shift-badge");
+assertIncludes(gridSource, "row.roleShiftLabel");
+assertIncludes(gridSource, "row.compactRoleShiftLabel");
+assertIncludes(gridSource, "row.shiftTimeLabel");
+assertIncludes(gridSource, "w-[14rem]");
+assertIncludes(gridSource, "min-w-[12rem]");
+assertIncludes(gridSource, "max-w-[16rem]");
 assertIncludes(gridSource, 'return "past"');
 assertIncludes(gridSource, 'return "today"');
 assertIncludes(gridSource, 'return "future"');

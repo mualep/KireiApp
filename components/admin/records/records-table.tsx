@@ -78,7 +78,7 @@ export function RecordsTable({
         <table className="w-full min-w-[72rem] border-collapse text-left text-xs">
           <thead>
             <tr className="border-b border-border/75 bg-background/35 text-muted-foreground">
-              <th className="sticky left-0 z-10 w-72 bg-card/95 px-3 py-2 font-semibold backdrop-blur">
+              <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 font-semibold backdrop-blur">
                 Worker
               </th>
               <th className="px-3 py-2 font-semibold">Work Late</th>
@@ -98,7 +98,7 @@ export function RecordsTable({
                 key={row.userId}
                 className="border-b border-border/55 last:border-b-0"
               >
-                <th className="sticky left-0 z-10 bg-card/95 px-3 py-2 backdrop-blur">
+                <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 backdrop-blur">
                   <div className="min-w-0">
                     <div
                       className="tracker-worker-name min-w-0 truncate font-bold leading-tight text-foreground"

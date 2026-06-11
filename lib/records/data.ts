@@ -50,6 +50,7 @@ export type RecordsDataResult = {
 };
 
 type WorkerProfileRow = {
+  cuti_stock: number;
   employee_role: string;
   gid: string;
   shift: string;
@@ -114,7 +115,7 @@ export async function getRecordsData({
 
   let profilesQuery = supabase
     .from("worker_profiles")
-    .select("user_id,gid,employee_role,shift")
+    .select("user_id,gid,employee_role,shift,cuti_stock")
     .eq("show_card", true);
 
   if (staff.profile.tier === "member") {
@@ -220,7 +221,7 @@ export async function getRecordsData({
 
     const record = recordsByUserId.get(profile.user_id);
     const workerRecord =
-      record ?? createEmptyRecordRow(month.monthStart, profile.user_id);
+      record ?? createEmptyRecordRow(month.monthStart, profile.user_id, profile.cuti_stock);
     const shiftTimeLabel = getRecordsShiftTimeLabel(profile.shift);
     const roleShiftLabel = getRecordsRoleShiftLabel(
       profile.employee_role,
@@ -243,7 +244,7 @@ export async function getRecordsData({
         ),
         compactRoleShiftLabel,
         cutiStockSnapshot: getEffectiveRecordMetric(
-          workerRecord.cuti_stock_snapshot,
+          workerRecord.cuti_stock_snapshot ?? profile.cuti_stock,
           workerRecord.cuti_stock_override_snapshot,
         ),
         employeeRole: profile.employee_role,
@@ -280,14 +281,18 @@ export async function getRecordsData({
   return { issues, month, rows };
 }
 
-function createEmptyRecordRow(periodMonth: string, userId: string): WorkerRecordRow {
+function createEmptyRecordRow(
+  periodMonth: string,
+  userId: string,
+  cutiStockSnapshot: number,
+): WorkerRecordRow {
   return {
     alpha_count: 0,
     alpha_override_count: null,
     break_late_override_seconds: null,
     break_late_seconds: 0,
     cuti_stock_override_snapshot: null,
-    cuti_stock_snapshot: 0,
+    cuti_stock_snapshot: cutiStockSnapshot,
     last_source: null,
     last_source_action: null,
     lembur_override_units: null,
