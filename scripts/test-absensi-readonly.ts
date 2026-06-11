@@ -23,6 +23,10 @@ const absensiMonthGridPath = resolve(
   projectRoot,
   "components/admin/absensi/absensi-month-grid.tsx",
 );
+const absensiToolbarPath = resolve(
+  projectRoot,
+  "components/admin/absensi/absensi-toolbar.tsx",
+);
 const layoutPath = resolve(projectRoot, "app/admin/(shell)/layout.tsx");
 const redirectsPath = resolve(projectRoot, "lib/auth/redirects.ts");
 
@@ -34,6 +38,7 @@ for (const path of [
   absensiFiltersPath,
   absensiHelpersPath,
   absensiMonthGridPath,
+  absensiToolbarPath,
 ]) {
   assert.ok(existsSync(path), `${path} must exist for R3A Absensi read-only.`);
 }
@@ -71,6 +76,7 @@ const helpersSource = readFileSync(absensiHelpersPath, "utf8");
 const layoutSource = readFileSync(layoutPath, "utf8");
 const redirectsSource = readFileSync(redirectsPath, "utf8");
 const absensiMonthGridSource = readFileSync(absensiMonthGridPath, "utf8");
+const absensiToolbarSource = readFileSync(absensiToolbarPath, "utf8");
 const absensiUiSource = [pageSource, helpersSource, ...readComponentSources()].join("\n");
 const absensiAllSource = [absensiUiSource, dataSource].join("\n");
 
@@ -170,7 +176,16 @@ assertIncludes(absensiUiSource, "Name &#x2192; Z-A");
 assertIncludes(absensiUiSource, 'placeholder="Search worker name');
 assertIncludes(absensiUiSource, "Previous Month");
 assertIncludes(absensiUiSource, "Next Month");
+assertIncludes(absensiUiSource, "absensi-toolbar-row");
+assertIncludes(absensiUiSource, "absensi-toolbar-controls");
+assertIncludes(absensiUiSource, "absensi-toolbar-tabs");
+assertIncludes(absensiUiSource, "month.monthLabel");
+assertIncludes(absensiUiSource, "p-0");
 assertNoPattern(absensiUiSource, /All visible workers|Correction Controls|modeLabel/);
+assertNoPattern(
+  absensiToolbarSource,
+  /Selected Month|CalendarDaysIcon|>\s*\{month\.monthParam\}\s*</,
+);
 assertNoPattern(absensiUiSource, /Search worker name or GID|placeholder=.*GID/);
 assertIncludes(absensiMonthGridSource, "tracker-worker-name");
 assertIncludes(absensiMonthGridSource, "tracker-role-shift-badge");

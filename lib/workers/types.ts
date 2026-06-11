@@ -72,18 +72,24 @@ export type WorkerStatusDTO = {
 export type TrackerCardDTO = {
   activeTrackerAttendanceId: string | null;
   breakAccumulatedSecs: number;
+  breakLateSeconds: number;
   breakStartedAt: string | null;
   breakTimerRunning: boolean;
   cutiStock: number;
   displayStatus: WorkerDisplayStatus;
   employeeRole: WorkerRole;
   gid: string;
+  alphaCount: number;
   isFlexible: boolean;
+  lemburUnits: number;
   name: string;
+  pendingDays: number;
+  sakitDays: number;
   shift: WorkerShift;
   showCard: boolean;
   statusUpdatedAt: string;
   storedStatus: WorkerStoredStatus;
   userId: string;
   version: number;
+  workLateSeconds: number;
 };

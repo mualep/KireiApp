@@ -15,6 +15,7 @@ import {
   type WorkerDisplayStatus,
   type WorkerRole,
 } from "@/lib/workers";
+import { formatRecordsDuration } from "@/lib/records/helpers";
 
 type TrackerCardProps = {
   card: TrackerCardDTO;
@@ -50,6 +51,7 @@ export function TrackerCard({
   const roleShiftLabel = getFullRoleShiftLabel(card);
   const compactRoleShiftLabel = getCompactRoleShiftLabel(card);
   const shiftTimeLabel = getShiftTimeLabel(card);
+  const recordBadges = getTrackerRecordBadges(card);
 
   return (
     <Card
@@ -112,6 +114,14 @@ export function TrackerCard({
             label="Cuti"
             value={`${card.cutiStock}x`}
           />
+          {recordBadges.map((badge) => (
+            <RecordBadge
+              key={badge.label}
+              color={badge.color}
+              label={badge.label}
+              value={badge.displayValue}
+            />
+          ))}
         </section>
       </CardContent>
 
@@ -135,6 +145,47 @@ export function TrackerCard({
       ) : null}
     </Card>
   );
+}
+
+function getTrackerRecordBadges(card: TrackerCardDTO) {
+  return [
+    {
+      color: "var(--status-break)",
+      displayValue: formatRecordsDuration(card.workLateSeconds),
+      label: "Work Late",
+      value: card.workLateSeconds,
+    },
+    {
+      color: "var(--status-sakit)",
+      displayValue: formatRecordsDuration(card.breakLateSeconds),
+      label: "Break Late",
+      value: card.breakLateSeconds,
+    },
+    {
+      color: "var(--status-alpha)",
+      displayValue: `${card.alphaCount}x`,
+      label: "Alpha",
+      value: card.alphaCount,
+    },
+    {
+      color: "var(--status-sakit)",
+      displayValue: `${card.sakitDays}d`,
+      label: "Sakit",
+      value: card.sakitDays,
+    },
+    {
+      color: "var(--status-pending)",
+      displayValue: `${card.pendingDays}d`,
+      label: "Pending",
+      value: card.pendingDays,
+    },
+    {
+      color: "var(--status-break)",
+      displayValue: `${card.lemburUnits}h`,
+      label: "Lembur",
+      value: card.lemburUnits,
+    },
+  ].filter((badge) => badge.value > 0);
 }
 
 function RecordBadge({

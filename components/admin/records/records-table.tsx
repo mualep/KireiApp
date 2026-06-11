@@ -81,14 +81,14 @@ export function RecordsTable({
               <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 font-semibold backdrop-blur">
                 Worker
               </th>
-              <th className="px-3 py-2 font-semibold">Work Late</th>
-              <th className="px-3 py-2 font-semibold">Break Late</th>
-              <th className="px-3 py-2 font-semibold">Alpha</th>
-              <th className="px-3 py-2 font-semibold">Sakit</th>
-              <th className="px-3 py-2 font-semibold">Pending</th>
-              <th className="px-3 py-2 font-semibold">Lembur</th>
-              <th className="px-3 py-2 font-semibold">Cuti</th>
-              <th className="px-3 py-2 font-semibold">Updated</th>
+              <th className="px-3 py-2 text-center font-semibold">Work Late</th>
+              <th className="px-3 py-2 text-center font-semibold">Break Late</th>
+              <th className="px-3 py-2 text-center font-semibold">Alpha</th>
+              <th className="px-3 py-2 text-center font-semibold">Sakit</th>
+              <th className="px-3 py-2 text-center font-semibold">Pending</th>
+              <th className="px-3 py-2 text-center font-semibold">Lembur</th>
+              <th className="px-3 py-2 text-center font-semibold">Cuti</th>
+              <th className="px-3 py-2 text-center font-semibold">Updated</th>
               <th className="px-3 py-2 text-right font-semibold">Action</th>
             </tr>
           </thead>
@@ -130,36 +130,36 @@ export function RecordsTable({
                     </div>
                   </div>
                 </th>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 text-center">
                   <MetricValue
                     metric={row.workLateSeconds}
                     tone="workLate"
                     type="duration"
                   />
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 text-center">
                   <MetricValue
                     metric={row.breakLateSeconds}
                     tone="breakLate"
                     type="duration"
                   />
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 text-center">
                   <MetricValue metric={row.alphaCount} tone="alpha" />
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 text-center">
                   <MetricValue metric={row.sakitDays} tone="sakit" />
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 text-center">
                   <MetricValue metric={row.pendingDays} tone="pending" />
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 text-center">
                   <MetricValue metric={row.lemburUnits} tone="lembur" />
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 text-center">
                   <MetricValue metric={row.cutiStockSnapshot} tone="cuti" />
                 </td>
-                <td className="px-3 py-2 font-sans text-[0.7rem] tabular-nums text-muted-foreground">
+                <td className="px-3 py-2 text-center font-sans text-[0.7rem] tabular-nums text-muted-foreground">
                   {row.updatedAt
                     ? updatedAtFormatter.format(new Date(row.updatedAt))
                     : "-"}
@@ -197,7 +197,7 @@ function MetricValue({
       : formatRecordsNumber(metric.value);
 
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5">
+    <span className="inline-flex min-w-0 items-center justify-center gap-1.5">
       <span
         className={cn(
           "font-sans font-bold tabular-nums",

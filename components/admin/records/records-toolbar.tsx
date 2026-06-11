@@ -4,12 +4,7 @@ import type React from "react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  CalendarDaysIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  XIcon,
-} from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -106,18 +101,52 @@ export function RecordsToolbar({
 
   return (
     <Card size="sm" className="tracker-glass-panel gap-0 rounded-xl border py-0">
-      <CardContent className="flex flex-col gap-2 p-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <CalendarDaysIcon aria-hidden="true" className="size-4 text-primary" />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Selected Month
-              </p>
-              <p className="truncate text-sm font-black" translate="no">
-                {month.monthLabel}
-              </p>
+      <CardContent className="flex flex-col gap-2 p-0">
+        <div className="records-toolbar-row flex flex-col gap-2 lg:flex-row lg:items-center">
+          <FieldGroup className="records-toolbar-controls grid flex-1 gap-2 md:grid-cols-[minmax(13rem,1fr)_minmax(9rem,auto)_auto]">
+            <Field>
+              <FieldLabel htmlFor="records-search" className="sr-only">
+                Search
+              </FieldLabel>
+              <Input
+                id="records-search"
+                name="q"
+                type="search"
+                value={queryDraft}
+                onChange={(event) => setQueryDraft(event.currentTarget.value)}
+                placeholder="Search worker name..."
+                autoComplete="off"
+                className="h-9 bg-background/55"
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="records-sort" className="sr-only">
+                Sort
+              </FieldLabel>
+              <Select
+                id="records-sort"
+                aria-label="Sort order"
+                value={sortDraft}
+                onChange={handleSortChange}
+                className="h-9 bg-background/55"
+              >
+                <option value="name-asc">Name &#x2192; A-Z</option>
+                <option value="name-desc">Name &#x2192; Z-A</option>
+              </Select>
+            </Field>
+
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" className="h-9 w-full sm:w-auto">
+                <Link href={clearFiltersHref}>
+                  <XIcon data-icon="inline-start" aria-hidden="true" />
+                  Clear Filters
+                </Link>
+              </Button>
             </div>
+          </FieldGroup>
+
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="icon-sm">
               <Link href={previousMonthHref} aria-label="Previous Month">
                 <ChevronLeftIcon aria-hidden="true" />
@@ -125,10 +154,10 @@ export function RecordsToolbar({
             </Button>
             <Badge
               variant="outline"
-              className="h-7 min-w-28 border-border bg-background/35 px-2 font-mono text-[0.7rem] text-foreground"
+              className="h-9 min-w-32 justify-center border-border bg-background/35 px-3 text-sm font-black text-foreground"
               translate="no"
             >
-              {month.monthParam}
+              {month.monthLabel}
             </Badge>
             <Button asChild variant="outline" size="icon-sm">
               <Link href={nextMonthHref} aria-label="Next Month">
@@ -137,7 +166,7 @@ export function RecordsToolbar({
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 lg:ml-auto">
             {scopeLabel ? (
               <Badge
                 variant="outline"
@@ -155,50 +184,7 @@ export function RecordsToolbar({
           </div>
         </div>
 
-        <FieldGroup className="grid gap-2 md:grid-cols-[minmax(13rem,1fr)_minmax(9rem,auto)_auto]">
-          <Field>
-            <FieldLabel htmlFor="records-search" className="sr-only">
-              Search
-            </FieldLabel>
-            <Input
-              id="records-search"
-              name="q"
-              type="search"
-              value={queryDraft}
-              onChange={(event) => setQueryDraft(event.currentTarget.value)}
-              placeholder="Search worker name..."
-              autoComplete="off"
-              className="h-9 bg-background/55"
-            />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="records-sort" className="sr-only">
-              Sort
-            </FieldLabel>
-            <Select
-              id="records-sort"
-              aria-label="Sort order"
-              value={sortDraft}
-              onChange={handleSortChange}
-              className="h-9 bg-background/55"
-            >
-              <option value="name-asc">Name &#x2192; A-Z</option>
-              <option value="name-desc">Name &#x2192; Z-A</option>
-            </Select>
-          </Field>
-
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" className="h-9 w-full sm:w-auto">
-              <Link href={clearFiltersHref}>
-                <XIcon data-icon="inline-start" aria-hidden="true" />
-                Clear Filters
-              </Link>
-            </Button>
-          </div>
-        </FieldGroup>
-
-        <nav aria-label="Records role groups" className="w-full">
+        <nav aria-label="Records role groups" className="records-toolbar-tabs w-full">
           <div className="grid w-full grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-8">
             {roleTabs.map((tab) => {
               const isActive = filters.role === tab.value;

@@ -132,7 +132,11 @@ assertIncludes(helpersSource, "formatRecordsSummaryDuration");
 
 assertIncludes(recordsUiSource, "Records");
 assertIncludes(recordsUiSource, "Self-only");
-assertIncludes(recordsUiSource, "Selected Month");
+assertIncludes(recordsUiSource, "records-toolbar-row");
+assertIncludes(recordsUiSource, "records-toolbar-controls");
+assertIncludes(recordsUiSource, "records-toolbar-tabs");
+assertIncludes(recordsUiSource, "month.monthLabel");
+assertIncludes(recordsUiSource, "p-0");
 assertIncludes(recordsUiSource, "Override");
 assertIncludes(recordsUiSource, "No records available");
 assertIncludes(recordsUiSource, 'aria-label="Read-only monthly worker records"');
@@ -142,7 +146,7 @@ assertIncludes(recordsUiSource, "Name &#x2192; A-Z");
 assertIncludes(recordsUiSource, "Name &#x2192; Z-A");
 assertIncludes(recordsUiSource, "Previous Month");
 assertIncludes(recordsUiSource, "Next Month");
-assertNoPattern(recordsUiSource, /All visible workers|modeLabel|>\s*Read-only\s*</);
+assertNoPattern(recordsUiSource, /All visible workers|modeLabel|>\s*Read-only\s*<|Selected Month|CalendarDaysIcon|>\s*\{month\.monthParam\}\s*</);
 assertNoPattern(componentSources, /row\.gid|KRU|Search worker name or GID/);
 for (const label of [
   "Total Work Late",
@@ -203,6 +207,8 @@ for (const colorClass of [
 }
 assertIncludes(recordsTableSource, "font-sans");
 assertIncludes(recordsSummaryCardsSource, "font-sans");
+assertIncludes(recordsTableSource, 'className="px-3 py-2 text-center"');
+assertIncludes(recordsTableSource, "justify-center");
 
 assertIncludes(layoutSource, 'href: "/admin/records"');
 assertIncludes(layoutSource, 'label: "Records"');

@@ -286,6 +286,31 @@ assertIncludes(trackerCardSource, 'data-slot="tracker-card-records"');
 assertIncludes(trackerCardSource, 'aria-label="Monthly Records"');
 assertIncludes(trackerCardSource, "getShiftDefinition");
 assertIncludes(trackerCardSource, "cutiStock");
+assertIncludes(trackerCardSource, "getTrackerRecordBadges");
+assertIncludes(trackerCardSource, "recordBadges");
+assertIncludes(trackerCardSource, ".filter((badge) => badge.value > 0)");
+assertIncludes(trackerCardSource, 'label: "Work Late"');
+assertIncludes(trackerCardSource, 'label: "Break Late"');
+assertIncludes(trackerCardSource, 'label: "Alpha"');
+assertIncludes(trackerCardSource, 'label: "Sakit"');
+assertIncludes(trackerCardSource, 'label: "Pending"');
+assertIncludes(trackerCardSource, 'label: "Lembur"');
+assertIncludes(trackerCardSource, "formatRecordsDuration");
+assertIncludes(trackerDataSource, '.from("worker_records")');
+assertIncludes(trackerDataSource, '.eq("period_month", recordsMonth.monthStart)');
+assertIncludes(trackerDataSource, "recordsByUserId");
+assertIncludes(trackerDataSource, "work_late_seconds");
+assertIncludes(trackerDataSource, "break_late_seconds");
+assertIncludes(trackerDataSource, "alpha_count");
+assertIncludes(trackerDataSource, "sakit_days");
+assertIncludes(trackerDataSource, "pending_days");
+assertIncludes(trackerDataSource, "lembur_units");
+assertIncludes(workerTypesSource, "workLateSeconds: number;");
+assertIncludes(workerTypesSource, "breakLateSeconds: number;");
+assertIncludes(workerTypesSource, "alphaCount: number;");
+assertIncludes(workerTypesSource, "sakitDays: number;");
+assertIncludes(workerTypesSource, "pendingDays: number;");
+assertIncludes(workerTypesSource, "lemburUnits: number;");
 assertIncludes(trackerCardSource, "TrackerActionControls");
 assertIncludes(trackerCardSource, "TrackerStatusBadge");
 assertIncludes(trackerCardSource, "card.name");
@@ -772,20 +797,26 @@ function buildCard({
 }): TrackerCardDTO {
   return {
     activeTrackerAttendanceId: null,
-    cutiStock: 2,
     breakAccumulatedSecs: 0,
+    breakLateSeconds: 0,
     breakStartedAt: null,
     breakTimerRunning: false,
+    cutiStock: 2,
     displayStatus,
     employeeRole,
     gid,
+    alphaCount: 0,
     isFlexible: shift === "flexible",
+    lemburUnits: 0,
     name,
+    pendingDays: 0,
+    sakitDays: 0,
     shift,
     showCard: true,
     statusUpdatedAt: "2026-04-27T00:00:00.000Z",
     storedStatus,
     userId,
     version: 0,
+    workLateSeconds: 0,
   };
 }
