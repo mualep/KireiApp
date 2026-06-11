@@ -335,6 +335,11 @@
         min-width: 0;
     }
 
+    .tracker-worker-name {
+        padding-left: 0.5rem;
+        font-size: 1rem;
+    }
+
     .tracker-card-grid > * {
         content-visibility: auto;
         contain-intrinsic-size: 15rem;
@@ -549,8 +554,7 @@
             var(--status-on) 52%,
             transparent
         ) !important;
-        background-color: color-mix(in oklch, var(--status-on) 13%, transparent) !important;
-        background-image: linear-gradient(
+        background: linear-gradient(
             135deg,
             color-mix(in oklch, var(--status-on) 18%, transparent),
             color-mix(in oklch, var(--status-on) 8%, var(--card))

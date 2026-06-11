@@ -554,8 +554,10 @@ assertNoPattern(
 );
 assertIncludes(trackerCardSource, "rounded-xl");
 
-// ── D3-B/D3-D: Worker name size ────────────────────────────────────────────
-assertIncludes(trackerCardSource, "text-2xl");
+// ── D3-B/D3-D: Worker name visual prominence ───────────────────────────────
+assertIncludes(trackerCardSource, "tracker-worker-name");
+assertIncludes(trackerCardSource, "truncate");
+assertIncludes(globalsSource, ".tracker-worker-name");
 
 // ── D3-B: Responsive role label ────────────────────────────────────────────
 assertIncludes(trackerCardSource, "card.employeeRole");
@@ -633,12 +635,16 @@ assertNoPattern(
 
 // ── D3-D: Card balanced padding and contrast ───────────────────────────────
 assertIncludes(trackerCardSource, "tracker-card-contrast");
-assertIncludes(trackerCardSource, "pt-5");
-assertIncludes(trackerCardSource, "px-5");
+assertIncludes(trackerCardSource, "tracker-card-header");
 assertNoPattern(
   trackerCardSource,
   /\bpt-3\b/,
   "Tracker worker card must remove special top-padding imbalance (D3-D).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /rounded-xl border p"/,
+  "Tracker worker card must not use an invalid bare padding class (D3-E).",
 );
 
 // ── D3-C: Status badge rectangular (radius-sm, not radius-lg, not pill) ───────
@@ -648,9 +654,8 @@ assertNoPattern(
   "Status badge prominent must not use radius-lg — should use radius-sm for rect shape (D3-C).",
 );
 
-// ── D3-D: Worker name size and role badge rectangle ─────────────────────────
-assertIncludes(trackerCardSource, "truncate text-2xl");
-assertIncludes(trackerCardSource, "rounded-md");
+// ── D3-D/D3-E: Worker name size and role badge rectangle ───────────────────
+assertIncludes(trackerCardSource, "tracker-role-shift-badge");
 assertNoPattern(
   trackerCardSource,
   /<Badge[\s\S]*?rounded-(?:full|4xl)/,
@@ -658,12 +663,12 @@ assertNoPattern(
 );
 
 // ── D3-D: Action button layout and data-tone styling ────────────────────────
-assertIncludes(trackerActionControlsSource, "flex flex-col gap-2.5");
+assertIncludes(trackerActionControlsSource, "tracker-action-stack");
 assertIncludes(trackerActionControlsSource, "data-tone");
 assertIncludes(globalsSource, "data-tone");
 assertPattern(
   globalsSource,
-  /\.tracker-action-btn\[data-tone="on"\]\s*\{[\s\S]*?background-color:\s*color-mix\(in oklch,\s*var\(--status-on\)/,
+  /\.tracker-action-btn\[data-tone="on"\]\s*\{[\s\S]*?background(?:-color|-image)?:[\s\S]*?var\(--status-on\)/,
   "START/on action tone must have green default background styling (D3-D).",
 );
 assertPattern(

@@ -59,7 +59,7 @@ export function TrackerCard({
         cardToneClasses[card.displayStatus],
       )}
     >
-      <CardHeader className="relative z-10 px-5 pt-5 pb-3">
+      <CardHeader className="tracker-card-header relative z-10 p-2">
         <div
           aria-label="Worker Identity"
           className="flex min-w-0 items-start justify-between gap-3"
@@ -67,7 +67,7 @@ export function TrackerCard({
         >
           <div className="min-w-0">
             <CardTitle
-              className="min-w-0 truncate text-2xl font-bold leading-tight text-foreground"
+              className="tracker-worker-name min-w-0 truncate font-bold leading-tight text-foreground"
               translate="no"
             >
               {card.name}
@@ -75,7 +75,7 @@ export function TrackerCard({
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="h-6 max-w-[14rem] rounded-md border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground"
+                className="tracker-role-shift-badge h-6 max-w-[14rem] rounded-sm border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground"
                 translate="no"
               >
                 <span className="hidden truncate @[14rem]:inline">

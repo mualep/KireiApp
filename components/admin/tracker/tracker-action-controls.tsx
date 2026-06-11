@@ -200,7 +200,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="tracker-action-stack flex flex-col gap-2.5">
       {isBreakCard
         ? (() => {
             const remaining = getBreakRemainingSeconds({
