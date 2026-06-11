@@ -77,18 +77,24 @@ assertIncludes(packageJsonSource, '"test:absensi-correction-ui"');
 const filterRows: AbsensiWorkerRowDTO[] = [
   {
     cellsByDate: {},
+    compactRoleShiftLabel: "PP-A",
     employeeRole: "Professional Player",
     gid: "KRU-001",
     name: "Budi Santoso",
+    roleShiftLabel: "Professional Player-A",
     shift: "A",
+    shiftTimeLabel: "06:00\u201314:00",
     userId: "10000000-0000-4000-8000-000000000001",
   },
   {
     cellsByDate: {},
+    compactRoleShiftLabel: "CL-B",
     employeeRole: "Cleaning Service",
     gid: "BUDI-999",
     name: "Sari Wangi",
+    roleShiftLabel: "Cleaning Service-B",
     shift: "B",
+    shiftTimeLabel: "08:00\u201316:00",
     userId: "10000000-0000-4000-8000-000000000002",
   },
 ];
@@ -96,18 +102,25 @@ const filterRows: AbsensiWorkerRowDTO[] = [
 assert.deepEqual(parseAbsensiFilters({ q: "  budi   santoso  " }), {
   q: "budi santoso",
   role: null,
+  sort: "name-asc",
 });
 assert.equal(parseAbsensiFilters({ q: "x".repeat(90) }).q.length, 80);
 assert.deepEqual(parseAbsensiFilters({ role: "Cleaning Service" }).role, "Cleaning Service");
 assert.deepEqual(parseAbsensiFilters({ role: "Owner" }).role, null);
-assert.equal(hasAbsensiFilters({ q: "", role: null }), false);
-assert.equal(hasAbsensiFilters({ q: "sari", role: null }), true);
+assert.equal(hasAbsensiFilters({ q: "", role: null, sort: "name-asc" }), false);
+assert.equal(hasAbsensiFilters({ q: "sari", role: null, sort: "name-asc" }), true);
 assert.deepEqual(
-  filterAbsensiRows(filterRows, { q: "budi", role: null }).map((row) => row.name),
+  filterAbsensiRows(filterRows, { q: "budi", role: null, sort: "name-asc" }).map(
+    (row) => row.name,
+  ),
   ["Budi Santoso"],
 );
 assert.deepEqual(
-  filterAbsensiRows(filterRows, { q: "", role: "Cleaning Service" }).map(
+  filterAbsensiRows(filterRows, {
+    q: "",
+    role: "Cleaning Service",
+    sort: "name-asc",
+  }).map(
     (row) => row.name,
   ),
   ["Sari Wangi"],
@@ -209,10 +222,14 @@ assertIncludes(gridSource, "emptyDescription");
 assertIncludes(gridSource, "getAbsensiDateState");
 assertIncludes(gridSource, "dateState");
 assertIncludes(gridSource, "data-date-state");
-assertIncludes(gridSource, "getAbsensiWorkerMetaLabel");
-assertIncludes(gridSource, "getAbsensiRoleShortLabel");
-assertIncludes(gridSource, "row.employeeRole");
-assertIncludes(gridSource, "row.shift");
+assertIncludes(gridSource, "tracker-worker-name");
+assertIncludes(gridSource, "tracker-role-shift-badge");
+assertIncludes(gridSource, "row.roleShiftLabel");
+assertIncludes(gridSource, "row.compactRoleShiftLabel");
+assertIncludes(gridSource, "row.shiftTimeLabel");
+assertIncludes(gridSource, "w-[14rem]");
+assertIncludes(gridSource, "min-w-[12rem]");
+assertIncludes(gridSource, "max-w-[16rem]");
 assertIncludes(gridSource, 'return "past"');
 assertIncludes(gridSource, 'return "today"');
 assertIncludes(gridSource, 'return "future"');
@@ -278,10 +295,14 @@ assertIncludes(toolbarSource, "previousMonthHref");
 assertIncludes(toolbarSource, "nextMonthHref");
 assertIncludes(toolbarSource, "getMonthHref");
 assertIncludes(toolbarSource, "Clear Filters");
-assertIncludes(toolbarSource, 'filters: { q: "", role: null }');
+assertIncludes(toolbarSource, 'filters: { q: "", role: null, sort: "name-asc" }');
 assertIncludes(toolbarSource, "visibleCount");
 assertIncludes(toolbarSource, "readableCount");
-assertIncludes(toolbarSource, "modeLabel");
+assertNoPattern(
+  toolbarSource,
+  /modeLabel|All visible workers|Correction Controls/,
+  "Absensi toolbar must not render owner/admin mode badges.",
+);
 assertNoPattern(
   pageSource,
   /sticky\s+top-24\s+z-20|fixed\s+top-|z-20/,

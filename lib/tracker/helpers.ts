@@ -102,13 +102,13 @@ export function parseTrackerFilters(searchParams: TrackerSearchParams): TrackerF
     q: q.slice(0, 80),
     role: isWorkerRole(role) ? role : null,
     shift: isWorkerShift(shift) ? shift : null,
-    sort: isTrackerSortOption(resolvedSort) ? resolvedSort : "status-urgent",
+    sort: isTrackerSortOption(resolvedSort) ? resolvedSort : "name-asc",
     status: isWorkerDisplayStatus(status) ? status : null,
   };
 }
 
 export function hasTrackerFilters(filters: TrackerFilters): boolean {
-  return Boolean(filters.q || filters.role || filters.shift || filters.status || filters.sort !== "status-urgent");
+  return Boolean(filters.q || filters.role || filters.shift || filters.status || filters.sort !== "name-asc");
 }
 
 export function scopeTrackerCards(

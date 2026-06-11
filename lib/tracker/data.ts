@@ -11,6 +11,7 @@ import {
   type TrackerCardDTO,
 } from "@/lib/workers";
 import { scopeTrackerCards } from "@/lib/tracker/helpers";
+import { getRecordsMonthRange } from "@/lib/records/helpers";
 
 export type TrackerDataIssue = {
   message: string;
@@ -63,6 +64,17 @@ type ActiveTrackerAttendanceRow = {
   user_id: string;
 };
 
+type WorkerRecordRow = {
+  alpha_count: number | null;
+  break_late_seconds: number | null;
+  lembur_units: number | null;
+  pending_days: number | null;
+  period_month: string;
+  sakit_days: number | null;
+  user_id: string;
+  work_late_seconds: number | null;
+};
+
 export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDataResult> {
   const supabase = await createClient();
   const { data: profiles, error: profilesError } = await supabase
@@ -85,10 +97,12 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   }
 
   const userIds = profileRows.map((profile) => profile.user_id);
+  const recordsMonth = getRecordsMonthRange();
   const [
     { data: users, error: usersError },
     { data: statuses, error: statusesError },
     { data: activeTrackerAttendances, error: attendancesError },
+    { data: records, error: recordsError },
   ] =
     await Promise.all([
       supabase
@@ -111,6 +125,14 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         .eq("is_canceled", false)
         .order("attendance_date", { ascending: false })
         .returns<ActiveTrackerAttendanceRow[]>(),
+      supabase
+        .from("worker_records")
+        .select(
+          "user_id,period_month,work_late_seconds,break_late_seconds,alpha_count,sakit_days,pending_days,lembur_units",
+        )
+        .in("user_id", userIds)
+        .eq("period_month", recordsMonth.monthStart)
+        .returns<WorkerRecordRow[]>(),
     ]);
 
   if (usersError) {
@@ -125,11 +147,16 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
     throw new Error("Tracker attendance rows could not load.");
   }
 
+  if (recordsError) {
+    throw new Error("Tracker worker record badges could not load.");
+  }
+
   const usersById = new Map((users ?? []).map((user) => [user.id, user]));
   const statusesByUserId = new Map(
     (statuses ?? []).map((status) => [status.user_id, status]),
   );
   const activeTrackerAttendancesByUserId = new Map<string, ActiveTrackerAttendanceRow>();
+  const recordsByUserId = new Map((records ?? []).map((record) => [record.user_id, record]));
 
   for (const attendance of activeTrackerAttendances ?? []) {
     if (!activeTrackerAttendancesByUserId.has(attendance.user_id)) {
@@ -141,6 +168,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   const cards = profileRows.flatMap((profile) => {
     const user = usersById.get(profile.user_id);
     const status = statusesByUserId.get(profile.user_id);
+    const record = recordsByUserId.get(profile.user_id);
 
     if (!user) {
       issues.push({
@@ -191,6 +219,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
             status.current_status,
           ),
         breakAccumulatedSecs: status.break_accumulated_secs,
+        breakLateSeconds: record?.break_late_seconds ?? 0,
         breakStartedAt: status.break_started_at,
         breakTimerRunning: status.break_timer_running,
         cutiStock: profile.cuti_stock,
@@ -203,14 +232,19 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         }),
         employeeRole: profile.employee_role,
         gid: profile.gid,
+        alphaCount: record?.alpha_count ?? 0,
         isFlexible: profile.is_flexible,
+        lemburUnits: record?.lembur_units ?? 0,
         name: user.name,
+        pendingDays: record?.pending_days ?? 0,
+        sakitDays: record?.sakit_days ?? 0,
         shift: profile.shift,
         showCard: profile.show_card,
         statusUpdatedAt: status.updated_at,
         storedStatus: status.current_status,
         userId: profile.user_id,
         version: Number(status.version),
+        workLateSeconds: record?.work_late_seconds ?? 0,
       } satisfies TrackerCardDTO,
     ];
   });

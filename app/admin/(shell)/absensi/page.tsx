@@ -50,9 +50,7 @@ export default async function AdminAbsensiPage({
   const roleTabs = getAbsensiRoleTabs(data.rows);
   const canCorrectAbsensi = staff.profile.tier !== "member";
   const currentWibDate = getCurrentWibDateParam();
-  const scopeLabel =
-    staff.profile.tier === "member" ? "Self-only" : "All visible workers";
-  const modeLabel = canCorrectAbsensi ? "Correction Controls" : "Read-only";
+  const scopeLabel = staff.profile.tier === "member" ? "Self-only" : null;
   const emptyTitle = hasFilters
     ? "No workers match these filters."
     : "No workers available.";
@@ -65,12 +63,11 @@ export default async function AdminAbsensiPage({
       {data.issues.length > 0 ? <AbsensiIssuePanel issues={data.issues} /> : null}
 
       <AbsensiToolbar
-        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}`}
+        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}:${filters.sort}`}
         filters={filters}
         month={data.month}
         readableCount={numberFormatter.format(data.rows.length)}
         roleTabs={roleTabs}
-        modeLabel={modeLabel}
         scopeLabel={scopeLabel}
         visibleCount={numberFormatter.format(filteredRows.length)}
       />

@@ -12,7 +12,11 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { TrackerFilters, TrackerRoleTab, TrackerSortOption } from "@/lib/tracker/helpers";
+import type {
+  TrackerFilters,
+  TrackerRoleTab,
+  TrackerSortOption,
+} from "@/lib/tracker/helpers";
 import { workerDisplayStatuses, workerShifts } from "@/lib/workers";
 
 type TrackerFilterFormProps = {
@@ -57,7 +61,16 @@ export function TrackerFilterForm({
     }, 300);
 
     return () => window.clearTimeout(timeoutId);
-  }, [filters.q, filters.role, pathname, queryDraft, router, shiftDraft, sortDraft, statusDraft]);
+  }, [
+    filters.q,
+    filters.role,
+    pathname,
+    queryDraft,
+    router,
+    shiftDraft,
+    sortDraft,
+    statusDraft,
+  ]);
 
   function getFilterHref({
     role = filters.role,
@@ -134,8 +147,11 @@ export function TrackerFilterForm({
   }
 
   return (
-    <Card size="sm" className="tracker-glass-panel gap-0 rounded-xl border py-0">
-      <CardContent className="flex flex-col gap-2 p-3">
+    <Card
+      size="sm"
+      className="tracker-glass-panel gap-0 rounded-xl border py-0"
+    >
+      <CardContent className="flex flex-col gap-2 p-0">
         <div className="flex flex-col gap-2">
           <FieldGroup className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.3fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_auto_auto]">
             <Field>
@@ -208,12 +224,18 @@ export function TrackerFilterForm({
                 <option value="name-asc">Name &#x2192; A-Z</option>
                 <option value="name-desc">Name &#x2192; Z-A</option>
                 <option value="status-urgent">Status &#x2192; Urgent</option>
-                <option value="status-not-urgent">Status &#x2192; Tidak Urgent</option>
+                <option value="status-not-urgent">
+                  Status &#x2192; Tidak Urgent
+                </option>
               </Select>
             </Field>
 
             <div className="flex items-center gap-2">
-              <Button asChild variant="outline" className="h-9 w-full sm:w-auto">
+              <Button
+                asChild
+                variant="outline"
+                className="h-9 w-full sm:w-auto"
+              >
                 <Link href={pathname}>
                   <XIcon data-icon="inline-start" aria-hidden="true" />
                   Clear
@@ -294,7 +316,7 @@ function getTrackerHref({
     params.set("status", filters.status);
   }
 
-  if (filters.sort && filters.sort !== "status-urgent") {
+  if (filters.sort !== "name-asc") {
     params.set("sort", filters.sort);
   }
 

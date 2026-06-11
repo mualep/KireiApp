@@ -3,7 +3,7 @@ import "server-only";
 import type { StaffTier } from "@/lib/auth/tiers";
 import { createClient } from "@/lib/supabase/server";
 import type { WorkerRole, WorkerShift } from "@/lib/workers";
-import { isWorkerRole, isWorkerShift } from "@/lib/workers";
+import { getShiftDefinition, isWorkerRole, isWorkerShift } from "@/lib/workers";
 import type { WorkerAttendanceSource } from "@/lib/workers/attendance-records";
 import {
   absensiAttendanceLabels,
@@ -28,10 +28,13 @@ export type AbsensiCellDTO = {
 
 export type AbsensiWorkerRowDTO = {
   cellsByDate: Record<string, AbsensiCellDTO>;
+  compactRoleShiftLabel: string;
   employeeRole: WorkerRole;
   gid: string;
   name: string;
+  roleShiftLabel: string;
   shift: WorkerShift;
+  shiftTimeLabel: string | null;
   userId: string;
 };
 
@@ -73,6 +76,16 @@ type AbsensiDataRequest = {
       tier: StaffTier;
     };
   };
+};
+
+const compactRoleLabels: Record<WorkerRole, string> = {
+  "Cleaning Service": "CL",
+  "Customer Service": "CS",
+  "Expert Player": "EP",
+  Explorer: "EX",
+  Internship: "IN",
+  "Professional Player": "PP",
+  Security: "SC",
 };
 
 export async function getAbsensiData({
@@ -199,13 +212,26 @@ export async function getAbsensiData({
       return [];
     }
 
+    const roleShiftLabel = getAbsensiRoleShiftLabel(
+      profile.employee_role,
+      profile.shift,
+    );
+    const compactRoleShiftLabel = getCompactAbsensiRoleShiftLabel(
+      profile.employee_role,
+      profile.shift,
+    );
+    const shiftTimeLabel = getAbsensiShiftTimeLabel(profile.shift);
+
     return [
       {
         cellsByDate: cellsByUserId.get(profile.user_id) ?? {},
+        compactRoleShiftLabel,
         employeeRole: profile.employee_role,
         gid: profile.gid,
         name: user.name,
+        roleShiftLabel,
         shift: profile.shift,
+        shiftTimeLabel,
         userId: profile.user_id,
       } satisfies AbsensiWorkerRowDTO,
     ];
@@ -216,6 +242,54 @@ export async function getAbsensiData({
     month,
     rows,
   };
+}
+
+function getAbsensiRoleShiftLabel(role: WorkerRole, shift: WorkerShift): string {
+  if (shift === "flexible") {
+    return `${role} • Flexible`;
+  }
+
+  return `${role}-${shift}`;
+}
+
+function getCompactAbsensiRoleShiftLabel(
+  role: WorkerRole,
+  shift: WorkerShift,
+): string {
+  const compactRole = compactRoleLabels[role];
+
+  if (shift === "flexible") {
+    return `${compactRole} • Flexible`;
+  }
+
+  return `${compactRole}-${shift}`;
+}
+
+function getAbsensiShiftTimeLabel(shift: WorkerShift): string | null {
+  const definition = getShiftDefinition(shift);
+
+  if (
+    definition.isFlexible ||
+    definition.startHour === null ||
+    definition.endHour === null
+  ) {
+    return null;
+  }
+
+  const start = formatShiftTime(
+    definition.startHour,
+    definition.startMinute ?? 0,
+  );
+  const end = formatShiftTime(
+    definition.endHour,
+    definition.endMinute ?? 0,
+  );
+
+  return `${start}\u2013${end}`;
+}
+
+function formatShiftTime(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function parseAttendanceSource(value: string): WorkerAttendanceSource | null {

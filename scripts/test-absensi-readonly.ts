@@ -6,6 +6,7 @@ import {
   absensiAttendanceLabels,
   getAbsensiMonthRange,
 } from "../lib/absensi/helpers";
+import { parseAbsensiFilters } from "../lib/absensi/filters";
 
 const projectRoot = process.cwd();
 const absensiPagePath = resolve(projectRoot, "app/admin/(shell)/absensi/page.tsx");
@@ -15,8 +16,17 @@ const absensiLoadingPath = resolve(
 );
 const absensiErrorPath = resolve(projectRoot, "app/admin/(shell)/absensi/error.tsx");
 const absensiDataPath = resolve(projectRoot, "lib/absensi/data.ts");
+const absensiFiltersPath = resolve(projectRoot, "lib/absensi/filters.ts");
 const absensiHelpersPath = resolve(projectRoot, "lib/absensi/helpers.ts");
 const absensiComponentsDir = resolve(projectRoot, "components/admin/absensi");
+const absensiMonthGridPath = resolve(
+  projectRoot,
+  "components/admin/absensi/absensi-month-grid.tsx",
+);
+const absensiToolbarPath = resolve(
+  projectRoot,
+  "components/admin/absensi/absensi-toolbar.tsx",
+);
 const layoutPath = resolve(projectRoot, "app/admin/(shell)/layout.tsx");
 const redirectsPath = resolve(projectRoot, "lib/auth/redirects.ts");
 
@@ -25,7 +35,10 @@ for (const path of [
   absensiLoadingPath,
   absensiErrorPath,
   absensiDataPath,
+  absensiFiltersPath,
   absensiHelpersPath,
+  absensiMonthGridPath,
+  absensiToolbarPath,
 ]) {
   assert.ok(existsSync(path), `${path} must exist for R3A Absensi read-only.`);
 }
@@ -58,9 +71,12 @@ assert.deepEqual(getAbsensiMonthRange("invalid").monthParam, getCurrentWibMonth(
 
 const pageSource = readFileSync(absensiPagePath, "utf8");
 const dataSource = readFileSync(absensiDataPath, "utf8");
+const filtersSource = readFileSync(absensiFiltersPath, "utf8");
 const helpersSource = readFileSync(absensiHelpersPath, "utf8");
 const layoutSource = readFileSync(layoutPath, "utf8");
 const redirectsSource = readFileSync(redirectsPath, "utf8");
+const absensiMonthGridSource = readFileSync(absensiMonthGridPath, "utf8");
+const absensiToolbarSource = readFileSync(absensiToolbarPath, "utf8");
 const absensiUiSource = [pageSource, helpersSource, ...readComponentSources()].join("\n");
 const absensiAllSource = [absensiUiSource, dataSource].join("\n");
 
@@ -73,10 +89,9 @@ assertIncludes(pageSource, "getAbsensiData({ monthParam, staff })");
 assertIncludes(pageSource, "AbsensiMonthGrid");
 assertIncludes(pageSource, "scopeLabel");
 assertIncludes(pageSource, "Self-only");
-assertIncludes(pageSource, "All visible workers");
 assertIncludes(pageSource, "canCorrectAbsensi");
 assertIncludes(pageSource, 'staff.profile.tier !== "member"');
-assertIncludes(pageSource, "Read-only");
+assertNoPattern(pageSource, /All visible workers|Correction Controls|modeLabel/);
 assertNoPattern(pageSource, /redirect\(["']\/admin\/profile["']\)/);
 assertNoPattern(pageSource, /<h1[^>]*>\s*Absensi\s*<\/h1>/);
 assertNoPattern(pageSource, /\bOwner\/Admin\b/);
@@ -101,8 +116,25 @@ assert.ok(
 assertIncludes(dataSource, 'import "server-only";');
 assertIncludes(dataSource, 'from "@/lib/supabase/server"');
 assertIncludes(dataSource, "createClient");
+assertIncludes(dataSource, "getShiftDefinition");
 assertIncludes(dataSource, 'from "@/lib/auth/tiers"');
 assertIncludes(dataSource, "type AbsensiDataRequest");
+assertIncludes(dataSource, "compactRoleShiftLabel");
+assertIncludes(dataSource, "shiftTimeLabel");
+assertIncludes(dataSource, "getAbsensiRoleShiftLabel");
+assertIncludes(dataSource, "getCompactAbsensiRoleShiftLabel");
+assertIncludes(dataSource, "getAbsensiShiftTimeLabel");
+for (const compactRoleLabel of [
+  '"Professional Player": "PP"',
+  '"Expert Player": "EP"',
+  '"Customer Service": "CS"',
+  'Explorer: "EX"',
+  'Security: "SC"',
+  '"Cleaning Service": "CL"',
+  'Internship: "IN"',
+]) {
+  assertIncludes(dataSource, compactRoleLabel);
+}
 assertIncludes(dataSource, "staff.profile.tier");
 assertIncludes(dataSource, 'staff.profile.tier === "member"');
 assertIncludes(dataSource, 'staff.profile.id');
@@ -117,6 +149,18 @@ assertIncludes(dataSource, '.eq("is_canceled", false)');
 assertIncludes(dataSource, "is_deleted");
 assertIncludes(dataSource, "getAbsensiMonthRange");
 assertNoPattern(dataSource, /\.from\(\s*["']worker_records["']\s*\)/);
+assertIncludes(filtersSource, "AbsensiSortOption");
+assertIncludes(filtersSource, "sortAbsensiRows");
+assertNoPattern(
+  filtersSource,
+  /row\.gid[\s\S]*includes|includes\(normalizedSearch\)[\s\S]*row\.gid/,
+);
+assert.deepEqual(parseAbsensiFilters({}), {
+  q: "",
+  role: null,
+  sort: "name-asc",
+});
+assert.deepEqual(parseAbsensiFilters({ sort: "name-desc" }).sort, "name-desc");
 
 assertIncludes(absensiUiSource, "Absensi");
 assertIncludes(absensiUiSource, "HADIR");
@@ -126,6 +170,35 @@ assertIncludes(absensiUiSource, "PENDING");
 assertIncludes(absensiUiSource, "ALPHA");
 assertIncludes(absensiUiSource, "No recorded attendance");
 assertIncludes(absensiUiSource, 'aria-label="Read-only attendance month grid"');
+assertIncludes(absensiUiSource, 'id="absensi-sort"');
+assertIncludes(absensiUiSource, "Name &#x2192; A-Z");
+assertIncludes(absensiUiSource, "Name &#x2192; Z-A");
+assertIncludes(absensiUiSource, 'placeholder="Search worker name');
+assertIncludes(absensiUiSource, "Previous Month");
+assertIncludes(absensiUiSource, "Next Month");
+assertIncludes(absensiUiSource, "absensi-toolbar-row");
+assertIncludes(absensiUiSource, "absensi-toolbar-controls");
+assertIncludes(absensiUiSource, "absensi-toolbar-tabs");
+assertIncludes(absensiUiSource, "month.monthLabel");
+assertIncludes(absensiUiSource, "p-0");
+assertNoPattern(absensiUiSource, /All visible workers|Correction Controls|modeLabel/);
+assertNoPattern(
+  absensiToolbarSource,
+  /Selected Month|CalendarDaysIcon|>\s*\{month\.monthParam\}\s*</,
+);
+assertNoPattern(absensiUiSource, /Search worker name or GID|placeholder=.*GID/);
+assertIncludes(absensiMonthGridSource, "tracker-worker-name");
+assertIncludes(absensiMonthGridSource, "tracker-role-shift-badge");
+assertIncludes(absensiMonthGridSource, "row.roleShiftLabel");
+assertIncludes(absensiMonthGridSource, "row.compactRoleShiftLabel");
+assertIncludes(absensiMonthGridSource, "row.shiftTimeLabel");
+assertIncludes(absensiMonthGridSource, "w-[14rem]");
+assertIncludes(absensiMonthGridSource, "min-w-[12rem]");
+assertIncludes(absensiMonthGridSource, "max-w-[16rem]");
+assertNoPattern(
+  absensiMonthGridSource,
+  /getAbsensiWorkerMetaLabel|>\s*KRU|Search worker name or GID/,
+);
 
 assertNoPattern(absensiAllSource, /\b(use server|revalidatePath)\b/);
 assertNoPattern(absensiAllSource, /\.rpc\s*\(/);

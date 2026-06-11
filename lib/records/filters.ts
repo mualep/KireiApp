@@ -1,24 +1,24 @@
 import { isWorkerRole, type WorkerRole } from "@/lib/workers";
-import type { AbsensiWorkerRowDTO } from "@/lib/absensi/data";
+import type { RecordsRowDTO } from "@/lib/records/data";
 
-export type AbsensiSearchParams = Record<string, string | string[] | undefined>;
+export type RecordsSearchParams = Record<string, string | string[] | undefined>;
 
-export type AbsensiFilters = {
+export type RecordsFilters = {
   q: string;
   role: WorkerRole | null;
-  sort: AbsensiSortOption;
+  sort: RecordsSortOption;
 };
 
-export type AbsensiSortOption = "name-asc" | "name-desc";
+export type RecordsSortOption = "name-asc" | "name-desc";
 
-export type AbsensiRoleTab = {
+export type RecordsRoleTab = {
   count: number;
   label: string;
   shortLabel: string;
   value: WorkerRole | null;
 };
 
-const absensiRoleTabDefinitions = [
+const recordsRoleTabDefinitions = [
   { label: "Professional Player", shortLabel: "PP", value: "Professional Player" },
   { label: "Expert Player", shortLabel: "EP", value: "Expert Player" },
   { label: "Customer Service", shortLabel: "CS", value: "Customer Service" },
@@ -28,15 +28,15 @@ const absensiRoleTabDefinitions = [
   { label: "Internship", shortLabel: "IN", value: "Internship" },
 ] satisfies Array<{ label: string; shortLabel: string; value: WorkerRole }>;
 
-const absensiSortOptions = new Set<AbsensiSortOption>(["name-asc", "name-desc"]);
+const recordsSortOptions = new Set<RecordsSortOption>(["name-asc", "name-desc"]);
 
-function isAbsensiSortOption(value: string): value is AbsensiSortOption {
-  return absensiSortOptions.has(value as AbsensiSortOption);
+function isRecordsSortOption(value: string): value is RecordsSortOption {
+  return recordsSortOptions.has(value as RecordsSortOption);
 }
 
-export function parseAbsensiFilters(
-  searchParams: AbsensiSearchParams,
-): AbsensiFilters {
+export function parseRecordsFilters(
+  searchParams: RecordsSearchParams,
+): RecordsFilters {
   const q = normalizeQueryParam(searchParams.q);
   const role = normalizeSingleParam(searchParams.role);
   const sort = normalizeSingleParam(searchParams.sort);
@@ -44,18 +44,18 @@ export function parseAbsensiFilters(
   return {
     q: q.slice(0, 80),
     role: isWorkerRole(role) ? role : null,
-    sort: isAbsensiSortOption(sort) ? sort : "name-asc",
+    sort: isRecordsSortOption(sort) ? sort : "name-asc",
   };
 }
 
-export function hasAbsensiFilters(filters: AbsensiFilters): boolean {
+export function hasRecordsFilters(filters: RecordsFilters): boolean {
   return Boolean(filters.q || filters.role || filters.sort !== "name-asc");
 }
 
-export function filterAbsensiRows(
-  rows: AbsensiWorkerRowDTO[],
-  filters: AbsensiFilters,
-): AbsensiWorkerRowDTO[] {
+export function filterRecordsRows(
+  rows: RecordsRowDTO[],
+  filters: RecordsFilters,
+): RecordsRowDTO[] {
   const normalizedSearch = filters.q.toLocaleLowerCase("id-ID");
 
   const filteredRows = rows.filter((row) => {
@@ -70,13 +70,13 @@ export function filterAbsensiRows(
     return row.name.toLocaleLowerCase("id-ID").includes(normalizedSearch);
   });
 
-  return sortAbsensiRows(filteredRows, filters.sort);
+  return sortRecordsRows(filteredRows, filters.sort);
 }
 
-export function sortAbsensiRows(
-  rows: AbsensiWorkerRowDTO[],
-  sort: AbsensiSortOption,
-): AbsensiWorkerRowDTO[] {
+export function sortRecordsRows(
+  rows: RecordsRowDTO[],
+  sort: RecordsSortOption,
+): RecordsRowDTO[] {
   return [...rows].sort((left, right) => {
     const nameDelta = left.name.localeCompare(right.name, "id-ID", {
       sensitivity: "base",
@@ -88,7 +88,7 @@ export function sortAbsensiRows(
   });
 }
 
-export function getAbsensiRoleTabs(rows: AbsensiWorkerRowDTO[]): AbsensiRoleTab[] {
+export function getRecordsRoleTabs(rows: RecordsRowDTO[]): RecordsRoleTab[] {
   const roleCounts = new Map<WorkerRole, number>();
 
   for (const row of rows) {
@@ -102,20 +102,13 @@ export function getAbsensiRoleTabs(rows: AbsensiWorkerRowDTO[]): AbsensiRoleTab[
       shortLabel: "All",
       value: null,
     },
-    ...absensiRoleTabDefinitions.map((role) => ({
+    ...recordsRoleTabDefinitions.map((role) => ({
       count: roleCounts.get(role.value) ?? 0,
       label: role.label,
       shortLabel: role.shortLabel,
       value: role.value,
     })),
   ];
-}
-
-export function getAbsensiRoleShortLabel(role: WorkerRole): string {
-  return (
-    absensiRoleTabDefinitions.find((definition) => definition.value === role)
-      ?.shortLabel ?? role
-  );
 }
 
 function normalizeQueryParam(value: string | string[] | undefined): string {

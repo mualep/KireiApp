@@ -13,34 +13,34 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { AbsensiMonthRange } from "@/lib/absensi/helpers";
 import type {
-  AbsensiFilters,
-  AbsensiRoleTab,
-  AbsensiSortOption,
-} from "@/lib/absensi/filters";
+  RecordsFilters,
+  RecordsRoleTab,
+  RecordsSortOption,
+} from "@/lib/records/filters";
+import type { RecordsMonthRange } from "@/lib/records/helpers";
 
-type AbsensiToolbarProps = {
-  filters: AbsensiFilters;
-  month: AbsensiMonthRange;
+type RecordsToolbarProps = {
+  filters: RecordsFilters;
+  month: RecordsMonthRange;
   readableCount: string;
-  roleTabs: AbsensiRoleTab[];
+  roleTabs: RecordsRoleTab[];
   scopeLabel: string | null;
   visibleCount: string;
 };
 
-export function AbsensiToolbar({
+export function RecordsToolbar({
   filters,
   month,
   readableCount,
   roleTabs,
   scopeLabel,
   visibleCount,
-}: AbsensiToolbarProps) {
+}: RecordsToolbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [queryDraft, setQueryDraft] = useState(filters.q);
-  const [sortDraft, setSortDraft] = useState<AbsensiSortOption>(filters.sort);
+  const [sortDraft, setSortDraft] = useState<RecordsSortOption>(filters.sort);
 
   useEffect(() => {
     if (normalizeQuery(queryDraft) === filters.q) {
@@ -86,7 +86,7 @@ export function AbsensiToolbar({
   });
 
   function handleSortChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const sort = event.currentTarget.value as AbsensiSortOption;
+    const sort = event.currentTarget.value as RecordsSortOption;
 
     setSortDraft(sort);
     router.replace(
@@ -102,30 +102,30 @@ export function AbsensiToolbar({
   return (
     <Card size="sm" className="tracker-glass-panel gap-0 rounded-xl border py-0">
       <CardContent className="flex flex-col gap-2 p-0">
-        <div className="absensi-toolbar-row flex flex-col gap-2 lg:flex-row lg:items-center">
-          <FieldGroup className="absensi-toolbar-controls grid flex-1 gap-2 md:grid-cols-[minmax(13rem,1fr)_minmax(9rem,auto)_auto]">
+        <div className="records-toolbar-row flex flex-col gap-2 lg:flex-row lg:items-center">
+          <FieldGroup className="records-toolbar-controls grid flex-1 gap-2 md:grid-cols-[minmax(13rem,1fr)_minmax(9rem,auto)_auto]">
             <Field>
-              <FieldLabel htmlFor="absensi-search" className="sr-only">
+              <FieldLabel htmlFor="records-search" className="sr-only">
                 Search
               </FieldLabel>
               <Input
-                id="absensi-search"
+                id="records-search"
                 name="q"
                 type="search"
                 value={queryDraft}
                 onChange={(event) => setQueryDraft(event.currentTarget.value)}
-                placeholder="Search worker name…"
+                placeholder="Search worker name..."
                 autoComplete="off"
                 className="h-9 bg-background/55"
               />
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="absensi-sort" className="sr-only">
+              <FieldLabel htmlFor="records-sort" className="sr-only">
                 Sort
               </FieldLabel>
               <Select
-                id="absensi-sort"
+                id="records-sort"
                 aria-label="Sort order"
                 value={sortDraft}
                 onChange={handleSortChange}
@@ -179,12 +179,12 @@ export function AbsensiToolbar({
               <span className="font-mono tabular-nums" translate="no">
                 {visibleCount}/{readableCount}
               </span>
-              <span className="hidden sm:inline">workers</span>
+              <span className="hidden sm:inline">records</span>
             </div>
           </div>
         </div>
 
-        <nav aria-label="Absensi role groups" className="absensi-toolbar-tabs w-full">
+        <nav aria-label="Records role groups" className="records-toolbar-tabs w-full">
           <div className="grid w-full grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-8">
             {roleTabs.map((tab) => {
               const isActive = filters.role === tab.value;
@@ -203,7 +203,7 @@ export function AbsensiToolbar({
                   key={tab.label}
                   href={href}
                   aria-current={isActive ? "page" : undefined}
-                  aria-label={`${tab.label}: ${tab.count} workers`}
+                  aria-label={`${tab.label}: ${tab.count} records`}
                   title={tab.label}
                   className={cn(
                     "inline-flex h-7 min-w-0 items-center justify-center gap-1 rounded-lg border px-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
@@ -235,14 +235,14 @@ function getMonthHref({
   monthParam,
   pathname,
 }: {
-  filters: AbsensiFilters;
+  filters: RecordsFilters;
   monthParam: string;
   pathname: string;
 }) {
   const params = new URLSearchParams();
   params.set("month", monthParam);
-  const q = normalizeQuery(filters.q);
 
+  const q = normalizeQuery(filters.q);
   if (q) {
     params.set("q", q);
   }
@@ -258,6 +258,6 @@ function getMonthHref({
   return `${pathname}?${params.toString()}`;
 }
 
-function normalizeQuery(value: string) {
+function normalizeQuery(value: string): string {
   return value.trim().replace(/\s+/g, " ");
 }
