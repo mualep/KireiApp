@@ -74,6 +74,14 @@ export function formatRecordsDuration(seconds: number): string {
   return minutes === 0 ? `${hours}h` : `${hours}h ${String(minutes).padStart(2, "0")}m`;
 }
 
+export function formatRecordsSummaryDuration(seconds: number): string {
+  const totalMinutes = Math.max(0, Math.floor(seconds / 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${hours} h ${minutes} m`;
+}
+
 export function formatRecordsNumber(value: number | null): string {
   return value === null ? "-" : String(value);
 }

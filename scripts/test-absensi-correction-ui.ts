@@ -96,18 +96,25 @@ const filterRows: AbsensiWorkerRowDTO[] = [
 assert.deepEqual(parseAbsensiFilters({ q: "  budi   santoso  " }), {
   q: "budi santoso",
   role: null,
+  sort: "name-asc",
 });
 assert.equal(parseAbsensiFilters({ q: "x".repeat(90) }).q.length, 80);
 assert.deepEqual(parseAbsensiFilters({ role: "Cleaning Service" }).role, "Cleaning Service");
 assert.deepEqual(parseAbsensiFilters({ role: "Owner" }).role, null);
-assert.equal(hasAbsensiFilters({ q: "", role: null }), false);
-assert.equal(hasAbsensiFilters({ q: "sari", role: null }), true);
+assert.equal(hasAbsensiFilters({ q: "", role: null, sort: "name-asc" }), false);
+assert.equal(hasAbsensiFilters({ q: "sari", role: null, sort: "name-asc" }), true);
 assert.deepEqual(
-  filterAbsensiRows(filterRows, { q: "budi", role: null }).map((row) => row.name),
+  filterAbsensiRows(filterRows, { q: "budi", role: null, sort: "name-asc" }).map(
+    (row) => row.name,
+  ),
   ["Budi Santoso"],
 );
 assert.deepEqual(
-  filterAbsensiRows(filterRows, { q: "", role: "Cleaning Service" }).map(
+  filterAbsensiRows(filterRows, {
+    q: "",
+    role: "Cleaning Service",
+    sort: "name-asc",
+  }).map(
     (row) => row.name,
   ),
   ["Sari Wangi"],
@@ -278,10 +285,14 @@ assertIncludes(toolbarSource, "previousMonthHref");
 assertIncludes(toolbarSource, "nextMonthHref");
 assertIncludes(toolbarSource, "getMonthHref");
 assertIncludes(toolbarSource, "Clear Filters");
-assertIncludes(toolbarSource, 'filters: { q: "", role: null }');
+assertIncludes(toolbarSource, 'filters: { q: "", role: null, sort: "name-asc" }');
 assertIncludes(toolbarSource, "visibleCount");
 assertIncludes(toolbarSource, "readableCount");
-assertIncludes(toolbarSource, "modeLabel");
+assertNoPattern(
+  toolbarSource,
+  /modeLabel|All visible workers|Correction Controls/,
+  "Absensi toolbar must not render owner/admin mode badges.",
+);
 assertNoPattern(
   pageSource,
   /sticky\s+top-24\s+z-20|fixed\s+top-|z-20/,

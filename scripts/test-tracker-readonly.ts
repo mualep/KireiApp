@@ -377,7 +377,7 @@ assert.deepEqual(parseTrackerFilters({ q: "  KRU-001  " }), {
   q: "KRU-001",
   role: null,
   shift: null,
-  sort: "status-urgent",
+  sort: "name-asc",
   status: null,
 });
 
@@ -392,7 +392,7 @@ assert.deepEqual(
     q: "x".repeat(80),
     role: null,
     shift: null,
-    sort: "status-urgent",
+    sort: "name-asc",
     status: null,
   },
 );
@@ -407,7 +407,7 @@ assert.deepEqual(
     q: "",
     role: "Customer Service",
     shift: "flexible",
-    sort: "status-urgent",
+    sort: "name-asc",
     status: "ALPHA",
   },
 );
@@ -457,6 +457,10 @@ assert.deepEqual(
     (card) => card.gid,
   ),
   ["KRU-003"],
+);
+assert.deepEqual(
+  filterAndSortTrackerCards(cards, parseTrackerFilters({})).map((card) => card.name),
+  ["Alya", "Bima", "Citra"],
 );
 
 for (const currentStatus of workerStoredStatuses) {
@@ -598,6 +602,9 @@ assertNoPattern(
 assertIncludes(trackerHelpersSource, "name-desc");
 assertIncludes(trackerHelpersSource, "status-urgent");
 assertIncludes(trackerHelpersSource, "status-not-urgent");
+assertIncludes(trackerHelpersSource, 'sort: isTrackerSortOption(resolvedSort) ? resolvedSort : "name-asc"');
+assertIncludes(trackerHelpersSource, 'filters.sort !== "name-asc"');
+assertIncludes(trackerFilterFormSource, 'filters.sort !== "name-asc"');
 
 // ── D3-C: Sort functional tests ──────────────────────────────────────────────
 assert.deepEqual(

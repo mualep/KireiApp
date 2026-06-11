@@ -6,7 +6,10 @@ export type RecordsSearchParams = Record<string, string | string[] | undefined>;
 export type RecordsFilters = {
   q: string;
   role: WorkerRole | null;
+  sort: RecordsSortOption;
 };
+
+export type RecordsSortOption = "name-asc" | "name-desc";
 
 export type RecordsRoleTab = {
   count: number;
@@ -25,20 +28,28 @@ const recordsRoleTabDefinitions = [
   { label: "Internship", shortLabel: "IN", value: "Internship" },
 ] satisfies Array<{ label: string; shortLabel: string; value: WorkerRole }>;
 
+const recordsSortOptions = new Set<RecordsSortOption>(["name-asc", "name-desc"]);
+
+function isRecordsSortOption(value: string): value is RecordsSortOption {
+  return recordsSortOptions.has(value as RecordsSortOption);
+}
+
 export function parseRecordsFilters(
   searchParams: RecordsSearchParams,
 ): RecordsFilters {
   const q = normalizeQueryParam(searchParams.q);
   const role = normalizeSingleParam(searchParams.role);
+  const sort = normalizeSingleParam(searchParams.sort);
 
   return {
     q: q.slice(0, 80),
     role: isWorkerRole(role) ? role : null,
+    sort: isRecordsSortOption(sort) ? sort : "name-asc",
   };
 }
 
 export function hasRecordsFilters(filters: RecordsFilters): boolean {
-  return Boolean(filters.q || filters.role);
+  return Boolean(filters.q || filters.role || filters.sort !== "name-asc");
 }
 
 export function filterRecordsRows(
@@ -47,7 +58,7 @@ export function filterRecordsRows(
 ): RecordsRowDTO[] {
   const normalizedSearch = filters.q.toLocaleLowerCase("id-ID");
 
-  return rows.filter((row) => {
+  const filteredRows = rows.filter((row) => {
     if (filters.role && row.employeeRole !== filters.role) {
       return false;
     }
@@ -56,7 +67,24 @@ export function filterRecordsRows(
       return true;
     }
 
-    return `${row.name} ${row.gid}`.toLocaleLowerCase("id-ID").includes(normalizedSearch);
+    return row.name.toLocaleLowerCase("id-ID").includes(normalizedSearch);
+  });
+
+  return sortRecordsRows(filteredRows, filters.sort);
+}
+
+export function sortRecordsRows(
+  rows: RecordsRowDTO[],
+  sort: RecordsSortOption,
+): RecordsRowDTO[] {
+  return [...rows].sort((left, right) => {
+    const nameDelta = left.name.localeCompare(right.name, "id-ID", {
+      sensitivity: "base",
+    });
+    const resolvedDelta =
+      nameDelta !== 0 ? nameDelta : left.userId.localeCompare(right.userId);
+
+    return sort === "name-desc" ? -resolvedDelta : resolvedDelta;
   });
 }
 

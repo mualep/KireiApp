@@ -1,4 +1,11 @@
-import { ActivityIcon, AlertTriangleIcon, ClockIcon, UsersIcon } from "lucide-react";
+import {
+  ActivityIcon,
+  AlertTriangleIcon,
+  BriefcaseBusinessIcon,
+  ClockIcon,
+  HeartPulseIcon,
+  HourglassIcon,
+} from "lucide-react";
 
 import {
   Card,
@@ -8,7 +15,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { RecordsRowDTO } from "@/lib/records/data";
-import { formatRecordsDuration } from "@/lib/records/helpers";
+import { formatRecordsSummaryDuration } from "@/lib/records/helpers";
+import { cn } from "@/lib/utils";
 
 type RecordsSummaryCardsProps = {
   rows: RecordsRowDTO[];
@@ -19,15 +27,17 @@ const numberFormatter = new Intl.NumberFormat("id-ID");
 export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
   const totals = rows.reduce(
     (summary, row) => ({
-      alpha: summary.alpha + row.alphaCount.value,
+      alphaWorkers: summary.alphaWorkers + (row.alphaCount.value > 0 ? 1 : 0),
       breakLateSeconds: summary.breakLateSeconds + row.breakLateSeconds.value,
+      lembur: summary.lembur + row.lemburUnits.value,
       pending: summary.pending + row.pendingDays.value,
       sakit: summary.sakit + row.sakitDays.value,
       workLateSeconds: summary.workLateSeconds + row.workLateSeconds.value,
     }),
     {
-      alpha: 0,
+      alphaWorkers: 0,
       breakLateSeconds: 0,
+      lembur: 0,
       pending: 0,
       sakit: 0,
       workLateSeconds: 0,
@@ -36,35 +46,53 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
 
   const cards = [
     {
-      description: "readable workers",
-      icon: UsersIcon,
-      label: "Workers",
-      value: numberFormatter.format(rows.length),
-    },
-    {
       description: "work-late total",
       icon: ClockIcon,
       label: "Work Late",
-      value: formatRecordsDuration(totals.workLateSeconds),
+      toneClass: "border-status-break/30 bg-status-break/10 text-status-break",
+      value: formatRecordsSummaryDuration(totals.workLateSeconds),
     },
     {
       description: "break-late total",
       icon: ActivityIcon,
       label: "Break Late",
-      value: formatRecordsDuration(totals.breakLateSeconds),
+      toneClass: "border-status-sakit/30 bg-status-sakit/10 text-status-sakit",
+      value: formatRecordsSummaryDuration(totals.breakLateSeconds),
     },
     {
-      description: "alpha / sakit / pending",
+      description: "people with alpha",
       icon: AlertTriangleIcon,
-      label: "Absence",
-      value: `${totals.alpha}/${totals.sakit}/${totals.pending}`,
+      label: "Alpha",
+      toneClass: "border-status-alpha/30 bg-status-alpha/10 text-status-alpha",
+      value: `${numberFormatter.format(totals.alphaWorkers)} orang`,
+    },
+    {
+      description: "sakit day total",
+      icon: HeartPulseIcon,
+      label: "Sakit",
+      toneClass: "border-status-sakit/30 bg-status-sakit/10 text-status-sakit",
+      value: `${numberFormatter.format(totals.sakit)} d`,
+    },
+    {
+      description: "pending day total",
+      icon: HourglassIcon,
+      label: "Pending",
+      toneClass: "border-status-pending/30 bg-status-pending/10 text-status-pending",
+      value: `${numberFormatter.format(totals.pending)} d`,
+    },
+    {
+      description: "display-only hours",
+      icon: BriefcaseBusinessIcon,
+      label: "Lembur",
+      toneClass: "border-status-break/35 bg-status-break/10 text-status-break",
+      value: `${numberFormatter.format(totals.lembur)} h`,
     },
   ];
 
   return (
     <section
       aria-label="Records monthly summary"
-      className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
     >
       {cards.map((card) => {
         const Icon = card.icon;
@@ -78,7 +106,12 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
                   {card.value}
                 </CardTitle>
               </div>
-              <span className="flex size-9 items-center justify-center rounded-lg border border-border/75 bg-background/45 text-primary">
+              <span
+                className={cn(
+                  "flex size-9 items-center justify-center rounded-lg border",
+                  card.toneClass,
+                )}
+              >
                 <Icon aria-hidden="true" className="size-4" />
               </span>
             </CardHeader>

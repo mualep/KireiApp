@@ -92,7 +92,7 @@ export function RecordsTable({
                     className="mt-1 block truncate font-mono text-[0.65rem] text-muted-foreground"
                     translate="no"
                   >
-                    {row.gid} · {row.employeeRole}
+                    {row.roleShiftLabel}
                   </span>
                 </th>
                 <td className="px-3 py-2">
@@ -125,7 +125,9 @@ export function RecordsTable({
                   </span>
                 </td>
                 <td className="px-3 py-2 font-mono text-[0.7rem] text-muted-foreground">
-                  {updatedAtFormatter.format(new Date(row.updatedAt))}
+                  {row.updatedAt
+                    ? updatedAtFormatter.format(new Date(row.updatedAt))
+                    : "-"}
                 </td>
               </tr>
             ))}

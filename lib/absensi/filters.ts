@@ -6,7 +6,10 @@ export type AbsensiSearchParams = Record<string, string | string[] | undefined>;
 export type AbsensiFilters = {
   q: string;
   role: WorkerRole | null;
+  sort: AbsensiSortOption;
 };
+
+export type AbsensiSortOption = "name-asc" | "name-desc";
 
 export type AbsensiRoleTab = {
   count: number;
@@ -25,20 +28,28 @@ const absensiRoleTabDefinitions = [
   { label: "Internship", shortLabel: "IN", value: "Internship" },
 ] satisfies Array<{ label: string; shortLabel: string; value: WorkerRole }>;
 
+const absensiSortOptions = new Set<AbsensiSortOption>(["name-asc", "name-desc"]);
+
+function isAbsensiSortOption(value: string): value is AbsensiSortOption {
+  return absensiSortOptions.has(value as AbsensiSortOption);
+}
+
 export function parseAbsensiFilters(
   searchParams: AbsensiSearchParams,
 ): AbsensiFilters {
   const q = normalizeQueryParam(searchParams.q);
   const role = normalizeSingleParam(searchParams.role);
+  const sort = normalizeSingleParam(searchParams.sort);
 
   return {
     q: q.slice(0, 80),
     role: isWorkerRole(role) ? role : null,
+    sort: isAbsensiSortOption(sort) ? sort : "name-asc",
   };
 }
 
 export function hasAbsensiFilters(filters: AbsensiFilters): boolean {
-  return Boolean(filters.q || filters.role);
+  return Boolean(filters.q || filters.role || filters.sort !== "name-asc");
 }
 
 export function filterAbsensiRows(
@@ -47,7 +58,7 @@ export function filterAbsensiRows(
 ): AbsensiWorkerRowDTO[] {
   const normalizedSearch = filters.q.toLocaleLowerCase("id-ID");
 
-  return rows.filter((row) => {
+  const filteredRows = rows.filter((row) => {
     if (filters.role && row.employeeRole !== filters.role) {
       return false;
     }
@@ -57,6 +68,23 @@ export function filterAbsensiRows(
     }
 
     return row.name.toLocaleLowerCase("id-ID").includes(normalizedSearch);
+  });
+
+  return sortAbsensiRows(filteredRows, filters.sort);
+}
+
+export function sortAbsensiRows(
+  rows: AbsensiWorkerRowDTO[],
+  sort: AbsensiSortOption,
+): AbsensiWorkerRowDTO[] {
+  return [...rows].sort((left, right) => {
+    const nameDelta = left.name.localeCompare(right.name, "id-ID", {
+      sensitivity: "base",
+    });
+    const resolvedDelta =
+      nameDelta !== 0 ? nameDelta : left.userId.localeCompare(right.userId);
+
+    return sort === "name-desc" ? -resolvedDelta : resolvedDelta;
   });
 }
 

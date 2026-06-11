@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+import { parseRecordsFilters } from "../lib/records/filters";
+
 const projectRoot = process.cwd();
 const packageJsonPath = resolve(projectRoot, "package.json");
 const recordsPagePath = resolve(projectRoot, "app/admin/(shell)/records/page.tsx");
@@ -57,8 +59,7 @@ assertIncludes(pageSource, "RecordsSummaryCards");
 assertIncludes(pageSource, "RecordsTable");
 assertIncludes(pageSource, "scopeLabel");
 assertIncludes(pageSource, "Self-only");
-assertIncludes(pageSource, "All visible workers");
-assertIncludes(pageSource, "Read-only");
+assertNoPattern(pageSource, /All visible workers|modeLabel/);
 assertNoPattern(pageSource, /redirect\(["']\/admin\/profile["']\)/);
 
 assertIncludes(redirectsSource, "canAccessAdminRecords");
@@ -74,10 +75,15 @@ assertIncludes(dataSource, "staff.profile.id");
 assertIncludes(dataSource, '.eq("user_id", staff.profile.id)');
 assertIncludes(dataSource, '.from("worker_profiles")');
 assertIncludes(dataSource, '.eq("show_card", true)');
+assertIncludes(dataSource, "profileRows.flatMap");
 assertIncludes(dataSource, '.from("users")');
 assertIncludes(dataSource, "is_deleted");
 assertIncludes(dataSource, '.from("worker_records")');
 assertIncludes(dataSource, '.eq("period_month", month.monthStart)');
+assertIncludes(dataSource, "recordsByUserId");
+assertIncludes(dataSource, "record ?? createEmptyRecordRow");
+assertIncludes(dataSource, "createEmptyRecordRow");
+assertIncludes(dataSource, "getRecordsShiftTimeLabel");
 assertIncludes(dataSource, "work_late_override_seconds");
 assertIncludes(dataSource, "break_late_override_seconds");
 assertIncludes(dataSource, "alpha_override_count");
@@ -90,18 +96,52 @@ assertIncludes(dataSource, "getRecordsMonthRange");
 assertIncludes(filtersSource, "parseRecordsFilters");
 assertIncludes(filtersSource, "filterRecordsRows");
 assertIncludes(filtersSource, "getRecordsRoleTabs");
+assertIncludes(filtersSource, "RecordsSortOption");
+assertIncludes(filtersSource, "sortRecordsRows");
+assertNoPattern(
+  filtersSource,
+  /row\.gid[\s\S]*includes|includes\(normalizedSearch\)[\s\S]*row\.gid/,
+);
+assert.deepEqual(parseRecordsFilters({}), {
+  q: "",
+  role: null,
+  sort: "name-asc",
+});
+assert.deepEqual(parseRecordsFilters({ sort: "name-desc" }).sort, "name-desc");
 assertIncludes(helpersSource, "getRecordsMonthRange");
 assertIncludes(helpersSource, "getEffectiveRecordMetric");
 assertIncludes(helpersSource, "formatRecordsDuration");
+assertIncludes(helpersSource, "formatRecordsSummaryDuration");
 
 assertIncludes(recordsUiSource, "Records");
-assertIncludes(recordsUiSource, "Read-only");
-assertIncludes(recordsUiSource, "All visible workers");
 assertIncludes(recordsUiSource, "Self-only");
 assertIncludes(recordsUiSource, "Selected Month");
 assertIncludes(recordsUiSource, "Override");
 assertIncludes(recordsUiSource, "No records available");
 assertIncludes(recordsUiSource, 'aria-label="Read-only monthly worker records"');
+assertIncludes(recordsUiSource, 'placeholder="Search worker name..."');
+assertIncludes(recordsUiSource, 'id="records-sort"');
+assertIncludes(recordsUiSource, "Name &#x2192; A-Z");
+assertIncludes(recordsUiSource, "Name &#x2192; Z-A");
+assertIncludes(recordsUiSource, "Previous Month");
+assertIncludes(recordsUiSource, "Next Month");
+assertNoPattern(recordsUiSource, /All visible workers|modeLabel|>\s*Read-only\s*</);
+assertNoPattern(componentSources, /row\.gid|KRU|Search worker name or GID/);
+for (const label of [
+  "Work Late",
+  "Break Late",
+  "Alpha",
+  "Sakit",
+  "Pending",
+  "Lembur",
+]) {
+  assertIncludes(componentSources, `label: "${label}"`);
+}
+assertNoPattern(componentSources, /label:\s*"Workers"|label:\s*"Absence"/);
+assertIncludes(componentSources, "grid-cols-2");
+assertIncludes(componentSources, "md:grid-cols-3");
+assertIncludes(componentSources, "xl:grid-cols-6");
+assertIncludes(componentSources, "roleShiftLabel");
 
 assertIncludes(layoutSource, 'href: "/admin/records"');
 assertIncludes(layoutSource, 'label: "Records"');

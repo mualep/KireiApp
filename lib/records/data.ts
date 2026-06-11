@@ -2,7 +2,13 @@ import "server-only";
 
 import type { StaffTier } from "@/lib/auth/tiers";
 import { createClient } from "@/lib/supabase/server";
-import { isWorkerRole, type WorkerRole } from "@/lib/workers";
+import {
+  getShiftDefinition,
+  isWorkerRole,
+  isWorkerShift,
+  type WorkerRole,
+  type WorkerShift,
+} from "@/lib/workers";
 import type { WorkerAttendanceSource } from "@/lib/workers/attendance-records";
 import {
   getEffectiveRecordMetric,
@@ -27,8 +33,10 @@ export type RecordsRowDTO = {
   name: string;
   pendingDays: EffectiveRecordMetric;
   periodMonth: string;
+  roleShiftLabel: string;
   sakitDays: EffectiveRecordMetric;
-  updatedAt: string;
+  shift: WorkerShift;
+  updatedAt: string | null;
   userId: string;
   workLateSeconds: EffectiveRecordMetric;
 };
@@ -42,6 +50,7 @@ export type RecordsDataResult = {
 type WorkerProfileRow = {
   employee_role: string;
   gid: string;
+  shift: string;
   user_id: string;
 };
 
@@ -68,7 +77,7 @@ type WorkerRecordRow = {
   period_month: string;
   sakit_days: number;
   sakit_override_days: number | null;
-  updated_at: string;
+  updated_at: string | null;
   user_id: string;
   work_late_override_seconds: number | null;
   work_late_seconds: number;
@@ -93,7 +102,7 @@ export async function getRecordsData({
 
   let profilesQuery = supabase
     .from("worker_profiles")
-    .select("user_id,gid,employee_role")
+    .select("user_id,gid,employee_role,shift")
     .eq("show_card", true);
 
   if (staff.profile.tier === "member") {
@@ -163,20 +172,14 @@ export async function getRecordsData({
     throw new Error("Records rows could not load.");
   }
 
-  const profilesByUserId = new Map(profileRows.map((profile) => [profile.user_id, profile]));
   const usersById = new Map((users ?? []).map((user) => [user.id, user]));
+  const recordsByUserId = new Map(
+    (records ?? []).map((record) => [record.user_id, record]),
+  );
   const issues: RecordsDataIssue[] = [];
 
-  const rows = (records ?? []).flatMap((record) => {
-    const profile = profilesByUserId.get(record.user_id);
-    const user = usersById.get(record.user_id);
-
-    if (!profile) {
-      issues.push({
-        message: `Record for worker ${record.user_id} is missing a readable worker profile.`,
-      });
-      return [];
-    }
+  const rows = profileRows.flatMap((profile) => {
+    const user = usersById.get(profile.user_id);
 
     if (!user) {
       issues.push({
@@ -196,49 +199,114 @@ export async function getRecordsData({
       return [];
     }
 
+    if (!isWorkerShift(profile.shift)) {
+      issues.push({
+        message: `Worker ${profile.gid} has an unsupported shift.`,
+      });
+      return [];
+    }
+
+    const record = recordsByUserId.get(profile.user_id);
+    const workerRecord =
+      record ?? createEmptyRecordRow(month.monthStart, profile.user_id);
+    const shiftTimeLabel = getRecordsShiftTimeLabel(profile.shift);
+
     return [
       {
         alphaCount: getEffectiveRecordMetric(
-          record.alpha_count,
-          record.alpha_override_count,
+          workerRecord.alpha_count,
+          workerRecord.alpha_override_count,
         ),
         breakLateSeconds: getEffectiveRecordMetric(
-          record.break_late_seconds,
-          record.break_late_override_seconds,
+          workerRecord.break_late_seconds,
+          workerRecord.break_late_override_seconds,
         ),
         cutiStockSnapshot: getEffectiveRecordMetric(
-          record.cuti_stock_snapshot,
-          record.cuti_stock_override_snapshot,
+          workerRecord.cuti_stock_snapshot,
+          workerRecord.cuti_stock_override_snapshot,
         ),
         employeeRole: profile.employee_role,
         gid: profile.gid,
-        lastSource: parseRecordSource(record.last_source),
-        lastSourceAction: record.last_source_action,
+        lastSource: parseRecordSource(workerRecord.last_source),
+        lastSourceAction: workerRecord.last_source_action,
         lemburUnits: getEffectiveRecordMetric(
-          record.lembur_units,
-          record.lembur_override_units,
+          workerRecord.lembur_units,
+          workerRecord.lembur_override_units,
         ),
         name: user.name,
         pendingDays: getEffectiveRecordMetric(
-          record.pending_days,
-          record.pending_override_days,
+          workerRecord.pending_days,
+          workerRecord.pending_override_days,
         ),
-        periodMonth: record.period_month,
+        periodMonth: workerRecord.period_month,
+        roleShiftLabel: `${profile.employee_role} • ${shiftTimeLabel}`,
         sakitDays: getEffectiveRecordMetric(
-          record.sakit_days,
-          record.sakit_override_days,
+          workerRecord.sakit_days,
+          workerRecord.sakit_override_days,
         ),
-        updatedAt: record.updated_at,
-        userId: record.user_id,
+        shift: profile.shift,
+        updatedAt: workerRecord.updated_at,
+        userId: profile.user_id,
         workLateSeconds: getEffectiveRecordMetric(
-          record.work_late_seconds,
-          record.work_late_override_seconds,
+          workerRecord.work_late_seconds,
+          workerRecord.work_late_override_seconds,
         ),
       } satisfies RecordsRowDTO,
     ];
   });
 
   return { issues, month, rows };
+}
+
+function createEmptyRecordRow(periodMonth: string, userId: string): WorkerRecordRow {
+  return {
+    alpha_count: 0,
+    alpha_override_count: null,
+    break_late_override_seconds: null,
+    break_late_seconds: 0,
+    cuti_stock_override_snapshot: null,
+    cuti_stock_snapshot: 0,
+    last_source: null,
+    last_source_action: null,
+    lembur_override_units: null,
+    lembur_units: 0,
+    pending_days: 0,
+    pending_override_days: null,
+    period_month: periodMonth,
+    sakit_days: 0,
+    sakit_override_days: null,
+    updated_at: null,
+    user_id: userId,
+    work_late_override_seconds: null,
+    work_late_seconds: 0,
+  };
+}
+
+function getRecordsShiftTimeLabel(shift: WorkerShift): string {
+  const definition = getShiftDefinition(shift);
+
+  if (
+    definition.isFlexible ||
+    definition.startHour === null ||
+    definition.endHour === null
+  ) {
+    return "Flexible";
+  }
+
+  const start = formatShiftTime(
+    definition.startHour,
+    definition.startMinute ?? 0,
+  );
+  const end = formatShiftTime(
+    definition.endHour,
+    definition.endMinute ?? 0,
+  );
+
+  return `${start}\u2013${end}`;
+}
+
+function formatShiftTime(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function parseRecordSource(value: string | null): WorkerAttendanceSource | null {

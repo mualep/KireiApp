@@ -48,9 +48,7 @@ export default async function AdminRecordsPage({
   const data = await getRecordsData({ monthParam, staff });
   const filteredRows = filterRecordsRows(data.rows, filters);
   const roleTabs = getRecordsRoleTabs(data.rows);
-  const scopeLabel =
-    staff.profile.tier === "member" ? "Self-only" : "All visible workers";
-  const modeLabel = "Read-only";
+  const scopeLabel = staff.profile.tier === "member" ? "Self-only" : null;
   const emptyTitle = hasFilters
     ? "No records match these filters."
     : "No records available.";
@@ -63,9 +61,8 @@ export default async function AdminRecordsPage({
       {data.issues.length > 0 ? <RecordsIssuePanel issues={data.issues} /> : null}
 
       <RecordsToolbar
-        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}`}
+        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}:${filters.sort}`}
         filters={filters}
-        modeLabel={modeLabel}
         month={data.month}
         readableCount={numberFormatter.format(data.rows.length)}
         roleTabs={roleTabs}

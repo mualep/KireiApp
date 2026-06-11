@@ -6,6 +6,7 @@ import {
   absensiAttendanceLabels,
   getAbsensiMonthRange,
 } from "../lib/absensi/helpers";
+import { parseAbsensiFilters } from "../lib/absensi/filters";
 
 const projectRoot = process.cwd();
 const absensiPagePath = resolve(projectRoot, "app/admin/(shell)/absensi/page.tsx");
@@ -15,6 +16,7 @@ const absensiLoadingPath = resolve(
 );
 const absensiErrorPath = resolve(projectRoot, "app/admin/(shell)/absensi/error.tsx");
 const absensiDataPath = resolve(projectRoot, "lib/absensi/data.ts");
+const absensiFiltersPath = resolve(projectRoot, "lib/absensi/filters.ts");
 const absensiHelpersPath = resolve(projectRoot, "lib/absensi/helpers.ts");
 const absensiComponentsDir = resolve(projectRoot, "components/admin/absensi");
 const layoutPath = resolve(projectRoot, "app/admin/(shell)/layout.tsx");
@@ -25,6 +27,7 @@ for (const path of [
   absensiLoadingPath,
   absensiErrorPath,
   absensiDataPath,
+  absensiFiltersPath,
   absensiHelpersPath,
 ]) {
   assert.ok(existsSync(path), `${path} must exist for R3A Absensi read-only.`);
@@ -58,6 +61,7 @@ assert.deepEqual(getAbsensiMonthRange("invalid").monthParam, getCurrentWibMonth(
 
 const pageSource = readFileSync(absensiPagePath, "utf8");
 const dataSource = readFileSync(absensiDataPath, "utf8");
+const filtersSource = readFileSync(absensiFiltersPath, "utf8");
 const helpersSource = readFileSync(absensiHelpersPath, "utf8");
 const layoutSource = readFileSync(layoutPath, "utf8");
 const redirectsSource = readFileSync(redirectsPath, "utf8");
@@ -73,10 +77,9 @@ assertIncludes(pageSource, "getAbsensiData({ monthParam, staff })");
 assertIncludes(pageSource, "AbsensiMonthGrid");
 assertIncludes(pageSource, "scopeLabel");
 assertIncludes(pageSource, "Self-only");
-assertIncludes(pageSource, "All visible workers");
 assertIncludes(pageSource, "canCorrectAbsensi");
 assertIncludes(pageSource, 'staff.profile.tier !== "member"');
-assertIncludes(pageSource, "Read-only");
+assertNoPattern(pageSource, /All visible workers|Correction Controls|modeLabel/);
 assertNoPattern(pageSource, /redirect\(["']\/admin\/profile["']\)/);
 assertNoPattern(pageSource, /<h1[^>]*>\s*Absensi\s*<\/h1>/);
 assertNoPattern(pageSource, /\bOwner\/Admin\b/);
@@ -117,6 +120,18 @@ assertIncludes(dataSource, '.eq("is_canceled", false)');
 assertIncludes(dataSource, "is_deleted");
 assertIncludes(dataSource, "getAbsensiMonthRange");
 assertNoPattern(dataSource, /\.from\(\s*["']worker_records["']\s*\)/);
+assertIncludes(filtersSource, "AbsensiSortOption");
+assertIncludes(filtersSource, "sortAbsensiRows");
+assertNoPattern(
+  filtersSource,
+  /row\.gid[\s\S]*includes|includes\(normalizedSearch\)[\s\S]*row\.gid/,
+);
+assert.deepEqual(parseAbsensiFilters({}), {
+  q: "",
+  role: null,
+  sort: "name-asc",
+});
+assert.deepEqual(parseAbsensiFilters({ sort: "name-desc" }).sort, "name-desc");
 
 assertIncludes(absensiUiSource, "Absensi");
 assertIncludes(absensiUiSource, "HADIR");
@@ -126,6 +141,14 @@ assertIncludes(absensiUiSource, "PENDING");
 assertIncludes(absensiUiSource, "ALPHA");
 assertIncludes(absensiUiSource, "No recorded attendance");
 assertIncludes(absensiUiSource, 'aria-label="Read-only attendance month grid"');
+assertIncludes(absensiUiSource, 'id="absensi-sort"');
+assertIncludes(absensiUiSource, "Name &#x2192; A-Z");
+assertIncludes(absensiUiSource, "Name &#x2192; Z-A");
+assertIncludes(absensiUiSource, 'placeholder="Search worker name');
+assertIncludes(absensiUiSource, "Previous Month");
+assertIncludes(absensiUiSource, "Next Month");
+assertNoPattern(absensiUiSource, /All visible workers|Correction Controls|modeLabel/);
+assertNoPattern(absensiUiSource, /Search worker name or GID|placeholder=.*GID/);
 
 assertNoPattern(absensiAllSource, /\b(use server|revalidatePath)\b/);
 assertNoPattern(absensiAllSource, /\.rpc\s*\(/);

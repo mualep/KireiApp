@@ -294,7 +294,7 @@ function getTrackerHref({
     params.set("status", filters.status);
   }
 
-  if (filters.sort && filters.sort !== "status-urgent") {
+  if (filters.sort !== "name-asc") {
     params.set("sort", filters.sort);
   }
 
