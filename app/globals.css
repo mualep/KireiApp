@@ -572,6 +572,40 @@
         --btn-action-color: var(--status-alpha);
     }
 
+    .tracker-action-btn[data-tone="danger"].tracker-action-btn-emphasis {
+        color: var(--status-alpha) !important;
+        border-color: color-mix(
+            in oklch,
+            var(--status-alpha) 52%,
+            transparent
+        ) !important;
+        background: linear-gradient(
+            135deg,
+            color-mix(in oklch, var(--status-alpha) 18%, transparent),
+            color-mix(in oklch, var(--status-alpha) 8%, var(--card))
+        ) !important;
+        box-shadow:
+            inset 0 1px 0 color-mix(in oklch, var(--status-alpha) 18%, white 8%),
+            0 0 0 1px color-mix(in oklch, var(--status-alpha) 12%, transparent) !important;
+    }
+
+    .tracker-action-btn[data-tone="break"].tracker-action-btn-emphasis {
+        color: var(--status-break) !important;
+        border-color: color-mix(
+            in oklch,
+            var(--status-break) 52%,
+            transparent
+        ) !important;
+        background: linear-gradient(
+            135deg,
+            color-mix(in oklch, var(--status-break) 18%, transparent),
+            color-mix(in oklch, var(--status-break) 8%, var(--card))
+        ) !important;
+        box-shadow:
+            inset 0 1px 0 color-mix(in oklch, var(--status-break) 18%, white 8%),
+            0 0 0 1px color-mix(in oklch, var(--status-break) 12%, transparent) !important;
+    }
+
     .tracker-action-btn[data-tone="cuti"] {
         --btn-action-color: var(--status-cuti);
     }
@@ -604,6 +638,33 @@
         ) !important;
         box-shadow: none !important;
         opacity: 1;
+    }
+
+    .tracker-action-btn-emphasis:hover:not(:disabled),
+    .tracker-action-btn-emphasis:focus-visible:not(:disabled) {
+        border-color: color-mix(
+            in oklch,
+            var(--btn-action-color, var(--primary)) 62%,
+            transparent
+        ) !important;
+        background: linear-gradient(
+            135deg,
+            color-mix(in oklch, var(--btn-action-color, var(--primary)) 24%, transparent),
+            color-mix(in oklch, var(--btn-action-color, var(--primary)) 12%, var(--card))
+        ) !important;
+        box-shadow:
+            inset 0 1px 0
+                color-mix(
+                    in oklch,
+                    var(--btn-action-color, var(--primary)) 22%,
+                    white 8%
+                ),
+            0 0 0 1px
+                color-mix(
+                    in oklch,
+                    var(--btn-action-color, var(--primary)) 18%,
+                    transparent
+                ) !important;
     }
 
     .tracker-action-btn svg {

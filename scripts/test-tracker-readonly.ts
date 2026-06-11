@@ -676,7 +676,37 @@ assertPattern(
   /\.tracker-action-btn\[data-tone="on"\]\s*\{[\s\S]*?color:\s*var\(--status-on\)/,
   "START/on action tone must have green default text styling (D3-D).",
 );
-for (const tone of ["cuti", "sakit", "pending", "break", "danger"]) {
+assertPattern(
+  trackerActionControlsSource,
+  /action:\s*"SELESAI"[\s\S]*?className:\s*"tracker-action-btn-emphasis"[\s\S]*?tone:\s*"danger"/,
+  "FINISH action must opt into default danger emphasis styling (D3-F).",
+);
+assertPattern(
+  trackerActionControlsSource,
+  /action:\s*"ISTIRAHAT"[\s\S]*?className:\s*"tracker-action-btn-emphasis"[\s\S]*?tone:\s*"break"/,
+  "BREAK action must opt into default break emphasis styling (D3-F).",
+);
+assert.equal(
+  countOccurrences(trackerActionControlsSource, "tracker-action-btn-emphasis"),
+  2,
+  "Only FINISH and BREAK should opt into default coloured emphasis (D3-F).",
+);
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="danger"\]\.tracker-action-btn-emphasis\s*\{[\s\S]*?background:[\s\S]*?var\(--status-alpha\)/,
+  "FINISH/danger emphasis must have red default background styling (D3-F).",
+);
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="break"\]\.tracker-action-btn-emphasis\s*\{[\s\S]*?background:[\s\S]*?var\(--status-break\)/,
+  "BREAK emphasis must have yellow/gold default background styling (D3-F).",
+);
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="danger"\]\s*\{\s*--btn-action-color:\s*var\(--status-alpha\);\s*\}/,
+  "Plain danger tone must stay token-only by default for cancel buttons (D3-F).",
+);
+for (const tone of ["cuti", "sakit", "pending"]) {
   assertPattern(
     globalsSource,
     new RegExp(
@@ -706,6 +736,10 @@ function assertNoPattern(source: string, pattern: RegExp, message: string) {
 
 function assertPattern(source: string, pattern: RegExp, message: string) {
   assert.ok(pattern.test(source), message);
+}
+
+function countOccurrences(source: string, fragment: string) {
+  return source.split(fragment).length - 1;
 }
 
 function normalize(value: string) {

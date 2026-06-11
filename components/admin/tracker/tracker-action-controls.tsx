@@ -335,12 +335,14 @@ function getActiveControlGroups(
       [
         {
           action: "SELESAI",
+          className: "tracker-action-btn-emphasis",
           icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
           label: "FINISH",
           tone: "danger",
         },
         {
           action: "ISTIRAHAT",
+          className: "tracker-action-btn-emphasis",
           icon: <PauseCircleIcon data-icon="inline-start" aria-hidden="true" />,
           label: "BREAK",
           tone: "break",
