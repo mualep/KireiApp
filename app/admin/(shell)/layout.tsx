@@ -24,6 +24,11 @@ const ownerAdminNavItems: AdminShellNavItem[] = [
     icon: "absensi",
   },
   {
+    href: "/admin/records",
+    label: "Records",
+    icon: "records",
+  },
+  {
     href: "/admin/content",
     label: "Content",
     icon: "content",
@@ -45,6 +50,11 @@ const memberNavItems: AdminShellNavItem[] = [
     href: "/admin/absensi",
     label: "Absensi",
     icon: "absensi",
+  },
+  {
+    href: "/admin/records",
+    label: "Records",
+    icon: "records",
   },
 ];
 

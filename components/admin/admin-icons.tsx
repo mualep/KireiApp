@@ -1,5 +1,6 @@
 import {
   CalendarCheckIcon,
+  ClipboardListIcon,
   LayoutDashboardIcon,
   MousePointerClickIcon,
   NewspaperIcon,
@@ -14,6 +15,7 @@ export type AdminNavIconKey =
   | "content"
   | "dashboard"
   | "profile"
+  | "records"
   | "tracker";
 
 type AdminNavIconProps = {
@@ -27,6 +29,7 @@ const adminNavIcons: Record<AdminNavIconKey, LucideIcon> = {
   content: NewspaperIcon,
   dashboard: LayoutDashboardIcon,
   profile: UserRoundIcon,
+  records: ClipboardListIcon,
   tracker: MousePointerClickIcon,
 };
 

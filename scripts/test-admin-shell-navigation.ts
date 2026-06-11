@@ -72,9 +72,11 @@ assert.match(logoutButtonSource, /^"use client";/);
 assertIncludes(adminIconsSource, "export type AdminNavIconKey");
 assertIncludes(adminIconsSource, "export function AdminNavIcon");
 assertIncludes(adminIconsSource, "MousePointerClickIcon");
+assertIncludes(adminIconsSource, "ClipboardListIcon");
 assertIncludes(adminIconsSource, "SidebarOpenIcon");
 assertIncludes(adminIconsSource, "SidebarCloseIcon");
 assertIncludes(adminIconsSource, 'tracker: MousePointerClickIcon');
+assertIncludes(adminIconsSource, 'records: ClipboardListIcon');
 assertIncludes(adminIconsSource, 'dashboard: LayoutDashboardIcon');
 assertIncludes(adminIconsSource, 'absensi: CalendarCheckIcon');
 assertIncludes(adminIconsSource, 'content: NewspaperIcon');
@@ -91,6 +93,7 @@ assertOrderedFragments(ownerNavSource, [
   'label: "Dashboard"',
   'label: "Tracker"',
   'label: "Absensi"',
+  'label: "Records"',
   'label: "Content"',
 ]);
 assertNoPattern(
@@ -106,6 +109,8 @@ for (const fragment of [
   'label: "Tracker"',
   'href: "/admin/absensi"',
   'label: "Absensi"',
+  'href: "/admin/records"',
+  'label: "Records"',
 ]) {
   assertIncludes(memberNavSource, fragment);
 }
