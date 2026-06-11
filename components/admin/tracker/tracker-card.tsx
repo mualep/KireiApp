@@ -67,7 +67,7 @@ export function TrackerCard({
         >
           <div className="min-w-0">
             <CardTitle
-              className="truncate text-2xl font-black leading-tight text-foreground"
+              className="min-w-0 truncate text-2xl font-bold leading-tight text-foreground"
               translate="no"
             >
               {card.name}
@@ -75,11 +75,15 @@ export function TrackerCard({
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="h-5 max-w-[12rem] rounded-md border-border/80 bg-background/45 px-1.5 text-[0.65rem] text-muted-foreground"
+                className="h-6 max-w-[14rem] rounded-md border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground"
                 translate="no"
               >
-                <span className="hidden truncate @[14rem]:inline">{roleShiftLabel}</span>
-                <span className="truncate @[14rem]:hidden">{compactRoleShiftLabel}</span>
+                <span className="hidden truncate @[14rem]:inline">
+                  {roleShiftLabel}
+                </span>
+                <span className="truncate @[14rem]:hidden">
+                  {compactRoleShiftLabel}
+                </span>
               </Badge>
               {shiftTimeLabel ? (
                 <span
@@ -91,7 +95,7 @@ export function TrackerCard({
               ) : null}
             </div>
           </div>
-          <div className="shrink-0 pt-0.5">
+          <div className="shrink-0 pt-0.5 pr-1">
             <TrackerStatusBadge status={card.displayStatus} prominent />
           </div>
         </div>
@@ -113,7 +117,10 @@ export function TrackerCard({
 
       {canApplyTrackerActions ? (
         <CardFooter className="relative z-10 flex flex-col items-stretch gap-2.5 border-t border-border/70 bg-background/25 px-5 py-4">
-          <div aria-label="Tracker action footer" data-slot="tracker-card-actions">
+          <div
+            aria-label="Tracker action footer"
+            data-slot="tracker-card-actions"
+          >
             <TrackerControlZone
               card={card}
               canApplyTrackerActions={canApplyTrackerActions}

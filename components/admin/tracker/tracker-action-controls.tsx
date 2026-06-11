@@ -47,7 +47,14 @@ type TrackerActionControlsProps = {
   card: TrackerCardDTO;
 };
 
-type ControlTone = "break" | "cuti" | "danger" | "muted" | "on" | "pending" | "sakit";
+type ControlTone =
+  | "break"
+  | "cuti"
+  | "danger"
+  | "muted"
+  | "on"
+  | "pending"
+  | "sakit";
 
 type ActionControlConfig = {
   action: TrackerAction;
@@ -76,7 +83,9 @@ const genericFailure: ApplyTrackerActionResult = {
 export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   const router = useRouter();
   const [isTransitionPending, startTransition] = useTransition();
-  const [pendingAction, setPendingAction] = useState<TrackerAction | null>(null);
+  const [pendingAction, setPendingAction] = useState<TrackerAction | null>(
+    null,
+  );
   const [pendingCorrectionAction, setPendingCorrectionAction] =
     useState<TrackerCorrectionAction | null>(null);
   const [result, setResult] = useState<
@@ -84,8 +93,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   >(null);
   const controlGroups = getActiveControlGroups(card);
   const isPending =
-    isTransitionPending || pendingAction !== null || pendingCorrectionAction !== null;
-  const isBreakCard = card.storedStatus === "break" && card.displayStatus === "BREAK";
+    isTransitionPending ||
+    pendingAction !== null ||
+    pendingCorrectionAction !== null;
+  const isBreakCard =
+    card.storedStatus === "break" && card.displayStatus === "BREAK";
   const [nowMs, setNowMs] = useState<number | null>(null);
 
   useEffect(() => {
@@ -125,7 +137,10 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
 
         setResult(nextResult);
 
-        if (nextResult.code === "success" || nextResult.code === "version_conflict") {
+        if (
+          nextResult.code === "success" ||
+          nextResult.code === "version_conflict"
+        ) {
           router.refresh();
         }
       } catch {
@@ -162,7 +177,10 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
 
         setResult(nextResult);
 
-        if (nextResult.code === "success" || nextResult.code === "version_conflict") {
+        if (
+          nextResult.code === "success" ||
+          nextResult.code === "version_conflict"
+        ) {
           router.refresh();
         }
       } catch {
@@ -183,26 +201,35 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      {isBreakCard ? (
-        (() => {
-          const remaining = getBreakRemainingSeconds({
-            accumulatedSeconds: card.breakAccumulatedSecs,
-            nowMs,
-            startedAt: card.breakStartedAt,
-            timerRunning: card.breakTimerRunning,
-          });
-          const timerColorClass = getBreakTimerColorClass(remaining);
+      {isBreakCard
+        ? (() => {
+            const remaining = getBreakRemainingSeconds({
+              accumulatedSeconds: card.breakAccumulatedSecs,
+              nowMs,
+              startedAt: card.breakStartedAt,
+              timerRunning: card.breakTimerRunning,
+            });
+            const timerColorClass = getBreakTimerColorClass(remaining);
 
-          return (
-            <div className="rounded-lg border border-status-break/25 bg-status-break/8 px-3 py-3.5 flex items-center justify-center gap-2.5">
-              <TimerIcon className={cn("size-6 shrink-0", timerColorClass)} data-icon="inline-start" aria-hidden="true" />
-              <div className={cn("tracker-break-timer-large font-black", timerColorClass)}>
-                {formatBreakRemainingSeconds(remaining)}
+            return (
+              <div className="rounded-lg border border-status-break/25 bg-status-break/8 px-3 py-3.5 flex items-center justify-center gap-2.5">
+                <TimerIcon
+                  className={cn("size-6 shrink-0", timerColorClass)}
+                  data-icon="inline-start"
+                  aria-hidden="true"
+                />
+                <div
+                  className={cn(
+                    "tracker-break-timer-large font-black",
+                    timerColorClass,
+                  )}
+                >
+                  {formatBreakRemainingSeconds(remaining)}
+                </div>
               </div>
-            </div>
-          );
-        })()
-      ) : null}
+            );
+          })()
+        : null}
 
       {controlGroups.map((group, index) => (
         <div
@@ -214,12 +241,14 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         >
           {group.map((control) => (
             <Button
-              key={"action" in control ? control.action : control.correctionAction}
+              key={
+                "action" in control ? control.action : control.correctionAction
+              }
               type="button"
               disabled={isPending}
               variant="outline"
               className={cn(
-                "tracker-action-btn h-8 min-w-0 rounded-md px-2 text-xs font-bold",
+                "tracker-action-btn h-9 min-w-0 rounded-sm border px-3 text-sm font-bold",
                 control.className,
               )}
               data-tone={control.tone}
@@ -260,7 +289,9 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   );
 }
 
-function getActiveControlGroups(card: TrackerCardDTO): TrackerControlConfig[][] {
+function getActiveControlGroups(
+  card: TrackerCardDTO,
+): TrackerControlConfig[][] {
   if (
     card.storedStatus === "off" &&
     (card.displayStatus === "OFF" || card.displayStatus === "LATE")
