@@ -9,7 +9,6 @@ import {
 
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -46,44 +45,38 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
 
   const cards = [
     {
-      description: "work-late total",
       icon: ClockIcon,
-      label: "Work Late",
+      label: "Total Work Late",
       toneClass: "border-status-break/30 bg-status-break/10 text-status-break",
       value: formatRecordsSummaryDuration(totals.workLateSeconds),
     },
     {
-      description: "break-late total",
       icon: ActivityIcon,
-      label: "Break Late",
+      label: "Total Break Late",
       toneClass: "border-status-sakit/30 bg-status-sakit/10 text-status-sakit",
       value: formatRecordsSummaryDuration(totals.breakLateSeconds),
     },
     {
-      description: "people with alpha",
       icon: AlertTriangleIcon,
-      label: "Alpha",
+      label: "Total Alpha",
       toneClass: "border-status-alpha/30 bg-status-alpha/10 text-status-alpha",
       value: `${numberFormatter.format(totals.alphaWorkers)} orang`,
     },
     {
-      description: "sakit day total",
       icon: HeartPulseIcon,
-      label: "Sakit",
+      label: "Total Sakit",
       toneClass: "border-status-sakit/30 bg-status-sakit/10 text-status-sakit",
       value: `${numberFormatter.format(totals.sakit)} d`,
     },
     {
-      description: "pending day total",
       icon: HourglassIcon,
-      label: "Pending",
+      label: "Total Pending",
       toneClass: "border-status-pending/30 bg-status-pending/10 text-status-pending",
       value: `${numberFormatter.format(totals.pending)} d`,
     },
     {
-      description: "display-only hours",
       icon: BriefcaseBusinessIcon,
-      label: "Lembur",
+      label: "Total Lembur",
       toneClass: "border-status-break/35 bg-status-break/10 text-status-break",
       value: `${numberFormatter.format(totals.lembur)} h`,
     },
@@ -102,7 +95,7 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
             <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3">
               <div>
                 <CardDescription>{card.label}</CardDescription>
-                <CardTitle className="mt-1 font-mono text-xl font-black tabular-nums">
+                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums">
                   {card.value}
                 </CardTitle>
               </div>
@@ -115,9 +108,6 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
                 <Icon aria-hidden="true" className="size-4" />
               </span>
             </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">{card.description}</p>
-            </CardContent>
           </Card>
         );
       })}

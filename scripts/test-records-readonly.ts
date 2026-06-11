@@ -16,6 +16,14 @@ const recordsDataPath = resolve(projectRoot, "lib/records/data.ts");
 const recordsFiltersPath = resolve(projectRoot, "lib/records/filters.ts");
 const recordsHelpersPath = resolve(projectRoot, "lib/records/helpers.ts");
 const recordsComponentsDir = resolve(projectRoot, "components/admin/records");
+const recordsSummaryCardsPath = resolve(
+  projectRoot,
+  "components/admin/records/records-summary-cards.tsx",
+);
+const recordsTablePath = resolve(
+  projectRoot,
+  "components/admin/records/records-table.tsx",
+);
 const redirectsPath = resolve(projectRoot, "lib/auth/redirects.ts");
 const layoutPath = resolve(projectRoot, "app/admin/(shell)/layout.tsx");
 const adminIconsPath = resolve(projectRoot, "components/admin/admin-icons.tsx");
@@ -28,6 +36,8 @@ for (const path of [
   recordsFiltersPath,
   recordsHelpersPath,
   recordsComponentsDir,
+  recordsSummaryCardsPath,
+  recordsTablePath,
 ]) {
   assert.ok(existsSync(path), `${path} must exist for R3 Records read-only.`);
 }
@@ -40,6 +50,8 @@ const helpersSource = readFileSync(recordsHelpersPath, "utf8");
 const redirectsSource = readFileSync(redirectsPath, "utf8");
 const layoutSource = readFileSync(layoutPath, "utf8");
 const adminIconsSource = readFileSync(adminIconsPath, "utf8");
+const recordsSummaryCardsSource = readFileSync(recordsSummaryCardsPath, "utf8");
+const recordsTableSource = readFileSync(recordsTablePath, "utf8");
 const componentSources = readComponentSources().join("\n");
 const recordsUiSource = [pageSource, componentSources].join("\n");
 const recordsAllSource = [recordsUiSource, dataSource, filtersSource, helpersSource].join("\n");
@@ -84,6 +96,8 @@ assertIncludes(dataSource, "recordsByUserId");
 assertIncludes(dataSource, "record ?? createEmptyRecordRow");
 assertIncludes(dataSource, "createEmptyRecordRow");
 assertIncludes(dataSource, "getRecordsShiftTimeLabel");
+assertIncludes(dataSource, "compactRoleShiftLabel");
+assertIncludes(dataSource, "shiftTimeLabel");
 assertIncludes(dataSource, "work_late_override_seconds");
 assertIncludes(dataSource, "break_late_override_seconds");
 assertIncludes(dataSource, "alpha_override_count");
@@ -128,20 +142,61 @@ assertIncludes(recordsUiSource, "Next Month");
 assertNoPattern(recordsUiSource, /All visible workers|modeLabel|>\s*Read-only\s*</);
 assertNoPattern(componentSources, /row\.gid|KRU|Search worker name or GID/);
 for (const label of [
-  "Work Late",
-  "Break Late",
-  "Alpha",
-  "Sakit",
-  "Pending",
-  "Lembur",
+  "Total Work Late",
+  "Total Break Late",
+  "Total Alpha",
+  "Total Sakit",
+  "Total Pending",
+  "Total Lembur",
 ]) {
-  assertIncludes(componentSources, `label: "${label}"`);
+  assertIncludes(recordsSummaryCardsSource, `label: "${label}"`);
 }
+assert.equal(countMatches(recordsSummaryCardsSource, /label:\s*"Total /g), 6);
+assertNoPattern(
+  recordsSummaryCardsSource,
+  /label:\s*"(?:Work Late|Break Late|Alpha|Sakit|Pending|Lembur)"/,
+);
+assertNoPattern(
+  recordsSummaryCardsSource,
+  /work-late total|break-late total|people with alpha|sakit day total|pending day total|display-only hours/,
+);
 assertNoPattern(componentSources, /label:\s*"Workers"|label:\s*"Absence"/);
 assertIncludes(componentSources, "grid-cols-2");
 assertIncludes(componentSources, "md:grid-cols-3");
 assertIncludes(componentSources, "xl:grid-cols-6");
 assertIncludes(componentSources, "roleShiftLabel");
+assertIncludes(recordsTableSource, "tracker-worker-name");
+assertIncludes(recordsTableSource, "tracker-role-shift-badge");
+assertIncludes(recordsTableSource, "compactRoleShiftLabel");
+assertIncludes(recordsTableSource, "shiftTimeLabel");
+assertNoPattern(recordsTableSource, /lastSource|lastSourceAction|>\s*Source\s*</);
+assertIncludes(recordsTableSource, ">Action<");
+assertIncludes(recordsTableSource, ">Edit<");
+assertIncludes(recordsTableSource, "disabled");
+assertIncludes(recordsTableSource, 'aria-disabled="true"');
+assertNoPattern(recordsTableSource, /onClick|formAction|<form|type="submit"/);
+for (const tone of [
+  "workLate",
+  "breakLate",
+  "alpha",
+  "cuti",
+  "sakit",
+  "pending",
+  "lembur",
+]) {
+  assertIncludes(recordsTableSource, `tone="${tone}"`);
+}
+for (const colorClass of [
+  "text-status-break",
+  "text-status-sakit",
+  "text-status-alpha",
+  "text-status-cuti",
+  "text-status-pending",
+]) {
+  assertIncludes(recordsTableSource, colorClass);
+}
+assertIncludes(recordsTableSource, "font-sans");
+assertIncludes(recordsSummaryCardsSource, "font-sans");
 
 assertIncludes(layoutSource, 'href: "/admin/records"');
 assertIncludes(layoutSource, 'label: "Records"');
@@ -179,7 +234,7 @@ assertNoPattern(
 );
 assertNoPattern(
   recordsAllSource,
-  /\b(Edit|Reset|Delete|Archive|Hard Delete|Access Manager|PAUSE|RESUME)\b/,
+  /\b(Reset|Delete|Archive|Hard Delete|Access Manager|PAUSE|RESUME)\b/,
 );
 assertNoPattern(
   recordsAllSource,
@@ -222,6 +277,10 @@ function assertNoPattern(source: string, pattern: RegExp) {
     false,
     `Source must not match forbidden pattern: ${pattern}`,
   );
+}
+
+function countMatches(source: string, pattern: RegExp): number {
+  return [...source.matchAll(pattern)].length;
 }
 
 function assertOrderedFragments(source: string, fragments: string[]) {

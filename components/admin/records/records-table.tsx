@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { RecordsRowDTO } from "@/lib/records/data";
 import {
@@ -6,6 +7,7 @@ import {
   formatRecordsNumber,
   type EffectiveRecordMetric,
 } from "@/lib/records/helpers";
+import { cn } from "@/lib/utils";
 
 type RecordsTableProps = {
   emptyDescription?: string;
@@ -22,6 +24,18 @@ const updatedAtFormatter = new Intl.DateTimeFormat("id-ID", {
   timeZone: "Asia/Jakarta",
   year: "numeric",
 });
+
+const recordsMetricToneClasses = {
+  alpha: "text-status-alpha",
+  breakLate: "text-status-sakit",
+  cuti: "text-status-cuti",
+  lembur: "text-status-break",
+  pending: "text-status-pending",
+  sakit: "text-status-sakit",
+  workLate: "text-status-break",
+} as const;
+
+type RecordsMetricTone = keyof typeof recordsMetricToneClasses;
 
 export function RecordsTable({
   emptyDescription = "Read-only monthly records appear after worker records are available.",
@@ -61,10 +75,10 @@ export function RecordsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[76rem] border-collapse text-left text-xs">
+        <table className="w-full min-w-[72rem] border-collapse text-left text-xs">
           <thead>
             <tr className="border-b border-border/75 bg-background/35 text-muted-foreground">
-              <th className="sticky left-0 z-10 w-64 bg-card/95 px-3 py-2 font-semibold backdrop-blur">
+              <th className="sticky left-0 z-10 w-72 bg-card/95 px-3 py-2 font-semibold backdrop-blur">
                 Worker
               </th>
               <th className="px-3 py-2 font-semibold">Work Late</th>
@@ -73,9 +87,9 @@ export function RecordsTable({
               <th className="px-3 py-2 font-semibold">Sakit</th>
               <th className="px-3 py-2 font-semibold">Pending</th>
               <th className="px-3 py-2 font-semibold">Lembur</th>
-              <th className="px-3 py-2 font-semibold">Cuti Stock</th>
-              <th className="px-3 py-2 font-semibold">Source</th>
+              <th className="px-3 py-2 font-semibold">Cuti</th>
               <th className="px-3 py-2 font-semibold">Updated</th>
+              <th className="px-3 py-2 text-right font-semibold">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -85,49 +99,79 @@ export function RecordsTable({
                 className="border-b border-border/55 last:border-b-0"
               >
                 <th className="sticky left-0 z-10 bg-card/95 px-3 py-2 backdrop-blur">
-                  <span className="block truncate font-bold" translate="no">
-                    {row.name}
-                  </span>
-                  <span
-                    className="mt-1 block truncate font-mono text-[0.65rem] text-muted-foreground"
-                    translate="no"
-                  >
-                    {row.roleShiftLabel}
-                  </span>
+                  <div className="min-w-0">
+                    <div
+                      className="tracker-worker-name min-w-0 truncate font-bold leading-tight text-foreground"
+                      translate="no"
+                    >
+                      {row.name}
+                    </div>
+                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+                      <Badge
+                        variant="outline"
+                        className="tracker-role-shift-badge h-6 max-w-[14rem] rounded-sm border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground"
+                        translate="no"
+                      >
+                        <span className="hidden truncate @[14rem]:inline">
+                          {row.roleShiftLabel}
+                        </span>
+                        <span className="truncate @[14rem]:hidden">
+                          {row.compactRoleShiftLabel}
+                        </span>
+                      </Badge>
+                      {row.shiftTimeLabel ? (
+                        <span
+                          className="text-[0.6rem] font-medium text-muted-foreground/70"
+                          translate="no"
+                        >
+                          {row.shiftTimeLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                 </th>
                 <td className="px-3 py-2">
-                  <MetricValue metric={row.workLateSeconds} type="duration" />
+                  <MetricValue
+                    metric={row.workLateSeconds}
+                    tone="workLate"
+                    type="duration"
+                  />
                 </td>
                 <td className="px-3 py-2">
-                  <MetricValue metric={row.breakLateSeconds} type="duration" />
+                  <MetricValue
+                    metric={row.breakLateSeconds}
+                    tone="breakLate"
+                    type="duration"
+                  />
                 </td>
                 <td className="px-3 py-2">
-                  <MetricValue metric={row.alphaCount} />
+                  <MetricValue metric={row.alphaCount} tone="alpha" />
                 </td>
                 <td className="px-3 py-2">
-                  <MetricValue metric={row.sakitDays} />
+                  <MetricValue metric={row.sakitDays} tone="sakit" />
                 </td>
                 <td className="px-3 py-2">
-                  <MetricValue metric={row.pendingDays} />
+                  <MetricValue metric={row.pendingDays} tone="pending" />
                 </td>
                 <td className="px-3 py-2">
-                  <MetricValue metric={row.lemburUnits} />
+                  <MetricValue metric={row.lemburUnits} tone="lembur" />
                 </td>
                 <td className="px-3 py-2">
-                  <MetricValue metric={row.cutiStockSnapshot} />
+                  <MetricValue metric={row.cutiStockSnapshot} tone="cuti" />
                 </td>
-                <td className="px-3 py-2">
-                  <span className="block font-mono text-[0.7rem] uppercase text-foreground">
-                    {row.lastSource ?? "-"}
-                  </span>
-                  <span className="block max-w-44 truncate font-mono text-[0.65rem] text-muted-foreground">
-                    {row.lastSourceAction ?? "-"}
-                  </span>
-                </td>
-                <td className="px-3 py-2 font-mono text-[0.7rem] text-muted-foreground">
+                <td className="px-3 py-2 font-sans text-[0.7rem] tabular-nums text-muted-foreground">
                   {row.updatedAt
                     ? updatedAtFormatter.format(new Date(row.updatedAt))
                     : "-"}
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <Button
+                    aria-disabled="true"
+                    disabled
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-3 text-[0.7rem]"
+                  >Edit</Button>
                 </td>
               </tr>
             ))}
@@ -140,9 +184,11 @@ export function RecordsTable({
 
 function MetricValue({
   metric,
+  tone,
   type = "number",
 }: {
   metric: EffectiveRecordMetric<number | null>;
+  tone: RecordsMetricTone;
   type?: "duration" | "number";
 }) {
   const value =
@@ -152,7 +198,15 @@ function MetricValue({
 
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5">
-      <span className="font-mono font-bold tabular-nums" translate="no">
+      <span
+        className={cn(
+          "font-sans font-bold tabular-nums",
+          metric.value && metric.value > 0
+            ? recordsMetricToneClasses[tone]
+            : "text-muted-foreground/45",
+        )}
+        translate="no"
+      >
         {value}
       </span>
       {metric.isOverride ? (

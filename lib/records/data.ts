@@ -24,6 +24,7 @@ export type RecordsDataIssue = {
 export type RecordsRowDTO = {
   alphaCount: EffectiveRecordMetric;
   breakLateSeconds: EffectiveRecordMetric;
+  compactRoleShiftLabel: string;
   cutiStockSnapshot: EffectiveRecordMetric<number | null>;
   employeeRole: WorkerRole;
   gid: string;
@@ -36,6 +37,7 @@ export type RecordsRowDTO = {
   roleShiftLabel: string;
   sakitDays: EffectiveRecordMetric;
   shift: WorkerShift;
+  shiftTimeLabel: string | null;
   updatedAt: string | null;
   userId: string;
   workLateSeconds: EffectiveRecordMetric;
@@ -91,6 +93,16 @@ type RecordsDataRequest = {
       tier: StaffTier;
     };
   };
+};
+
+const compactRoleLabels: Record<WorkerRole, string> = {
+  "Cleaning Service": "Cleaning",
+  "Customer Service": "CS",
+  "Expert Player": "EP",
+  Explorer: "Explorer",
+  Internship: "Internship",
+  "Professional Player": "PP",
+  Security: "Security",
 };
 
 export async function getRecordsData({
@@ -210,6 +222,14 @@ export async function getRecordsData({
     const workerRecord =
       record ?? createEmptyRecordRow(month.monthStart, profile.user_id);
     const shiftTimeLabel = getRecordsShiftTimeLabel(profile.shift);
+    const roleShiftLabel = getRecordsRoleShiftLabel(
+      profile.employee_role,
+      profile.shift,
+    );
+    const compactRoleShiftLabel = getCompactRecordsRoleShiftLabel(
+      profile.employee_role,
+      profile.shift,
+    );
 
     return [
       {
@@ -221,6 +241,7 @@ export async function getRecordsData({
           workerRecord.break_late_seconds,
           workerRecord.break_late_override_seconds,
         ),
+        compactRoleShiftLabel,
         cutiStockSnapshot: getEffectiveRecordMetric(
           workerRecord.cuti_stock_snapshot,
           workerRecord.cuti_stock_override_snapshot,
@@ -239,12 +260,13 @@ export async function getRecordsData({
           workerRecord.pending_override_days,
         ),
         periodMonth: workerRecord.period_month,
-        roleShiftLabel: `${profile.employee_role} • ${shiftTimeLabel}`,
+        roleShiftLabel,
         sakitDays: getEffectiveRecordMetric(
           workerRecord.sakit_days,
           workerRecord.sakit_override_days,
         ),
         shift: profile.shift,
+        shiftTimeLabel,
         updatedAt: workerRecord.updated_at,
         userId: profile.user_id,
         workLateSeconds: getEffectiveRecordMetric(
@@ -282,7 +304,28 @@ function createEmptyRecordRow(periodMonth: string, userId: string): WorkerRecord
   };
 }
 
-function getRecordsShiftTimeLabel(shift: WorkerShift): string {
+function getRecordsRoleShiftLabel(role: WorkerRole, shift: WorkerShift): string {
+  if (shift === "flexible") {
+    return `${role} • Flexible`;
+  }
+
+  return `${role}-${shift}`;
+}
+
+function getCompactRecordsRoleShiftLabel(
+  role: WorkerRole,
+  shift: WorkerShift,
+): string {
+  const compactRole = compactRoleLabels[role];
+
+  if (shift === "flexible") {
+    return `${compactRole} • Flexible`;
+  }
+
+  return `${compactRole}-${shift}`;
+}
+
+function getRecordsShiftTimeLabel(shift: WorkerShift): string | null {
   const definition = getShiftDefinition(shift);
 
   if (
@@ -290,7 +333,7 @@ function getRecordsShiftTimeLabel(shift: WorkerShift): string {
     definition.startHour === null ||
     definition.endHour === null
   ) {
-    return "Flexible";
+    return null;
   }
 
   const start = formatShiftTime(
