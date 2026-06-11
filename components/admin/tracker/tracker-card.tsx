@@ -199,11 +199,11 @@ function RecordBadge({
 }) {
   return (
     <span
-      className="tracker-record-badge"
+      className="tracker-record-badge font-sans"
       style={{ "--record-color": color } as React.CSSProperties}
     >
       <span className="text-muted-foreground/60">{label}</span>
-      <span className="font-mono font-bold" style={{ color }}>
+      <span className="font-sans font-bold tabular-nums" style={{ color }}>
         {value}
       </span>
     </span>

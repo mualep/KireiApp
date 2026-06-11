@@ -296,6 +296,13 @@ assertIncludes(trackerCardSource, 'label: "Sakit"');
 assertIncludes(trackerCardSource, 'label: "Pending"');
 assertIncludes(trackerCardSource, 'label: "Lembur"');
 assertIncludes(trackerCardSource, "formatRecordsDuration");
+assertIncludes(trackerCardSource, "font-sans");
+assertIncludes(trackerCardSource, "tabular-nums");
+assertNoPattern(
+  trackerCardSource,
+  /tracker-record-badge[\s\S]*?font-mono/,
+  "Tracker record badge values must use clear sans-serif typography, not mono.",
+);
 assertIncludes(trackerDataSource, '.from("worker_records")');
 assertIncludes(trackerDataSource, '.eq("period_month", recordsMonth.monthStart)');
 assertIncludes(trackerDataSource, "recordsByUserId");
