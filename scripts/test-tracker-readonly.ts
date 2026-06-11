@@ -554,8 +554,8 @@ assertNoPattern(
 );
 assertIncludes(trackerCardSource, "rounded-xl");
 
-// ── D3-B: Worker name size ─────────────────────────────────────────────────
-assertIncludes(trackerCardSource, "text-lg");
+// ── D3-B/D3-D: Worker name size ────────────────────────────────────────────
+assertIncludes(trackerCardSource, "text-2xl");
 
 // ── D3-B: Responsive role label ────────────────────────────────────────────
 assertIncludes(trackerCardSource, "card.employeeRole");
@@ -631,9 +631,15 @@ assertNoPattern(
   "Outer action controls bordered wrapper must be removed (D3-C).",
 );
 
-// ── D3-C: Card balanced padding (larger side, smaller top) ───────────────────
-assertIncludes(trackerCardSource, "pt-3");
-assertIncludes(trackerCardSource, "px-4");
+// ── D3-D: Card balanced padding and contrast ───────────────────────────────
+assertIncludes(trackerCardSource, "tracker-card-contrast");
+assertIncludes(trackerCardSource, "pt-5");
+assertIncludes(trackerCardSource, "px-5");
+assertNoPattern(
+  trackerCardSource,
+  /\bpt-3\b/,
+  "Tracker worker card must remove special top-padding imbalance (D3-D).",
+);
 
 // ── D3-C: Status badge rectangular (radius-sm, not radius-lg, not pill) ───────
 assertNoPattern(
@@ -642,9 +648,43 @@ assertNoPattern(
   "Status badge prominent must not use radius-lg — should use radius-sm for rect shape (D3-C).",
 );
 
-// ── D3-C: Action button data-tone (monochrome normal, colour on hover) ─────────
+// ── D3-D: Worker name size and role badge rectangle ─────────────────────────
+assertIncludes(trackerCardSource, "truncate text-2xl");
+assertIncludes(trackerCardSource, "rounded-md");
+assertNoPattern(
+  trackerCardSource,
+  /<Badge[\s\S]*?rounded-(?:full|4xl)/,
+  "Tracker role badge must be a modest rounded rectangle, not a pill (D3-D).",
+);
+
+// ── D3-D: Action button layout and data-tone styling ────────────────────────
+assertIncludes(trackerActionControlsSource, "flex flex-col gap-2.5");
 assertIncludes(trackerActionControlsSource, "data-tone");
 assertIncludes(globalsSource, "data-tone");
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="on"\]\s*\{[\s\S]*?background-color:\s*color-mix\(in oklch,\s*var\(--status-on\)/,
+  "START/on action tone must have green default background styling (D3-D).",
+);
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="on"\]\s*\{[\s\S]*?color:\s*var\(--status-on\)/,
+  "START/on action tone must have green default text styling (D3-D).",
+);
+for (const tone of ["cuti", "sakit", "pending", "break", "danger"]) {
+  assertPattern(
+    globalsSource,
+    new RegExp(
+      String.raw`\.tracker-action-btn\[data-tone="${tone}"\]\s*\{\s*--btn-action-color:\s*var\(--status-`,
+    ),
+    `${tone} action tone should only set hover/focus colour token by default (D3-D).`,
+  );
+}
+assertNoPattern(
+  trackerActionControlsSource,
+  /\b(LEMBUR|PAUSE|RESUME)\b/,
+  "Tracker controls must not render unsupported LEMBUR, PAUSE, or RESUME actions (D3-D).",
+);
 
 console.log("Tracker read-only tests passed.");
 
@@ -657,6 +697,10 @@ function assertIncludes(source: string, fragment: string) {
 
 function assertNoPattern(source: string, pattern: RegExp, message: string) {
   assert.equal(pattern.test(source), false, message);
+}
+
+function assertPattern(source: string, pattern: RegExp, message: string) {
+  assert.ok(pattern.test(source), message);
 }
 
 function normalize(value: string) {

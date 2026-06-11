@@ -55,11 +55,11 @@ export function TrackerCard({
     <Card
       size="sm"
       className={cn(
-        "tracker-worker-card tracker-glass-panel tracker-card-tone relative gap-0 overflow-hidden rounded-xl border py-0",
+        "tracker-worker-card tracker-glass-panel tracker-card-tone tracker-card-contrast relative gap-0 overflow-hidden rounded-xl border py-0",
         cardToneClasses[card.displayStatus],
       )}
     >
-      <CardHeader className="relative z-10 px-4 pt-3 pb-2">
+      <CardHeader className="relative z-10 px-5 pt-5 pb-3">
         <div
           aria-label="Worker Identity"
           className="flex min-w-0 items-start justify-between gap-3"
@@ -67,7 +67,7 @@ export function TrackerCard({
         >
           <div className="min-w-0">
             <CardTitle
-              className="truncate text-lg font-black leading-tight text-foreground"
+              className="truncate text-2xl font-black leading-tight text-foreground"
               translate="no"
             >
               {card.name}
@@ -75,7 +75,7 @@ export function TrackerCard({
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="h-5 max-w-[12rem] border-border/80 bg-background/45 px-1.5 text-[0.65rem] text-muted-foreground"
+                className="h-5 max-w-[12rem] rounded-md border-border/80 bg-background/45 px-1.5 text-[0.65rem] text-muted-foreground"
                 translate="no"
               >
                 <span className="hidden truncate @[14rem]:inline">{roleShiftLabel}</span>
@@ -97,7 +97,7 @@ export function TrackerCard({
         </div>
       </CardHeader>
 
-      <CardContent className="relative z-10 flex flex-col gap-2.5 px-4 pt-0 pb-3">
+      <CardContent className="relative z-10 flex flex-col gap-2.5 px-5 pt-0 pb-3">
         <section
           aria-label="Monthly Records"
           className="flex flex-wrap gap-1.5"
@@ -112,7 +112,7 @@ export function TrackerCard({
       </CardContent>
 
       {canApplyTrackerActions ? (
-        <CardFooter className="relative z-10 flex flex-col items-stretch gap-1.5 border-t border-border/70 bg-background/25 px-4 py-3">
+        <CardFooter className="relative z-10 flex flex-col items-stretch gap-2.5 border-t border-border/70 bg-background/25 px-5 py-4">
           <div aria-label="Tracker action footer" data-slot="tracker-card-actions">
             <TrackerControlZone
               card={card}

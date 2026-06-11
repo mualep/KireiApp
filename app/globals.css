@@ -255,6 +255,26 @@
       inset 0 1px 0 color-mix(in oklch, var(--foreground) 8%, transparent);
     }
 
+  .tracker-card-contrast {
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in oklch, var(--card) 68%, var(--background) 32%),
+        color-mix(in oklch, var(--background) 76%, var(--card) 24%)
+      );
+    border-color: color-mix(in oklch, var(--tracker-status-color) 24%, var(--border));
+    }
+
+  .dark .tracker-card-contrast {
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in oklch, var(--card) 42%, var(--background) 58%),
+        color-mix(in oklch, var(--background) 88%, var(--card) 12%)
+      );
+    border-color: color-mix(in oklch, var(--tracker-status-color) 28%, var(--border));
+    }
+
   .tracker-card-grid {
     display: grid;
     width: 100%;
@@ -432,7 +452,13 @@
     transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
     }
 
-  .tracker-action-btn[data-tone="on"]      { --btn-action-color: var(--status-on); }
+  .tracker-action-btn[data-tone="on"] {
+    --btn-action-color: var(--status-on);
+    background-color: color-mix(in oklch, var(--status-on) 13%, transparent);
+    border-color: color-mix(in oklch, var(--status-on) 46%, transparent);
+    color: var(--status-on);
+    }
+
   .tracker-action-btn[data-tone="break"]   { --btn-action-color: var(--status-break); }
   .tracker-action-btn[data-tone="danger"]  { --btn-action-color: var(--status-alpha); }
   .tracker-action-btn[data-tone="cuti"]    { --btn-action-color: var(--status-cuti); }
