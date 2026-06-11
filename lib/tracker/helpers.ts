@@ -9,10 +9,24 @@ import {
   type WorkerShift,
 } from "@/lib/workers";
 
+export type TrackerSortOption = "name-asc" | "name-desc" | "status-urgent" | "status-not-urgent";
+
+const trackerSortOptions = new Set<TrackerSortOption>([
+  "name-asc",
+  "name-desc",
+  "status-urgent",
+  "status-not-urgent",
+]);
+
+function isTrackerSortOption(value: string): value is TrackerSortOption {
+  return trackerSortOptions.has(value as TrackerSortOption);
+}
+
 export type TrackerFilters = {
   q: string;
   role: WorkerRole | null;
   shift: WorkerShift | null;
+  sort: TrackerSortOption;
   status: WorkerDisplayStatus | null;
 };
 
@@ -78,18 +92,23 @@ export function parseTrackerFilters(searchParams: TrackerSearchParams): TrackerF
   const q = normalizeQueryParam(searchParams.q);
   const role = normalizeSingleParam(searchParams.role);
   const shift = normalizeSingleParam(searchParams.shift);
+  const sort = normalizeSingleParam(searchParams.sort);
   const status = normalizeSingleParam(searchParams.status);
+
+  // Backward compat: old URLs with ?sort=critical-name gracefully upgrade to status-urgent
+  const resolvedSort = sort === "critical-name" ? "status-urgent" : sort;
 
   return {
     q: q.slice(0, 80),
     role: isWorkerRole(role) ? role : null,
     shift: isWorkerShift(shift) ? shift : null,
+    sort: isTrackerSortOption(resolvedSort) ? resolvedSort : "status-urgent",
     status: isWorkerDisplayStatus(status) ? status : null,
   };
 }
 
 export function hasTrackerFilters(filters: TrackerFilters): boolean {
-  return Boolean(filters.q || filters.role || filters.shift || filters.status);
+  return Boolean(filters.q || filters.role || filters.shift || filters.status || filters.sort !== "status-urgent");
 }
 
 export function scopeTrackerCards(
@@ -133,6 +152,11 @@ export function filterTrackerCards(
   });
 }
 
+const notUrgentStatusOrder: WorkerDisplayStatus[] = [...criticalStatusOrder].reverse();
+const notUrgentStatusRanks = new Map(
+  notUrgentStatusOrder.map((status, index) => [status, index]),
+);
+
 export function sortTrackerCards(cards: TrackerCardDTO[]): TrackerCardDTO[] {
   return [...cards].sort((left, right) => {
     const statusDelta =
@@ -149,11 +173,49 @@ export function sortTrackerCards(cards: TrackerCardDTO[]): TrackerCardDTO[] {
   });
 }
 
+export function sortTrackerCardsByName(cards: TrackerCardDTO[]): TrackerCardDTO[] {
+  return [...cards].sort((left, right) =>
+    left.name.localeCompare(right.name, "id-ID", { sensitivity: "base" }),
+  );
+}
+
+export function sortTrackerCardsByNameDesc(cards: TrackerCardDTO[]): TrackerCardDTO[] {
+  return [...cards].sort((left, right) =>
+    right.name.localeCompare(left.name, "id-ID", { sensitivity: "base" }),
+  );
+}
+
+export function sortTrackerCardsByNotUrgent(cards: TrackerCardDTO[]): TrackerCardDTO[] {
+  return [...cards].sort((left, right) => {
+    const statusDelta =
+      (notUrgentStatusRanks.get(left.displayStatus) ?? notUrgentStatusOrder.length) -
+      (notUrgentStatusRanks.get(right.displayStatus) ?? notUrgentStatusOrder.length);
+
+    if (statusDelta !== 0) {
+      return statusDelta;
+    }
+
+    return left.name.localeCompare(right.name, "id-ID", { sensitivity: "base" });
+  });
+}
+
 export function filterAndSortTrackerCards(
   cards: TrackerCardDTO[],
   filters: TrackerFilters,
 ): TrackerCardDTO[] {
-  return sortTrackerCards(filterTrackerCards(cards, filters));
+  const filtered = filterTrackerCards(cards, filters);
+
+  switch (filters.sort) {
+    case "name-asc":
+      return sortTrackerCardsByName(filtered);
+    case "name-desc":
+      return sortTrackerCardsByNameDesc(filtered);
+    case "status-not-urgent":
+      return sortTrackerCardsByNotUrgent(filtered);
+    case "status-urgent":
+    default:
+      return sortTrackerCards(filtered);
+  }
 }
 
 export function getCriticalStatusRank(status: WorkerDisplayStatus): number {

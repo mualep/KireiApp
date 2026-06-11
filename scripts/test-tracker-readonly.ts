@@ -102,8 +102,9 @@ assertIncludes(trackerActionControlsSource, 'label: "BATAL SAKIT"');
 assertIncludes(trackerActionControlsSource, 'label: "BATAL PENDING"');
 assertIncludes(trackerActionControlsSource, "attendanceId: card.activeTrackerAttendanceId");
 assertIncludes(trackerActionControlsSource, "window.prompt");
-assertIncludes(trackerActionControlsSource, "Ends break and returns to active work.");
-assertIncludes(trackerActionControlsSource, "Break Remaining");
+assertNoPattern(trackerActionControlsSource, /"BREAK TIMER"|BREAK TIMER|Break Timer/, "Break timer area does not contain BREAK TIMER");
+assertNoPattern(trackerActionControlsSource, /Ends break|returns to active/, "Break timer area does not contain Ends break");
+assertIncludes(trackerActionControlsSource, "tracker-break-timer-large");
 assertIncludes(trackerActionControlsSource, "formatBreakRemainingSeconds");
 assertIncludes(trackerActionControlsSource, "getBreakRemainingSeconds");
 assertIncludes(trackerActionControlsSource, "breakAccumulatedSecs");
@@ -220,18 +221,74 @@ assertIncludes(trackerCardSource, "TrackerActionControls");
 assertIncludes(trackerCardSource, "TrackerStatusBadge");
 assertIncludes(trackerCardSource, 'data-slot="tracker-card-identity"');
 assertIncludes(trackerCardSource, 'aria-label="Worker Identity"');
-assertIncludes(trackerCardSource, 'data-slot="tracker-card-metadata"');
-assertIncludes(trackerCardSource, 'aria-label="Worker Metadata"');
-assertIncludes(trackerCardSource, 'data-slot="tracker-card-activity"');
-assertIncludes(trackerCardSource, 'aria-label="Worker Activity"');
 assertIncludes(trackerCardSource, 'data-slot="tracker-card-actions"');
 assertIncludes(trackerCardSource, 'aria-label="Tracker action footer"');
-assertIncludes(trackerCardSource, "CardFooter");
-assertIncludes(trackerCardSource, "roleShiftLabel");
-assertIncludes(trackerCardSource, "updatedAtText");
-assertIncludes(trackerCardSource, "breakAccumulatedSecs");
-assertIncludes(trackerCardSource, "Self View");
+assertNoPattern(trackerCardSource, /"Self View"|Self View/, "Card no longer renders Self View");
+assertNoPattern(trackerCardSource, /ShieldIcon|Shield/, "Card no longer renders shield icon for member visual label");
+assertIncludes(trackerCardSource, "<TrackerStatusBadge status={card.displayStatus} prominent />");
+assertIncludes(readFileSync(resolve(projectRoot, "app/globals.css"), "utf8"), "tracker-status-badge-prominent");
 assertIncludes(trackerCardSource, "R2C");
+
+// ── D3 Refinement: removed UI elements ─────────────────────────────────────
+assertNoPattern(
+  trackerCardSource,
+  /UserRoundIcon/,
+  "Tracker card must no longer render avatar/person icon (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /IdCardIcon/,
+  "Tracker card must no longer render GID icon (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /card\.gid/,
+  "Tracker card must no longer render worker GID/profile ID (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /MetricChip/,
+  "Tracker card must no longer render Role/Cuti/Stored/Version metadata boxes (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /data-slot="tracker-card-metadata"/,
+  "Tracker card must no longer have metadata data-slot (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /data-slot="tracker-card-activity"/,
+  "Tracker card must no longer have activity data-slot (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /"Updated"/,
+  "Tracker card must no longer render Updated at section (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /"Break Used"/,
+  "Tracker card must no longer render Break Used section (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /formatDuration/,
+  "Tracker card must no longer use formatDuration helper (D3 removal).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /updatedAtText/,
+  "Tracker card must no longer accept or render updatedAtText (D3 removal).",
+);
+
+// ── D3 Refinement: added/improved UI elements ──────────────────────────────
+assertIncludes(trackerCardSource, 'data-slot="tracker-card-records"');
+assertIncludes(trackerCardSource, 'aria-label="Monthly Records"');
+assertIncludes(trackerCardSource, "getShiftDefinition");
+assertIncludes(trackerCardSource, "cutiStock");
+assertIncludes(trackerCardSource, "TrackerActionControls");
+assertIncludes(trackerCardSource, "TrackerStatusBadge");
+assertIncludes(trackerCardSource, "card.name");
 assertNoPattern(
   trackerCardSource,
   /from\s+["']@\/app\/admin\/\(shell\)\/tracker\/actions["']|applyTrackerAction\(|applyTrackerCorrection\(|@\/lib\/supabase|createClient|\.rpc\s*\(|fetch\(|\/api\/|Absensi|absensi|worker_status/i,
@@ -320,6 +377,7 @@ assert.deepEqual(parseTrackerFilters({ q: "  KRU-001  " }), {
   q: "KRU-001",
   role: null,
   shift: null,
+  sort: "status-urgent",
   status: null,
 });
 
@@ -334,6 +392,7 @@ assert.deepEqual(
     q: "x".repeat(80),
     role: null,
     shift: null,
+    sort: "status-urgent",
     status: null,
   },
 );
@@ -348,6 +407,7 @@ assert.deepEqual(
     q: "",
     role: "Customer Service",
     shift: "flexible",
+    sort: "status-urgent",
     status: "ALPHA",
   },
 );
@@ -469,6 +529,198 @@ assert.deepEqual(
   ],
 );
 
+// ── D3-B: Sorting must work ────────────────────────────────────────────────
+assertNoPattern(
+  trackerFilterFormSource,
+  /id="tracker-sort"[^>]*disabled/,
+  "Tracker sort select must not be disabled (D3-B sorting fix).",
+);
+assertIncludes(trackerFilterFormSource, "handleSortChange");
+assertIncludes(trackerFilterFormSource, "status-urgent");
+assertIncludes(trackerFilterFormSource, "name-asc");
+
+const trackerHelpersPath = resolve(projectRoot, "lib/tracker/helpers.ts");
+const trackerHelpersSource = readFileSync(trackerHelpersPath, "utf8");
+assertIncludes(trackerHelpersSource, "sort:");
+assertIncludes(trackerHelpersSource, "TrackerSortOption");
+
+// ── D3-B: Status badge shape (rounded rectangle, not pill) ─────────────────
+const globalsSource = readFileSync(resolve(projectRoot, "app/globals.css"), "utf8");
+assertIncludes(globalsSource, "tracker-status-badge-prominent");
+assertNoPattern(
+  globalsSource,
+  /tracker-status-badge-prominent[\s\S]*?box-shadow:\s*0\s+0\s+12px/,
+  "Status badge prominent must not have excessive glow (D3-B).",
+);
+assertIncludes(trackerCardSource, "rounded-xl");
+
+// ── D3-B/D3-D: Worker name visual prominence ───────────────────────────────
+assertIncludes(trackerCardSource, "tracker-worker-name");
+assertIncludes(trackerCardSource, "truncate");
+assertIncludes(globalsSource, ".tracker-worker-name");
+
+// ── D3-B: Responsive role label ────────────────────────────────────────────
+assertIncludes(trackerCardSource, "card.employeeRole");
+assertIncludes(trackerCardSource, "compactRoleLabels");
+
+// ── D3-B: Break timer contextual colour ────────────────────────────────────
+assertIncludes(trackerActionControlsSource, "getBreakTimerColorClass");
+assertIncludes(trackerActionControlsSource, "tracker-timer-normal");
+assertIncludes(trackerActionControlsSource, "tracker-timer-warning");
+assertIncludes(trackerActionControlsSource, "tracker-timer-overdue");
+assertIncludes(globalsSource, "tracker-timer-normal");
+assertIncludes(globalsSource, "tracker-timer-warning");
+assertIncludes(globalsSource, "tracker-timer-overdue");
+
+// ── D3-B: Action button monochrome styling ─────────────────────────────────
+assertIncludes(trackerActionControlsSource, "tracker-action-btn");
+assertIncludes(globalsSource, "tracker-action-btn");
+assertNoPattern(
+  trackerActionControlsSource,
+  /\bLEMBUR\b/,
+  "Tracker controls must not render LEMBUR action (D3-B guardrail).",
+);
+
+// ── D3-C: Sort options (4 options, labels and values) ──────────────────────
+assertIncludes(trackerFilterFormSource, "Name &#x2192; A-Z");
+assertIncludes(trackerFilterFormSource, "Name &#x2192; Z-A");
+assertIncludes(trackerFilterFormSource, "Status &#x2192; Urgent");
+assertIncludes(trackerFilterFormSource, "Status &#x2192; Tidak Urgent");
+assertIncludes(trackerFilterFormSource, "name-asc");
+assertIncludes(trackerFilterFormSource, "name-desc");
+assertIncludes(trackerFilterFormSource, "status-urgent");
+assertIncludes(trackerFilterFormSource, "status-not-urgent");
+assertNoPattern(
+  trackerFilterFormSource,
+  /Critical[^"]*A-Z|critical-name/,
+  "Old Critical \u2192 A-Z option and critical-name value must be removed (D3-C).",
+);
+assertIncludes(trackerHelpersSource, "name-desc");
+assertIncludes(trackerHelpersSource, "status-urgent");
+assertIncludes(trackerHelpersSource, "status-not-urgent");
+
+// ── D3-C: Sort functional tests ──────────────────────────────────────────────
+assert.deepEqual(
+  filterAndSortTrackerCards(cards, parseTrackerFilters({ sort: "name-desc" })).map((c) => c.name),
+  ["Citra", "Bima", "Alya"],
+);
+assert.deepEqual(
+  filterAndSortTrackerCards(cards, parseTrackerFilters({ sort: "status-urgent" })).map(
+    (c) => c.displayStatus,
+  ),
+  ["ALPHA", "LATE", "OFF"],
+);
+assert.deepEqual(
+  filterAndSortTrackerCards(cards, parseTrackerFilters({ sort: "status-not-urgent" })).map(
+    (c) => c.displayStatus,
+  ),
+  ["OFF", "LATE", "ALPHA"],
+);
+
+// ── D3-C: Backward compat — critical-name falls back to status-urgent ─────────
+assert.deepEqual(parseTrackerFilters({ sort: "critical-name" }), {
+  q: "",
+  role: null,
+  shift: null,
+  sort: "status-urgent",
+  status: null,
+});
+
+// ── D3-C: Action controls outer bordered container removed ────────────────────
+assertNoPattern(
+  trackerCardSource,
+  /aria-label="Tracker controls"/,
+  "Outer action controls bordered wrapper must be removed (D3-C).",
+);
+
+// ── D3-D: Card balanced padding and contrast ───────────────────────────────
+assertIncludes(trackerCardSource, "tracker-card-contrast");
+assertIncludes(trackerCardSource, "tracker-card-header");
+assertNoPattern(
+  trackerCardSource,
+  /\bpt-3\b/,
+  "Tracker worker card must remove special top-padding imbalance (D3-D).",
+);
+assertNoPattern(
+  trackerCardSource,
+  /rounded-xl border p"/,
+  "Tracker worker card must not use an invalid bare padding class (D3-E).",
+);
+
+// ── D3-C: Status badge rectangular (radius-sm, not radius-lg, not pill) ───────
+assertNoPattern(
+  globalsSource,
+  /tracker-status-badge-prominent[\s\S]*?border-radius:\s*var\(--radius-lg\)/,
+  "Status badge prominent must not use radius-lg — should use radius-sm for rect shape (D3-C).",
+);
+
+// ── D3-D/D3-E: Worker name size and role badge rectangle ───────────────────
+assertIncludes(trackerCardSource, "tracker-role-shift-badge");
+assertNoPattern(
+  trackerCardSource,
+  /<Badge[\s\S]*?rounded-(?:full|4xl)/,
+  "Tracker role badge must be a modest rounded rectangle, not a pill (D3-D).",
+);
+
+// ── D3-D: Action button layout and data-tone styling ────────────────────────
+assertIncludes(trackerActionControlsSource, "tracker-action-stack");
+assertIncludes(trackerActionControlsSource, "data-tone");
+assertIncludes(globalsSource, "data-tone");
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="on"\]\s*\{[\s\S]*?background(?:-color|-image)?:[\s\S]*?var\(--status-on\)/,
+  "START/on action tone must have green default background styling (D3-D).",
+);
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="on"\]\s*\{[\s\S]*?color:\s*var\(--status-on\)/,
+  "START/on action tone must have green default text styling (D3-D).",
+);
+assertPattern(
+  trackerActionControlsSource,
+  /action:\s*"SELESAI"[\s\S]*?className:\s*"tracker-action-btn-emphasis"[\s\S]*?tone:\s*"danger"/,
+  "FINISH action must opt into default danger emphasis styling (D3-F).",
+);
+assertPattern(
+  trackerActionControlsSource,
+  /action:\s*"ISTIRAHAT"[\s\S]*?className:\s*"tracker-action-btn-emphasis"[\s\S]*?tone:\s*"break"/,
+  "BREAK action must opt into default break emphasis styling (D3-F).",
+);
+assert.equal(
+  countOccurrences(trackerActionControlsSource, "tracker-action-btn-emphasis"),
+  2,
+  "Only FINISH and BREAK should opt into default coloured emphasis (D3-F).",
+);
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="danger"\]\.tracker-action-btn-emphasis\s*\{[\s\S]*?background:[\s\S]*?var\(--status-alpha\)/,
+  "FINISH/danger emphasis must have red default background styling (D3-F).",
+);
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="break"\]\.tracker-action-btn-emphasis\s*\{[\s\S]*?background:[\s\S]*?var\(--status-break\)/,
+  "BREAK emphasis must have yellow/gold default background styling (D3-F).",
+);
+assertPattern(
+  globalsSource,
+  /\.tracker-action-btn\[data-tone="danger"\]\s*\{\s*--btn-action-color:\s*var\(--status-alpha\);\s*\}/,
+  "Plain danger tone must stay token-only by default for cancel buttons (D3-F).",
+);
+for (const tone of ["cuti", "sakit", "pending"]) {
+  assertPattern(
+    globalsSource,
+    new RegExp(
+      String.raw`\.tracker-action-btn\[data-tone="${tone}"\]\s*\{\s*--btn-action-color:\s*var\(--status-`,
+    ),
+    `${tone} action tone should only set hover/focus colour token by default (D3-D).`,
+  );
+}
+assertNoPattern(
+  trackerActionControlsSource,
+  /\b(LEMBUR|PAUSE|RESUME)\b/,
+  "Tracker controls must not render unsupported LEMBUR, PAUSE, or RESUME actions (D3-D).",
+);
+
 console.log("Tracker read-only tests passed.");
 
 function assertIncludes(source: string, fragment: string) {
@@ -480,6 +732,14 @@ function assertIncludes(source: string, fragment: string) {
 
 function assertNoPattern(source: string, pattern: RegExp, message: string) {
   assert.equal(pattern.test(source), false, message);
+}
+
+function assertPattern(source: string, pattern: RegExp, message: string) {
+  assert.ok(pattern.test(source), message);
+}
+
+function countOccurrences(source: string, fragment: string) {
+  return source.split(fragment).length - 1;
 }
 
 function normalize(value: string) {
