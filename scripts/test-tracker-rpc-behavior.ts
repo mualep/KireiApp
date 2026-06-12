@@ -30,6 +30,10 @@ const ids = {
   breakCumulative: "20000000-0000-4000-8000-000000000122",
   breakAuditFail: "20000000-0000-4000-8000-000000000123",
   absenceReuse: "20000000-0000-4000-8000-000000000124",
+  expiredCutiClose: "20000000-0000-4000-8000-000000000125",
+  expiredSakitClose: "20000000-0000-4000-8000-000000000126",
+  expiredIzinClose: "20000000-0000-4000-8000-000000000127",
+  notExpiredClose: "20000000-0000-4000-8000-000000000128",
 } as const;
 
 const dbContainer = findLocalSupabaseDbContainer();
@@ -672,6 +676,141 @@ select
   'absensi.manual'
 from public.worker_attendance
 where user_id = '${ids.lateExistingHadir}'::uuid;
+
+with close_users(id, email, name) as (
+  values
+    ('${ids.expiredCutiClose}'::uuid, 'r3-t1-expired-cuti-close@example.test', 'R3 T1 Expired Cuti Close'),
+    ('${ids.expiredSakitClose}'::uuid, 'r3-t1-expired-sakit-close@example.test', 'R3 T1 Expired Sakit Close'),
+    ('${ids.expiredIzinClose}'::uuid, 'r3-t1-expired-izin-close@example.test', 'R3 T1 Expired Izin Close'),
+    ('${ids.notExpiredClose}'::uuid, 'r3-t1-not-expired-close@example.test', 'R3 T1 Not Expired Close')
+)
+insert into auth.users (
+  id,
+  aud,
+  role,
+  email,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at
+)
+select
+  id,
+  'authenticated',
+  'authenticated',
+  email,
+  pg_catalog.clock_timestamp(),
+  '{}'::jsonb,
+  '{}'::jsonb,
+  pg_catalog.clock_timestamp(),
+  pg_catalog.clock_timestamp()
+from close_users;
+
+with close_users(id, email, name) as (
+  values
+    ('${ids.expiredCutiClose}'::uuid, 'r3-t1-expired-cuti-close@example.test', 'R3 T1 Expired Cuti Close'),
+    ('${ids.expiredSakitClose}'::uuid, 'r3-t1-expired-sakit-close@example.test', 'R3 T1 Expired Sakit Close'),
+    ('${ids.expiredIzinClose}'::uuid, 'r3-t1-expired-izin-close@example.test', 'R3 T1 Expired Izin Close'),
+    ('${ids.notExpiredClose}'::uuid, 'r3-t1-not-expired-close@example.test', 'R3 T1 Not Expired Close')
+)
+insert into public.users (id, name, email, tier)
+select id, name, email, 'member'
+from close_users;
+
+insert into public.worker_profiles (
+  user_id,
+  gid,
+  employee_role,
+  shift,
+  is_flexible,
+  cuti_stock
+)
+values
+  ('${ids.expiredCutiClose}'::uuid, 'KRU-125', 'Professional Player', 'flexible', true, 3),
+  ('${ids.expiredSakitClose}'::uuid, 'KRU-126', 'Professional Player', 'flexible', true, 3),
+  ('${ids.expiredIzinClose}'::uuid, 'KRU-127', 'Professional Player', 'flexible', true, 3),
+  ('${ids.notExpiredClose}'::uuid, 'KRU-128', 'Professional Player', 'flexible', true, 3);
+
+insert into public.worker_status (user_id, version, current_status, cuti_set_date, sakit_started_at, pending_started_at)
+values
+  ('${ids.expiredCutiClose}'::uuid, 0, 'cuti', (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1, null, null),
+  ('${ids.expiredSakitClose}'::uuid, 0, 'sakit', null, pg_catalog.clock_timestamp() - interval '1 day', null),
+  ('${ids.expiredIzinClose}'::uuid, 0, 'pending', null, null, pg_catalog.clock_timestamp() - interval '1 day'),
+  ('${ids.notExpiredClose}'::uuid, 0, 'cuti', (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date, null, null);
+
+insert into public.worker_attendance (
+  user_id,
+  attendance_date,
+  status,
+  source,
+  source_action
+)
+values
+  (
+    '${ids.expiredCutiClose}'::uuid,
+    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1,
+    'cuti',
+    'tracker',
+    'tracker.cuti'
+  ),
+  (
+    '${ids.expiredSakitClose}'::uuid,
+    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1,
+    'sakit',
+    'tracker',
+    'tracker.sakit'
+  ),
+  (
+    '${ids.expiredIzinClose}'::uuid,
+    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1,
+    'pending',
+    'tracker',
+    'tracker.izin'
+  ),
+  (
+    '${ids.notExpiredClose}'::uuid,
+    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    'cuti',
+    'tracker',
+    'tracker.cuti'
+  );
+
+insert into public.worker_records (
+  user_id,
+  period_month,
+  cuti_stock_snapshot,
+  sakit_days,
+  pending_days,
+  last_source,
+  last_source_action
+)
+select
+  '${ids.expiredCutiClose}'::uuid,
+  pg_catalog.date_trunc('month', ((pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1)::timestamp)::date,
+  2,
+  0,
+  0,
+  'tracker',
+  'tracker.cuti'
+union all
+select
+  '${ids.expiredSakitClose}'::uuid,
+  pg_catalog.date_trunc('month', ((pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1)::timestamp)::date,
+  3,
+  1,
+  0,
+  'tracker',
+  'tracker.sakit'
+union all
+select
+  '${ids.expiredIzinClose}'::uuid,
+  pg_catalog.date_trunc('month', ((pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1)::timestamp)::date,
+  3,
+  0,
+  1,
+  'tracker',
+  'tracker.izin';
 
 set local role authenticated;
 select pg_temp.set_auth(null);
@@ -1719,6 +1858,96 @@ select pg_temp.assert_true(
       and status = 'alpha'
   ),
   'tracker must not create ALPHA attendance'
+);
+
+select pg_temp.set_auth('${ids.member}'::uuid);
+select pg_temp.expect_error(
+  'member expired absence close',
+  'select public.apply_tracker_absence_close(''${ids.expiredCutiClose}''::uuid, 0::bigint, (select id from public.worker_attendance where user_id = ''${ids.expiredCutiClose}''::uuid))',
+  'tracker.unauthorized'
+);
+
+select pg_temp.set_auth('${ids.owner}'::uuid);
+select pg_temp.expect_error(
+  'not expired absence close',
+  'select public.apply_tracker_absence_close(''${ids.notExpiredClose}''::uuid, 0::bigint, (select id from public.worker_attendance where user_id = ''${ids.notExpiredClose}''::uuid))',
+  'tracker.absence_close_not_expired'
+);
+
+with result as (
+  select public.apply_tracker_absence_close(
+    '${ids.expiredCutiClose}'::uuid,
+    0,
+    (select id from public.worker_attendance where user_id = '${ids.expiredCutiClose}'::uuid)
+  ) as payload
+)
+select
+  pg_temp.assert_true((payload->>'ok')::boolean, 'expired CUTI close should succeed'),
+  pg_temp.assert_true(payload->>'to_status' = 'off', 'expired CUTI close should return off'),
+  pg_temp.assert_true(payload->>'audit_id' is not null, 'expired CUTI close should return audit_id')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1 from public.worker_status
+    where user_id = '${ids.expiredCutiClose}'::uuid
+      and current_status = 'off'
+      and version = 1
+      and cuti_set_date is null
+      and sakit_started_at is null
+      and pending_started_at is null
+  )
+  and exists (
+    select 1 from public.worker_attendance
+    where user_id = '${ids.expiredCutiClose}'::uuid
+      and status = 'cuti'
+      and source = 'tracker'
+      and source_action = 'tracker.cuti'
+      and is_canceled = false
+  )
+  and exists (
+    select 1 from public.worker_profiles
+    where user_id = '${ids.expiredCutiClose}'::uuid
+      and cuti_stock = 3
+  )
+  and exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.expiredCutiClose}'::uuid
+      and cuti_stock_snapshot = 2
+      and sakit_days = 0
+      and pending_days = 0
+      and last_source_action = 'tracker.cuti'
+  )
+  and exists (
+    select 1 from public.audit_logs
+    where target_user_id = '${ids.expiredCutiClose}'::uuid
+      and action = 'tracker.close_expired_absence'
+  ),
+  'expired CUTI close must only clear operational status and audit the close'
+);
+select pg_temp.expect_error(
+  'repeated expired absence close',
+  'select public.apply_tracker_absence_close(''${ids.expiredCutiClose}''::uuid, 0::bigint, (select id from public.worker_attendance where user_id = ''${ids.expiredCutiClose}''::uuid))',
+  'tracker.version_conflict'
+);
+
+select public.apply_tracker_absence_close(
+  '${ids.expiredSakitClose}'::uuid,
+  0,
+  (select id from public.worker_attendance where user_id = '${ids.expiredSakitClose}'::uuid)
+);
+select public.apply_tracker_absence_close(
+  '${ids.expiredIzinClose}'::uuid,
+  0,
+  (select id from public.worker_attendance where user_id = '${ids.expiredIzinClose}'::uuid)
+);
+select pg_temp.assert_true(
+  exists (select 1 from public.worker_status where user_id = '${ids.expiredSakitClose}'::uuid and current_status = 'off' and version = 1)
+  and exists (select 1 from public.worker_status where user_id = '${ids.expiredIzinClose}'::uuid and current_status = 'off' and version = 1)
+  and exists (select 1 from public.worker_attendance where user_id = '${ids.expiredSakitClose}'::uuid and status = 'sakit' and is_canceled = false)
+  and exists (select 1 from public.worker_attendance where user_id = '${ids.expiredIzinClose}'::uuid and status = 'pending' and is_canceled = false)
+  and exists (select 1 from public.worker_records where user_id = '${ids.expiredSakitClose}'::uuid and sakit_days = 1)
+  and exists (select 1 from public.worker_records where user_id = '${ids.expiredIzinClose}'::uuid and pending_days = 1),
+  'expired SAKIT/PENDING close must preserve attendance and monthly records'
 );
 rollback;
 `;

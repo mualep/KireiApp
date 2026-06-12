@@ -67,6 +67,7 @@ assert.match(
 assertIncludes(trackerActionControlsSource, 'from "@/app/admin/(shell)/tracker/actions"');
 assertIncludes(trackerActionControlsSource, "applyTrackerAction({");
 assertIncludes(trackerActionControlsSource, "applyTrackerCorrection({");
+assertIncludes(trackerActionControlsSource, "applyTrackerExpiredAbsenceClose({");
 assertIncludes(trackerActionControlsSource, "targetUserId: card.userId");
 assertIncludes(trackerActionControlsSource, "expectedVersion: card.version");
 assertIncludes(trackerActionControlsSource, "action");
@@ -100,7 +101,12 @@ assertIncludes(trackerActionControlsSource, 'action: "LANJUT"');
 assertIncludes(trackerActionControlsSource, 'label: "BATAL CUTI"');
 assertIncludes(trackerActionControlsSource, 'label: "BATAL SAKIT"');
 assertIncludes(trackerActionControlsSource, 'label: "BATAL PENDING"');
+assertIncludes(trackerActionControlsSource, 'label: "SELESAIKAN STATUS"');
 assertIncludes(trackerActionControlsSource, "attendanceId: card.activeTrackerAttendanceId");
+assertIncludes(trackerActionControlsSource, "isTrackerCorrectionAvailable");
+assertIncludes(trackerActionControlsSource, "isExpiredAbsenceCloseAvailable");
+assertIncludes(trackerActionControlsSource, "runTrackerExpiredAbsenceClose");
+assertIncludes(trackerActionControlsSource, 'expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE"');
 assertIncludes(trackerActionControlsSource, "window.prompt");
 assertNoPattern(trackerActionControlsSource, /"BREAK TIMER"|BREAK TIMER|Break Timer/, "Break timer area does not contain BREAK TIMER");
 assertNoPattern(trackerActionControlsSource, /Ends break|returns to active/, "Break timer area does not contain Ends break");
@@ -113,12 +119,32 @@ assertIncludes(trackerActionControlsSource, "breakTimerRunning");
 assertIncludes(workerTypesSource, "breakAccumulatedSecs: number;");
 assertIncludes(workerTypesSource, "breakStartedAt: string | null;");
 assertIncludes(workerTypesSource, "breakTimerRunning: boolean;");
+assertIncludes(workerTypesSource, "isTrackerCorrectionAvailable: boolean;");
+assertIncludes(workerTypesSource, "isExpiredAbsenceCloseAvailable: boolean;");
 assertIncludes(trackerDataSource, "break_accumulated_secs");
 assertIncludes(trackerDataSource, "break_started_at");
 assertIncludes(trackerDataSource, "break_timer_running");
 assertIncludes(trackerDataSource, "breakAccumulatedSecs: status.break_accumulated_secs");
 assertIncludes(trackerDataSource, "breakStartedAt: status.break_started_at");
 assertIncludes(trackerDataSource, "breakTimerRunning: status.break_timer_running");
+assertIncludes(trackerDataSource, "getTrackerCorrectionWindowState");
+assertIncludes(trackerDataSource, "isTrackerCorrectionAvailable:");
+assertIncludes(trackerDataSource, "isExpiredAbsenceCloseAvailable:");
+assertPattern(
+  trackerActionControlsSource,
+  /card\.isTrackerCorrectionAvailable[\s\S]{0,900}correctionAction:\s*"CANCEL_CUTI"[\s\S]{0,900}card\.isExpiredAbsenceCloseAvailable[\s\S]{0,900}expiredAbsenceCloseAction:\s*"CLOSE_EXPIRED_ABSENCE"/,
+  "Tracker controls must render BATAL before expiry and SELESAIKAN STATUS after expiry, never both for CUTI.",
+);
+assertPattern(
+  trackerActionControlsSource,
+  /card\.isTrackerCorrectionAvailable[\s\S]{0,900}correctionAction:\s*"CANCEL_SAKIT"[\s\S]{0,900}card\.isExpiredAbsenceCloseAvailable[\s\S]{0,900}expiredAbsenceCloseAction:\s*"CLOSE_EXPIRED_ABSENCE"/,
+  "Tracker controls must render BATAL before expiry and SELESAIKAN STATUS after expiry, never both for SAKIT.",
+);
+assertPattern(
+  trackerActionControlsSource,
+  /card\.isTrackerCorrectionAvailable[\s\S]{0,900}correctionAction:\s*"CANCEL_IZIN"[\s\S]{0,900}card\.isExpiredAbsenceCloseAvailable[\s\S]{0,900}expiredAbsenceCloseAction:\s*"CLOSE_EXPIRED_ABSENCE"/,
+  "Tracker controls must render BATAL before expiry and SELESAIKAN STATUS after expiry, never both for PENDING.",
+);
 assertNoPattern(
   trackerActionControlsSource,
   /label:\s*["']Izin["']/,
@@ -814,6 +840,8 @@ function buildCard({
     gid,
     alphaCount: 0,
     isFlexible: shift === "flexible",
+    isExpiredAbsenceCloseAvailable: false,
+    isTrackerCorrectionAvailable: false,
     lemburUnits: 0,
     name,
     pendingDays: 0,
