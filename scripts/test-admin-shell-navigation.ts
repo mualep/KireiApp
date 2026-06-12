@@ -105,8 +105,6 @@ assertNoPattern(
 );
 
 for (const fragment of [
-  'href: "/admin/profile"',
-  'label: "Profile"',
   'href: "/admin/performance"',
   'label: "Performance"',
 ]) {
@@ -114,12 +112,13 @@ for (const fragment of [
 }
 assertNoPattern(
   memberNavSource,
-  /href:\s*["']\/admin\/(?:dashboard|tracker|absensi|records|content)["']|label:\s*["'](?:Dashboard|Tracker|Absensi|Records|Content)["']/,
-  "Member nav must only include Profile and Performance.",
+  /href:\s*["']\/admin\/(?:dashboard|tracker|absensi|records|content|profile)["']|label:\s*["'](?:Dashboard|Tracker|Absensi|Records|Content|Profile)["']/,
+  "Member nav must only include Performance.",
 );
 
 assertIncludes(sidebarSource, 'href="/admin/profile"');
-assertIncludes(sidebarSource, "Profile");
+assertIncludes(sidebarSource, 'aria-label="View Staff Profile"');
+assertIncludes(sidebarSource, 'title="View Staff Profile"');
 assertIncludes(sidebarSource, "Logout");
 assertIncludes(sidebarSource, "LogoutButton");
 assertIncludes(sidebarSource, "AdminNavIcon");

@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 const projectRoot = process.cwd();
 const packageJsonPath = resolve(projectRoot, "package.json");
 const layoutPath = resolve(projectRoot, "app/admin/(shell)/layout.tsx");
+const sidebarPath = resolve(projectRoot, "components/admin/admin-sidebar.tsx");
 const adminIconsPath = resolve(projectRoot, "components/admin/admin-icons.tsx");
 const profilePagePath = resolve(projectRoot, "app/admin/(shell)/profile/page.tsx");
 const performancePagePath = resolve(
@@ -24,6 +25,7 @@ const memberProfileDataPath = resolve(projectRoot, "lib/member-profile/data.ts")
 for (const path of [
   packageJsonPath,
   layoutPath,
+  sidebarPath,
   adminIconsPath,
   profilePagePath,
   performancePagePath,
@@ -36,6 +38,7 @@ for (const path of [
 
 const packageJsonSource = readFileSync(packageJsonPath, "utf8");
 const layoutSource = readFileSync(layoutPath, "utf8");
+const sidebarSource = readFileSync(sidebarPath, "utf8");
 const adminIconsSource = readFileSync(adminIconsPath, "utf8");
 const profilePageSource = readFileSync(profilePagePath, "utf8");
 const performancePageSource = readFileSync(performancePagePath, "utf8");
@@ -74,16 +77,17 @@ assertOrderedFragments(ownerNavSource, [
   'label: "Content"',
 ]);
 assertOrderedFragments(memberNavSource, [
-  'href: "/admin/profile"',
-  'label: "Profile"',
   'href: "/admin/performance"',
   'label: "Performance"',
 ]);
 assertNoPattern(
   memberNavSource,
-  /href:\s*["']\/admin\/(?:dashboard|tracker|absensi|records|content)["']|label:\s*["'](?:Dashboard|Tracker|Absensi|Records|Content)["']/,
-  "Member sidebar must expose only Profile and Performance.",
+  /href:\s*["']\/admin\/(?:dashboard|tracker|absensi|records|content|profile)["']|label:\s*["'](?:Dashboard|Tracker|Absensi|Records|Content|Profile)["']/,
+  "Member sidebar must expose only Performance.",
 );
+assertIncludes(sidebarSource, 'href="/admin/profile"');
+assertIncludes(sidebarSource, 'aria-label="View Staff Profile"');
+assertIncludes(sidebarSource, 'title="View Staff Profile"');
 
 assertIncludes(profilePageSource, "getCurrentStaffUser");
 assertIncludes(profilePageSource, "getMemberProfileData");

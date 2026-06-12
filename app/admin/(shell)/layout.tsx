@@ -37,11 +37,6 @@ const ownerAdminNavItems: AdminShellNavItem[] = [
 
 const memberNavItems: AdminShellNavItem[] = [
   {
-    href: "/admin/profile",
-    label: "Profile",
-    icon: "profile",
-  },
-  {
     href: "/admin/performance",
     label: "Performance",
     icon: "performance",
