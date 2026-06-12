@@ -73,10 +73,12 @@ assertIncludes(adminIconsSource, "export type AdminNavIconKey");
 assertIncludes(adminIconsSource, "export function AdminNavIcon");
 assertIncludes(adminIconsSource, "MousePointerClickIcon");
 assertIncludes(adminIconsSource, "ClipboardListIcon");
+assertIncludes(adminIconsSource, "ChartNoAxesCombinedIcon");
 assertIncludes(adminIconsSource, "SidebarOpenIcon");
 assertIncludes(adminIconsSource, "SidebarCloseIcon");
 assertIncludes(adminIconsSource, 'tracker: MousePointerClickIcon');
 assertIncludes(adminIconsSource, 'records: ClipboardListIcon');
+assertIncludes(adminIconsSource, 'performance: ChartNoAxesCombinedIcon');
 assertIncludes(adminIconsSource, 'dashboard: LayoutDashboardIcon');
 assertIncludes(adminIconsSource, 'absensi: CalendarCheckIcon');
 assertIncludes(adminIconsSource, 'content: NewspaperIcon');
@@ -105,19 +107,15 @@ assertNoPattern(
 for (const fragment of [
   'href: "/admin/profile"',
   'label: "Profile"',
-  'href: "/admin/tracker"',
-  'label: "Tracker"',
-  'href: "/admin/absensi"',
-  'label: "Absensi"',
-  'href: "/admin/records"',
-  'label: "Records"',
+  'href: "/admin/performance"',
+  'label: "Performance"',
 ]) {
   assertIncludes(memberNavSource, fragment);
 }
 assertNoPattern(
   memberNavSource,
-  /href:\s*["']\/admin\/content["']|label:\s*["']Content["']/,
-  "Member nav must not include Content.",
+  /href:\s*["']\/admin\/(?:dashboard|tracker|absensi|records|content)["']|label:\s*["'](?:Dashboard|Tracker|Absensi|Records|Content)["']/,
+  "Member nav must only include Profile and Performance.",
 );
 
 assertIncludes(sidebarSource, 'href="/admin/profile"');
