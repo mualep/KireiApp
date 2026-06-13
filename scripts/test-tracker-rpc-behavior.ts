@@ -34,6 +34,7 @@ const ids = {
   expiredSakitClose: "20000000-0000-4000-8000-000000000126",
   expiredIzinClose: "20000000-0000-4000-8000-000000000127",
   notExpiredClose: "20000000-0000-4000-8000-000000000128",
+  expiredMarkerClose: "20000000-0000-4000-8000-000000000129",
 } as const;
 
 const dbContainer = findLocalSupabaseDbContainer();
@@ -682,7 +683,8 @@ with close_users(id, email, name) as (
     ('${ids.expiredCutiClose}'::uuid, 'r3-t1-expired-cuti-close@example.test', 'R3 T1 Expired Cuti Close'),
     ('${ids.expiredSakitClose}'::uuid, 'r3-t1-expired-sakit-close@example.test', 'R3 T1 Expired Sakit Close'),
     ('${ids.expiredIzinClose}'::uuid, 'r3-t1-expired-izin-close@example.test', 'R3 T1 Expired Izin Close'),
-    ('${ids.notExpiredClose}'::uuid, 'r3-t1-not-expired-close@example.test', 'R3 T1 Not Expired Close')
+    ('${ids.notExpiredClose}'::uuid, 'r3-t1-not-expired-close@example.test', 'R3 T1 Not Expired Close'),
+    ('${ids.expiredMarkerClose}'::uuid, 'r3-t1-expired-marker-close@example.test', 'R3 T1 Expired Marker Close')
 )
 insert into auth.users (
   id,
@@ -712,7 +714,8 @@ with close_users(id, email, name) as (
     ('${ids.expiredCutiClose}'::uuid, 'r3-t1-expired-cuti-close@example.test', 'R3 T1 Expired Cuti Close'),
     ('${ids.expiredSakitClose}'::uuid, 'r3-t1-expired-sakit-close@example.test', 'R3 T1 Expired Sakit Close'),
     ('${ids.expiredIzinClose}'::uuid, 'r3-t1-expired-izin-close@example.test', 'R3 T1 Expired Izin Close'),
-    ('${ids.notExpiredClose}'::uuid, 'r3-t1-not-expired-close@example.test', 'R3 T1 Not Expired Close')
+    ('${ids.notExpiredClose}'::uuid, 'r3-t1-not-expired-close@example.test', 'R3 T1 Not Expired Close'),
+    ('${ids.expiredMarkerClose}'::uuid, 'r3-t1-expired-marker-close@example.test', 'R3 T1 Expired Marker Close')
 )
 insert into public.users (id, name, email, tier)
 select id, name, email, 'member'
@@ -730,14 +733,16 @@ values
   ('${ids.expiredCutiClose}'::uuid, 'KRU-125', 'Professional Player', 'flexible', true, 3),
   ('${ids.expiredSakitClose}'::uuid, 'KRU-126', 'Professional Player', 'flexible', true, 3),
   ('${ids.expiredIzinClose}'::uuid, 'KRU-127', 'Professional Player', 'flexible', true, 3),
-  ('${ids.notExpiredClose}'::uuid, 'KRU-128', 'Professional Player', 'flexible', true, 3);
+  ('${ids.notExpiredClose}'::uuid, 'KRU-128', 'Professional Player', 'flexible', true, 3),
+  ('${ids.expiredMarkerClose}'::uuid, 'KRU-129', 'Professional Player', 'flexible', true, 3);
 
 insert into public.worker_status (user_id, version, current_status, cuti_set_date, sakit_started_at, pending_started_at)
 values
   ('${ids.expiredCutiClose}'::uuid, 0, 'cuti', (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1, null, null),
   ('${ids.expiredSakitClose}'::uuid, 0, 'sakit', null, pg_catalog.clock_timestamp() - interval '1 day', null),
   ('${ids.expiredIzinClose}'::uuid, 0, 'pending', null, null, pg_catalog.clock_timestamp() - interval '1 day'),
-  ('${ids.notExpiredClose}'::uuid, 0, 'cuti', (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date, null, null);
+  ('${ids.notExpiredClose}'::uuid, 0, 'cuti', (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date, null, null),
+  ('${ids.expiredMarkerClose}'::uuid, 0, 'sakit', null, pg_catalog.clock_timestamp() - interval '2 days', null);
 
 insert into public.worker_attendance (
   user_id,
@@ -1928,6 +1933,49 @@ select pg_temp.expect_error(
   'repeated expired absence close',
   'select public.apply_tracker_absence_close(''${ids.expiredCutiClose}''::uuid, 0::bigint, (select id from public.worker_attendance where user_id = ''${ids.expiredCutiClose}''::uuid))',
   'tracker.version_conflict'
+);
+
+with result as (
+  select public.apply_tracker_absence_close(
+    '${ids.expiredMarkerClose}'::uuid,
+    0,
+    null
+  ) as payload
+)
+select
+  pg_temp.assert_true((payload->>'ok')::boolean, 'expired marker-only close should succeed'),
+  pg_temp.assert_true(payload->>'to_status' = 'off', 'expired marker-only close should return off'),
+  pg_temp.assert_true(payload->>'attendance_id' is null, 'expired marker-only close should not invent attendance id')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1 from public.worker_status
+    where user_id = '${ids.expiredMarkerClose}'::uuid
+      and current_status = 'off'
+      and version = 1
+      and cuti_set_date is null
+      and sakit_started_at is null
+      and pending_started_at is null
+  )
+  and not exists (
+    select 1 from public.worker_attendance
+    where user_id = '${ids.expiredMarkerClose}'::uuid
+  )
+  and not exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.expiredMarkerClose}'::uuid
+  )
+  and exists (
+    select 1 from public.worker_profiles
+    where user_id = '${ids.expiredMarkerClose}'::uuid
+      and cuti_stock = 3
+  )
+  and exists (
+    select 1 from public.audit_logs
+    where target_user_id = '${ids.expiredMarkerClose}'::uuid
+      and action = 'tracker.close_expired_absence'
+  ),
+  'expired marker-only close must clear only operational status and leave accounting absent'
 );
 
 select public.apply_tracker_absence_close(

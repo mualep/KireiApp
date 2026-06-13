@@ -318,6 +318,21 @@ assert.deepEqual(
   }),
   { ok: false, reason: "member_read_only" },
 );
+assert.equal(
+  Object.values(trackerActionTargetStatuses).includes("late" as never),
+  false,
+  "Expired absence close must not introduce a stored LATE transition.",
+);
+assert.equal(
+  evaluateTrackerExpiredAbsenceCloseTransition({
+    action: "CLOSE_EXPIRED_ABSENCE",
+    actorTier: "owner",
+    isExpired: true,
+    storedStatus: "sakit",
+  }).ok,
+  true,
+  "Expired SAKIT close must stay operational-only and separate from correction reversal.",
+);
 assert.deepEqual(
   evaluateTrackerExpiredAbsenceCloseTransition({
     action: "CLOSE_EXPIRED_ABSENCE",

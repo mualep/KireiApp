@@ -51,6 +51,7 @@ assertIncludes("export type TrackerActionResultCode");
 assertIncludes("z.enum(trackerActions)");
 assertIncludes("z.enum(trackerExpiredAbsenceCloseActions)");
 assertIncludes("targetUserId: z.string().uuid()");
+assertIncludes("attendanceId: z.string().uuid().nullable()");
 assertIncludes("expectedVersion: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER)");
 assertIncludes('supabase.rpc("apply_tracker_action"');
 assertIncludes('supabase.rpc("apply_tracker_correction"');

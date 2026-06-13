@@ -35,7 +35,7 @@ const applyTrackerCorrectionSchema = z.object({
 
 const applyTrackerExpiredAbsenceCloseSchema = z.object({
   action: z.enum(trackerExpiredAbsenceCloseActions),
-  attendanceId: z.string().uuid(),
+  attendanceId: z.string().uuid().nullable(),
   expectedVersion: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
   targetUserId: z.string().uuid(),
 });

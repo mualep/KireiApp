@@ -347,10 +347,16 @@ assertR3T1SqlIncludes("from public.worker_status as ws");
 assertR3T1SqlIncludes("for update");
 assertR3T1SqlIncludes("v_from_status not in ('cuti', 'sakit', 'pending')");
 assertR3T1SqlIncludes("v_expected_source_action");
+assertR3T1SqlIncludes("v_status_marker_date");
 assertR3T1SqlIncludes("when 'pending' then 'tracker.izin'");
+assertR3T1SqlIncludes("if p_attendance_id is not null then");
 assertR3T1SqlIncludes("wa.is_canceled");
 assertR3T1SqlIncludes("v_attendance_source <> 'tracker'");
 assertR3T1SqlIncludes("v_attendance_source_action <> v_expected_source_action");
+assertR3T1SqlIncludes("when 'cuti' then v_cuti_set_date");
+assertR3T1SqlIncludes("when 'sakit' then (v_sakit_started_at at time zone 'Asia/Jakarta')::date");
+assertR3T1SqlIncludes("when 'pending' then (v_pending_started_at at time zone 'Asia/Jakarta')::date");
+assertR3T1SqlIncludes("v_attendance_date := coalesce(v_attendance_date, v_status_marker_date)");
 assertR3T1SqlIncludes("if v_is_flexible then");
 assertR3T1SqlIncludes("(p_now at time zone 'Asia/Jakarta')::date = v_attendance_date");
 assertR3T1SqlIncludes("if p_now < v_shift_ends_at then");
@@ -422,13 +428,18 @@ function readR2CDMigration() {
 
 function readR3T1Migration() {
   const migrationsDir = resolve(process.cwd(), "supabase/migrations");
-  const migrationFile = readdirSync(migrationsDir).find((entry) =>
-    entry.endsWith("_r3_t1_expired_absence_close_action.sql"),
+  const migrationFiles = readdirSync(migrationsDir)
+    .filter((entry) => entry.endsWith("_r3_t1_expired_absence_close_action.sql"))
+    .sort();
+
+  assert.ok(
+    migrationFiles.length > 0,
+    "R3-T1 expired absence close migration not found.",
   );
 
-  assert.ok(migrationFile, "R3-T1 expired absence close migration not found.");
-
-  return readFileSync(join(migrationsDir, migrationFile), "utf8");
+  return migrationFiles
+    .map((migrationFile) => readFileSync(join(migrationsDir, migrationFile), "utf8"))
+    .join("\n\n");
 }
 
 function assertFunctionShape(functionSql: string, expectedSignature: string) {
@@ -463,12 +474,12 @@ function extractFunctionSql(functionName: string) {
 function extractFunctionSqlFrom(sql: string, functionName: string) {
   const pattern = new RegExp(
     `create\\s+or\\s+replace\\s+function\\s+${escapeRegExp(functionName)}\\s*\\([\\s\\S]*?\\n\\$\\$;`,
-    "i",
+    "gi",
   );
-  const match = sql.match(pattern);
+  const matches = sql.match(pattern);
 
-  assert.ok(match, `Missing function body for ${functionName}.`);
-  return match[0];
+  assert.ok(matches?.length, `Missing function body for ${functionName}.`);
+  return matches[matches.length - 1];
 }
 
 function assertSqlIncludes(fragment: string) {
