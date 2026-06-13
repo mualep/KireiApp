@@ -108,9 +108,10 @@ assert.ok(
   layoutSource.slice(ownerNavIndex, memberNavIndex).includes('href: "/admin/absensi"'),
   "Owner/Admin nav must include Absensi.",
 );
-assert.ok(
+assert.equal(
   layoutSource.slice(memberNavIndex).includes('href: "/admin/absensi"'),
-  "Member nav must include Absensi for read-only self attendance.",
+  false,
+  "Member sidebar must not expose Absensi after R3-M1; direct route remains self-only.",
 );
 
 assertIncludes(dataSource, 'import "server-only";');

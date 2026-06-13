@@ -18,6 +18,10 @@ export function canAccessAdminContent(tier: StaffTier): boolean {
   return tier === "owner" || tier === "admin";
 }
 
+export function canAccessAdminPerformance(tier: StaffTier): boolean {
+  return tier === "member";
+}
+
 export function canAccessAdminAbsensi(tier: StaffTier): boolean {
   return tier === "owner" || tier === "admin" || tier === "member";
 }
