@@ -35,6 +35,12 @@ const ids = {
   expiredIzinClose: "20000000-0000-4000-8000-000000000127",
   notExpiredClose: "20000000-0000-4000-8000-000000000128",
   expiredMarkerClose: "20000000-0000-4000-8000-000000000129",
+  materializeSakit: "20000000-0000-4000-8000-000000000130",
+  materializePending: "20000000-0000-4000-8000-000000000131",
+  materializeCuti: "20000000-0000-4000-8000-000000000132",
+  materializeCutiLow: "20000000-0000-4000-8000-000000000133",
+  materializeConflict: "20000000-0000-4000-8000-000000000134",
+  materializeMonthBoundary: "20000000-0000-4000-8000-000000000135",
 } as const;
 
 const dbContainer = findLocalSupabaseDbContainer();
@@ -1996,6 +2002,286 @@ select pg_temp.assert_true(
   and exists (select 1 from public.worker_records where user_id = '${ids.expiredSakitClose}'::uuid and sakit_days = 1)
   and exists (select 1 from public.worker_records where user_id = '${ids.expiredIzinClose}'::uuid and pending_days = 1),
   'expired SAKIT/PENDING close must preserve attendance and monthly records'
+);
+
+with materialize_users(id, email, name) as (
+  values
+    ('${ids.materializeSakit}'::uuid, 'r3-t2-materialize-sakit@example.test', 'R3 T2 Materialize Sakit'),
+    ('${ids.materializePending}'::uuid, 'r3-t2-materialize-pending@example.test', 'R3 T2 Materialize Pending'),
+    ('${ids.materializeCuti}'::uuid, 'r3-t2-materialize-cuti@example.test', 'R3 T2 Materialize Cuti'),
+    ('${ids.materializeCutiLow}'::uuid, 'r3-t2-materialize-cuti-low@example.test', 'R3 T2 Materialize Cuti Low'),
+    ('${ids.materializeConflict}'::uuid, 'r3-t2-materialize-conflict@example.test', 'R3 T2 Materialize Conflict'),
+    ('${ids.materializeMonthBoundary}'::uuid, 'r3-t2-materialize-month@example.test', 'R3 T2 Materialize Month')
+)
+insert into auth.users (
+  id,
+  aud,
+  role,
+  email,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at
+)
+select
+  id,
+  'authenticated',
+  'authenticated',
+  email,
+  pg_catalog.clock_timestamp(),
+  '{}'::jsonb,
+  '{}'::jsonb,
+  pg_catalog.clock_timestamp(),
+  pg_catalog.clock_timestamp()
+from materialize_users;
+
+with materialize_users(id, email, name) as (
+  values
+    ('${ids.materializeSakit}'::uuid, 'r3-t2-materialize-sakit@example.test', 'R3 T2 Materialize Sakit'),
+    ('${ids.materializePending}'::uuid, 'r3-t2-materialize-pending@example.test', 'R3 T2 Materialize Pending'),
+    ('${ids.materializeCuti}'::uuid, 'r3-t2-materialize-cuti@example.test', 'R3 T2 Materialize Cuti'),
+    ('${ids.materializeCutiLow}'::uuid, 'r3-t2-materialize-cuti-low@example.test', 'R3 T2 Materialize Cuti Low'),
+    ('${ids.materializeConflict}'::uuid, 'r3-t2-materialize-conflict@example.test', 'R3 T2 Materialize Conflict'),
+    ('${ids.materializeMonthBoundary}'::uuid, 'r3-t2-materialize-month@example.test', 'R3 T2 Materialize Month')
+)
+insert into public.users (id, name, email, tier)
+select id, name, email, 'member'
+from materialize_users;
+
+insert into public.worker_profiles (
+  user_id,
+  gid,
+  employee_role,
+  shift,
+  is_flexible,
+  cuti_stock
+)
+values
+  ('${ids.materializeSakit}'::uuid, 'KRU-130', 'Professional Player', 'flexible', true, 2),
+  ('${ids.materializePending}'::uuid, 'KRU-131', 'Professional Player', 'flexible', true, 2),
+  ('${ids.materializeCuti}'::uuid, 'KRU-132', 'Professional Player', 'flexible', true, 4),
+  ('${ids.materializeCutiLow}'::uuid, 'KRU-133', 'Professional Player', 'flexible', true, 2),
+  ('${ids.materializeConflict}'::uuid, 'KRU-134', 'Professional Player', 'flexible', true, 2),
+  ('${ids.materializeMonthBoundary}'::uuid, 'KRU-135', 'Professional Player', 'flexible', true, 2);
+
+insert into public.worker_status (user_id, version, current_status, cuti_set_date, sakit_started_at, pending_started_at)
+values
+  ('${ids.materializeSakit}'::uuid, 0, 'sakit', null, '2026-06-10T00:00:00+07'::timestamptz, null),
+  ('${ids.materializePending}'::uuid, 0, 'pending', null, null, '2026-06-10T00:00:00+07'::timestamptz),
+  ('${ids.materializeCuti}'::uuid, 0, 'cuti', '2026-06-10'::date, null, null),
+  ('${ids.materializeCutiLow}'::uuid, 0, 'cuti', '2026-06-10'::date, null, null),
+  ('${ids.materializeConflict}'::uuid, 0, 'sakit', null, '2026-06-10T00:00:00+07'::timestamptz, null),
+  ('${ids.materializeMonthBoundary}'::uuid, 0, 'pending', null, null, '2026-06-30T00:00:00+07'::timestamptz);
+
+insert into public.worker_attendance (
+  user_id,
+  attendance_date,
+  status,
+  source,
+  source_action,
+  is_canceled
+)
+values
+  ('${ids.materializeSakit}'::uuid, '2026-06-10'::date, 'sakit', 'tracker', 'tracker.sakit', false),
+  ('${ids.materializePending}'::uuid, '2026-06-10'::date, 'pending', 'tracker', 'tracker.izin', false),
+  ('${ids.materializeCuti}'::uuid, '2026-06-10'::date, 'cuti', 'tracker', 'tracker.cuti', false),
+  ('${ids.materializeCutiLow}'::uuid, '2026-06-10'::date, 'cuti', 'tracker', 'tracker.cuti', false),
+  ('${ids.materializeConflict}'::uuid, '2026-06-10'::date, 'sakit', 'tracker', 'tracker.sakit', false),
+  ('${ids.materializeConflict}'::uuid, '2026-06-11'::date, 'hadir', 'absensi', 'absensi.manual', false),
+  ('${ids.materializeConflict}'::uuid, '2026-06-12'::date, 'sakit', 'tracker', 'tracker.sakit', true),
+  ('${ids.materializeMonthBoundary}'::uuid, '2026-06-30'::date, 'pending', 'tracker', 'tracker.izin', false);
+
+insert into public.worker_records (
+  user_id,
+  period_month,
+  sakit_days,
+  pending_days,
+  cuti_stock_snapshot,
+  last_source,
+  last_source_action
+)
+values
+  ('${ids.materializeSakit}'::uuid, '2026-06-01'::date, 1, 0, 2, 'tracker', 'tracker.sakit'),
+  ('${ids.materializePending}'::uuid, '2026-06-01'::date, 0, 1, 2, 'tracker', 'tracker.izin'),
+  ('${ids.materializeCuti}'::uuid, '2026-06-01'::date, 0, 0, 4, 'tracker', 'tracker.cuti'),
+  ('${ids.materializeCutiLow}'::uuid, '2026-06-01'::date, 0, 0, 2, 'tracker', 'tracker.cuti'),
+  ('${ids.materializeConflict}'::uuid, '2026-06-01'::date, 1, 0, 2, 'tracker', 'tracker.sakit'),
+  ('${ids.materializeMonthBoundary}'::uuid, '2026-06-01'::date, 0, 1, 2, 'tracker', 'tracker.izin');
+
+select pg_temp.set_auth('${ids.member}'::uuid);
+select pg_temp.expect_error(
+  'member materialize absence days',
+  'select public.materialize_tracker_absence_days(''${ids.materializeSakit}''::uuid, 0::bigint)',
+  'tracker.unauthorized'
+);
+
+select pg_temp.set_auth('${ids.owner}'::uuid);
+
+with result as (
+  select app_private.materialize_tracker_absence_days_impl(
+    '${ids.owner}'::uuid,
+    '${ids.materializeSakit}'::uuid,
+    0,
+    '2026-06-13T05:00:00+07'::timestamptz
+  ) as payload
+)
+select
+  pg_temp.assert_true((payload->>'ok')::boolean, 'multi-day SAKIT materialization should succeed'),
+  pg_temp.assert_true((payload->>'inserted_count')::integer = 3, 'multi-day SAKIT should insert only missing 11, 12, 13')
+from result;
+select pg_temp.assert_true(
+  (
+    select pg_catalog.array_agg(attendance_date order by attendance_date)
+    from public.worker_attendance
+    where user_id = '${ids.materializeSakit}'::uuid
+  ) = array['2026-06-10'::date, '2026-06-11'::date, '2026-06-12'::date, '2026-06-13'::date]
+  and exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.materializeSakit}'::uuid
+      and period_month = '2026-06-01'::date
+      and sakit_days = 4
+  ),
+  'SAKIT from date 10 to 13 must exist exactly once and update records once per materialized date'
+);
+
+with result as (
+  select app_private.materialize_tracker_absence_days_impl(
+    '${ids.owner}'::uuid,
+    '${ids.materializeSakit}'::uuid,
+    0,
+    '2026-06-13T05:00:00+07'::timestamptz
+  ) as payload
+)
+select pg_temp.assert_true((payload->>'inserted_count')::integer = 0, 're-running SAKIT materialization should be idempotent')
+from result;
+select pg_temp.assert_true(
+  (select count(*) from public.worker_attendance where user_id = '${ids.materializeSakit}'::uuid) = 4
+  and exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.materializeSakit}'::uuid
+      and sakit_days = 4
+  ),
+  'idempotent materialization must not duplicate attendance or records'
+);
+
+select app_private.materialize_tracker_absence_days_impl(
+  '${ids.owner}'::uuid,
+  '${ids.materializePending}'::uuid,
+  0,
+  '2026-06-12T05:00:00+07'::timestamptz
+);
+select pg_temp.assert_true(
+  (select count(*) from public.worker_attendance where user_id = '${ids.materializePending}'::uuid and status = 'pending') = 3
+  and exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.materializePending}'::uuid
+      and pending_days = 3
+  ),
+  'PENDING materialization must increment pending records only for inserted dates'
+);
+
+select app_private.materialize_tracker_absence_days_impl(
+  '${ids.owner}'::uuid,
+  '${ids.materializeCuti}'::uuid,
+  0,
+  '2026-06-13T05:00:00+07'::timestamptz
+);
+select pg_temp.assert_true(
+  (select count(*) from public.worker_attendance where user_id = '${ids.materializeCuti}'::uuid and status = 'cuti') = 4
+  and exists (
+    select 1 from public.worker_profiles
+    where user_id = '${ids.materializeCuti}'::uuid
+      and cuti_stock = 1
+  )
+  and exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.materializeCuti}'::uuid
+      and cuti_stock_snapshot = 1
+  ),
+  'CUTI materialization must consume one stock unit per inserted date and snapshot the remaining stock'
+);
+
+select pg_temp.expect_error(
+  'insufficient CUTI stock materialization',
+  'select app_private.materialize_tracker_absence_days_impl(''${ids.owner}''::uuid, ''${ids.materializeCutiLow}''::uuid, 0::bigint, ''2026-06-13T05:00:00+07''::timestamptz)',
+  'tracker.cuti_stock_exhausted'
+);
+select pg_temp.assert_true(
+  (select count(*) from public.worker_attendance where user_id = '${ids.materializeCutiLow}'::uuid) = 1
+  and exists (
+    select 1 from public.worker_profiles
+    where user_id = '${ids.materializeCutiLow}'::uuid
+      and cuti_stock = 2
+  )
+  and exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.materializeCutiLow}'::uuid
+      and cuti_stock_snapshot = 2
+  ),
+  'insufficient CUTI stock must fail atomically without rows, record deltas, or stock changes'
+);
+
+with result as (
+  select app_private.materialize_tracker_absence_days_impl(
+    '${ids.owner}'::uuid,
+    '${ids.materializeConflict}'::uuid,
+    0,
+    '2026-06-13T05:00:00+07'::timestamptz
+  ) as payload
+)
+select pg_temp.assert_true((payload->>'inserted_count')::integer = 1, 'conflicting/canceled dates should be skipped while safe missing date is inserted')
+from result;
+select pg_temp.assert_true(
+  exists (
+    select 1 from public.worker_attendance
+    where user_id = '${ids.materializeConflict}'::uuid
+      and attendance_date = '2026-06-11'::date
+      and status = 'hadir'
+      and source = 'absensi'
+      and is_canceled = false
+  )
+  and exists (
+    select 1 from public.worker_attendance
+    where user_id = '${ids.materializeConflict}'::uuid
+      and attendance_date = '2026-06-12'::date
+      and is_canceled = true
+  )
+  and exists (
+    select 1 from public.worker_attendance
+    where user_id = '${ids.materializeConflict}'::uuid
+      and attendance_date = '2026-06-13'::date
+      and status = 'sakit'
+      and is_canceled = false
+  )
+  and exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.materializeConflict}'::uuid
+      and sakit_days = 2
+  ),
+  'materialization must not overwrite active rows or revive canceled rows silently'
+);
+
+select app_private.materialize_tracker_absence_days_impl(
+  '${ids.owner}'::uuid,
+  '${ids.materializeMonthBoundary}'::uuid,
+  0,
+  '2026-07-02T05:00:00+07'::timestamptz
+);
+select pg_temp.assert_true(
+  exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.materializeMonthBoundary}'::uuid
+      and period_month = '2026-06-01'::date
+      and pending_days = 1
+  )
+  and exists (
+    select 1 from public.worker_records
+    where user_id = '${ids.materializeMonthBoundary}'::uuid
+      and period_month = '2026-07-01'::date
+      and pending_days = 2
+  ),
+  'month boundary materialization must update the correct monthly records'
 );
 rollback;
 `;

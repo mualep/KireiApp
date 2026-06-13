@@ -11,6 +11,11 @@ import {
   type TrackerAction,
 } from "@/lib/workers/tracker-actions";
 import {
+  canStaffTierMaterializeTrackerAbsence,
+  trackerAbsenceMaterializationActions,
+  type TrackerAbsenceMaterializationAction,
+} from "@/lib/workers/tracker-absence-materialization";
+import {
   trackerExpiredAbsenceCloseActions,
   type TrackerExpiredAbsenceCloseAction,
 } from "@/lib/workers/tracker-absence-close";
@@ -40,6 +45,12 @@ const applyTrackerExpiredAbsenceCloseSchema = z.object({
   targetUserId: z.string().uuid(),
 });
 
+const materializeTrackerAbsenceDaysSchema = z.object({
+  action: z.enum(trackerAbsenceMaterializationActions),
+  expectedVersion: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  targetUserId: z.string().uuid(),
+});
+
 export type ApplyTrackerActionInput = z.infer<typeof applyTrackerActionSchema>;
 
 export type TrackerActionResultCode =
@@ -60,6 +71,7 @@ export type TrackerActionResultCode =
   | "correction_expired"
   | "cuti_stock_exhausted"
   | "generic_error"
+  | "materialization_conflict"
   | "records_missing";
 
 type TrackerActionErrorCode = Exclude<TrackerActionResultCode, "success">;
@@ -109,6 +121,22 @@ export type ApplyTrackerExpiredAbsenceCloseResult =
       ok: false;
     };
 
+export type ApplyTrackerAbsenceMaterializationResult =
+  | {
+      action: TrackerAbsenceMaterializationAction;
+      code: "success";
+      insertedCount: number;
+      message: string;
+      ok: true;
+      targetUserId: string;
+    }
+  | {
+      code: TrackerActionErrorCode;
+      fieldErrors?: Record<string, string[] | undefined>;
+      message: string;
+      ok: false;
+    };
+
 const RESULT_MESSAGES = {
   absence_close_not_expired: "This tracker status can still be canceled before expiry.",
   alpha_rejected: "Manual tracker actions are not allowed after ALPHA is set.",
@@ -123,6 +151,7 @@ const RESULT_MESSAGES = {
   invalid_input: "Check the tracker action details and try again.",
   invalid_target: "Choose a valid worker target.",
   invalid_transition: "That tracker action is not allowed from the current status.",
+  materialization_conflict: "Absensi sync found an unsafe attendance conflict.",
   records_missing: "Tracker records could not be reversed safely.",
   success: "Tracker action applied.",
   unauthenticated: "Sign in again to continue.",
@@ -142,6 +171,7 @@ const RPC_ERROR_CODES: Partial<Record<string, TrackerActionErrorCode>> = {
   "tracker.invalid_correction_input": "invalid_correction_input",
   "tracker.invalid_target": "invalid_target",
   "tracker.invalid_transition": "invalid_transition",
+  "tracker.materialization_conflict": "materialization_conflict",
   "tracker.records_missing": "records_missing",
   "tracker.unauthenticated": "unauthenticated",
   "tracker.unauthorized": "unauthorized",
@@ -271,6 +301,54 @@ export async function applyTrackerExpiredAbsenceClose(
   };
 }
 
+export async function materializeTrackerAbsenceDays(
+  input: unknown,
+): Promise<ApplyTrackerAbsenceMaterializationResult> {
+  const staff = await getCurrentStaffUser();
+
+  if (!staff) {
+    return actionError("unauthenticated");
+  }
+
+  if (!canStaffTierMaterializeTrackerAbsence(staff.profile.tier)) {
+    return actionError("unauthorized");
+  }
+
+  const parsed = materializeTrackerAbsenceDaysSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return actionError("invalid_input", parsed.error.flatten().fieldErrors);
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("materialize_tracker_absence_days", {
+    p_expected_version: parsed.data.expectedVersion,
+    p_target_user_id: parsed.data.targetUserId,
+  });
+
+  if (error) {
+    return actionError(mapTrackerRpcError(error.message));
+  }
+
+  revalidatePath("/admin/tracker");
+  revalidatePath("/admin/absensi");
+  revalidatePath("/admin/records");
+
+  const insertedCount = getInsertedCount(data);
+
+  return {
+    action: parsed.data.action,
+    code: "success",
+    insertedCount,
+    message:
+      insertedCount === 0
+        ? "Absensi already synchronized."
+        : `Absensi synchronized for ${insertedCount} day${insertedCount === 1 ? "" : "s"}.`,
+    ok: true,
+    targetUserId: parsed.data.targetUserId,
+  };
+}
+
 function mapTrackerRpcError(message: string): TrackerActionErrorCode {
   return RPC_ERROR_CODES[message] ?? "generic_error";
 }
@@ -281,7 +359,8 @@ function actionError(
 ): Extract<
   | ApplyTrackerActionResult
   | ApplyTrackerCorrectionResult
-  | ApplyTrackerExpiredAbsenceCloseResult,
+  | ApplyTrackerExpiredAbsenceCloseResult
+  | ApplyTrackerAbsenceMaterializationResult,
   { ok: false }
 > {
   return {
@@ -290,4 +369,17 @@ function actionError(
     message: RESULT_MESSAGES[code],
     ok: false,
   };
+}
+
+function getInsertedCount(data: unknown): number {
+  if (
+    data &&
+    typeof data === "object" &&
+    "inserted_count" in data &&
+    typeof data.inserted_count === "number"
+  ) {
+    return data.inserted_count;
+  }
+
+  return 0;
 }

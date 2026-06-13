@@ -68,6 +68,7 @@ assertIncludes(trackerActionControlsSource, 'from "@/app/admin/(shell)/tracker/a
 assertIncludes(trackerActionControlsSource, "applyTrackerAction({");
 assertIncludes(trackerActionControlsSource, "applyTrackerCorrection({");
 assertIncludes(trackerActionControlsSource, "applyTrackerExpiredAbsenceClose({");
+assertIncludes(trackerActionControlsSource, "materializeTrackerAbsenceDays({");
 assertIncludes(trackerActionControlsSource, "targetUserId: card.userId");
 assertIncludes(trackerActionControlsSource, "expectedVersion: card.version");
 assertIncludes(trackerActionControlsSource, "action");
@@ -102,11 +103,16 @@ assertIncludes(trackerActionControlsSource, 'label: "BATAL CUTI"');
 assertIncludes(trackerActionControlsSource, 'label: "BATAL SAKIT"');
 assertIncludes(trackerActionControlsSource, 'label: "BATAL PENDING"');
 assertIncludes(trackerActionControlsSource, 'label: "SELESAIKAN STATUS"');
+assertIncludes(trackerActionControlsSource, 'label: "SINKRONKAN ABSENSI"');
 assertIncludes(trackerActionControlsSource, "attendanceId: card.activeTrackerAttendanceId");
 assertIncludes(trackerActionControlsSource, "isTrackerCorrectionAvailable");
 assertIncludes(trackerActionControlsSource, "isExpiredAbsenceCloseAvailable");
+assertIncludes(trackerActionControlsSource, "isAbsenceMaterializationAvailable");
+assertIncludes(trackerActionControlsSource, "absenceMaterializationMissingDays");
 assertIncludes(trackerActionControlsSource, "runTrackerExpiredAbsenceClose");
+assertIncludes(trackerActionControlsSource, "runTrackerAbsenceMaterialization");
 assertIncludes(trackerActionControlsSource, 'expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE"');
+assertIncludes(trackerActionControlsSource, 'absenceMaterializationAction: "MATERIALIZE_ABSENCE_DAYS"');
 assertIncludes(trackerActionControlsSource, "selectedCorrectionAction");
 assertIncludes(trackerActionControlsSource, "correctionReason");
 assertIncludes(trackerActionControlsSource, "Reason is required");
@@ -128,6 +134,8 @@ assertIncludes(workerTypesSource, "breakStartedAt: string | null;");
 assertIncludes(workerTypesSource, "breakTimerRunning: boolean;");
 assertIncludes(workerTypesSource, "isTrackerCorrectionAvailable: boolean;");
 assertIncludes(workerTypesSource, "isExpiredAbsenceCloseAvailable: boolean;");
+assertIncludes(workerTypesSource, "isAbsenceMaterializationAvailable: boolean;");
+assertIncludes(workerTypesSource, "absenceMaterializationMissingDays: number;");
 assertIncludes(trackerDataSource, "break_accumulated_secs");
 assertIncludes(trackerDataSource, "break_started_at");
 assertIncludes(trackerDataSource, "break_timer_running");
@@ -137,9 +145,13 @@ assertIncludes(trackerDataSource, "breakTimerRunning: status.break_timer_running
 assertIncludes(trackerDataSource, "getTrackerCorrectionWindowState");
 assertIncludes(trackerDataSource, "isTrackerCorrectionAvailable:");
 assertIncludes(trackerDataSource, "isExpiredAbsenceCloseAvailable:");
+assertIncludes(trackerDataSource, "isAbsenceMaterializationAvailable:");
+assertIncludes(trackerDataSource, "absenceMaterializationMissingDays:");
 assertIncludes(trackerDataSource, "cuti_set_date");
 assertIncludes(trackerDataSource, "sakit_started_at");
 assertIncludes(trackerDataSource, "pending_started_at");
+assertIncludes(trackerDataSource, "getTrackerAbsenceMaterializationMissingDates");
+assertIncludes(trackerDataSource, "deriveTrackerAttendanceDate");
 assertIncludes(trackerDataSource, "isTrackerAbsenceCloseIdentified");
 assertIncludes(trackerDataSource, "isExpiredAbsenceCloseAvailable: isTrackerAbsenceCloseIdentified");
 assertIncludes(trackerDataSource, "activeTrackerAttendance?.id ?? null");
@@ -157,6 +169,16 @@ assertPattern(
   trackerActionControlsSource,
   /card\.isTrackerCorrectionAvailable[\s\S]{0,900}correctionAction:\s*"CANCEL_IZIN"[\s\S]{0,900}card\.isExpiredAbsenceCloseAvailable[\s\S]{0,900}expiredAbsenceCloseAction:\s*"CLOSE_EXPIRED_ABSENCE"/,
   "Tracker controls must render BATAL before expiry and SELESAIKAN STATUS after expiry, never both for PENDING.",
+);
+assertPattern(
+  trackerActionControlsSource,
+  /card\.isAbsenceMaterializationAvailable[\s\S]{0,900}absenceMaterializationAction:\s*"MATERIALIZE_ABSENCE_DAYS"/,
+  "Tracker controls must render SINKRONKAN ABSENSI only when missing absence days exist.",
+);
+assertNoPattern(
+  trackerActionControlsSource,
+  /storedStatus\s*===\s*"off"[\s\S]{0,1200}MATERIALIZE_ABSENCE_DAYS/,
+  "Absence materialization must not render for OFF/LATE cards.",
 );
 assertNoPattern(
   trackerActionControlsSource,
@@ -852,7 +874,9 @@ function buildCard({
     employeeRole,
     gid,
     alphaCount: 0,
+    absenceMaterializationMissingDays: 0,
     isFlexible: shift === "flexible",
+    isAbsenceMaterializationAvailable: false,
     isExpiredAbsenceCloseAvailable: false,
     isTrackerCorrectionAvailable: false,
     lemburUnits: 0,

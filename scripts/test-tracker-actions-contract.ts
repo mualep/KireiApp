@@ -25,6 +25,13 @@ import {
   trackerExpiredAbsenceCloseActions,
   trackerExpiredAbsenceCloseStatuses,
 } from "../lib/workers/tracker-absence-close";
+import {
+  canStaffTierMaterializeTrackerAbsence,
+  getTrackerAbsenceMaterializationMissingDates,
+  isTrackerAbsenceMaterializationAction,
+  trackerAbsenceMaterializationActions,
+  trackerAbsenceMaterializationStatuses,
+} from "../lib/workers/tracker-absence-materialization";
 
 const expectedTrackerActions = [
   "START",
@@ -284,6 +291,42 @@ assert.deepEqual(
     storedStatus: "cuti",
   }),
   { ok: false, reason: "invalid_source_status" },
+);
+
+assert.deepEqual(trackerAbsenceMaterializationActions, ["MATERIALIZE_ABSENCE_DAYS"]);
+assert.deepEqual(trackerAbsenceMaterializationStatuses, ["cuti", "sakit", "pending"]);
+assert.equal(isTrackerAbsenceMaterializationAction("MATERIALIZE_ABSENCE_DAYS"), true);
+assert.equal(isTrackerAbsenceMaterializationAction("CLOSE_EXPIRED_ABSENCE"), false);
+assert.equal(isTrackerAbsenceMaterializationAction("LEMBUR"), false);
+assert.equal(canStaffTierMaterializeTrackerAbsence("owner"), true);
+assert.equal(canStaffTierMaterializeTrackerAbsence("admin"), true);
+assert.equal(canStaffTierMaterializeTrackerAbsence("member"), false);
+assert.deepEqual(
+  getTrackerAbsenceMaterializationMissingDates({
+    currentAttendanceDate: "2026-06-13",
+    existingAttendanceDates: new Set(["2026-06-10", "2026-06-12"]),
+    markerDate: "2026-06-10",
+  }),
+  ["2026-06-11", "2026-06-13"],
+  "Materialization should only return truly missing dates through the current tracker date.",
+);
+assert.deepEqual(
+  getTrackerAbsenceMaterializationMissingDates({
+    currentAttendanceDate: "2026-06-10",
+    existingAttendanceDates: new Set(["2026-06-10"]),
+    markerDate: "2026-06-10",
+  }),
+  [],
+  "Materialization should be idempotent when all dates already exist.",
+);
+assert.deepEqual(
+  getTrackerAbsenceMaterializationMissingDates({
+    currentAttendanceDate: "2026-06-09",
+    existingAttendanceDates: new Set(),
+    markerDate: "2026-06-10",
+  }),
+  [],
+  "Materialization must never generate future dates.",
 );
 
 assert.deepEqual(trackerExpiredAbsenceCloseActions, ["CLOSE_EXPIRED_ABSENCE"]);

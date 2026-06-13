@@ -27,6 +27,16 @@ const r3T1PrivateFunctionSql = extractFunctionSqlFrom(
   r3T1MigrationSql,
   "app_private.apply_tracker_absence_close_impl",
 );
+const r3T2MigrationSql = readR3T2Migration();
+const normalizedR3T2MigrationSql = normalizeSql(r3T2MigrationSql);
+const r3T2PublicFunctionSql = extractFunctionSqlFrom(
+  r3T2MigrationSql,
+  "public.materialize_tracker_absence_days",
+);
+const r3T2PrivateFunctionSql = extractFunctionSqlFrom(
+  r3T2MigrationSql,
+  "app_private.materialize_tracker_absence_days_impl",
+);
 
 assertFunctionShape(publicFunctionSql, expectedPublicSignature);
 assertFunctionShape(privateFunctionSql, expectedPrivateSignature);
@@ -399,6 +409,89 @@ assert.equal(
   "R3-T1 close must not call tracker correction RPCs.",
 );
 
+assertFunctionShape(
+  r3T2PublicFunctionSql,
+  "public.materialize_tracker_absence_days(p_target_user_id uuid, p_expected_version bigint)",
+);
+assertFunctionShape(
+  r3T2PrivateFunctionSql,
+  "app_private.materialize_tracker_absence_days_impl(p_actor_user_id uuid, p_target_user_id uuid, p_expected_version bigint, p_now timestamptz)",
+);
+assertR3T2SqlIncludes(
+  "revoke execute on function public.materialize_tracker_absence_days(uuid, bigint) from public",
+);
+assertR3T2SqlIncludes(
+  "revoke execute on function public.materialize_tracker_absence_days(uuid, bigint) from anon",
+);
+assertR3T2SqlIncludes(
+  "grant execute on function public.materialize_tracker_absence_days(uuid, bigint) to authenticated",
+);
+assertR3T2SqlIncludes(
+  "revoke execute on function app_private.materialize_tracker_absence_days_impl(uuid, uuid, bigint, timestamptz) from public",
+);
+assertR3T2SqlIncludes(
+  "revoke execute on function app_private.materialize_tracker_absence_days_impl(uuid, uuid, bigint, timestamptz) from authenticated",
+);
+assertR3T2SqlIncludes("auth.uid()");
+assertR3T2SqlIncludes("u.tier in ('owner', 'admin')");
+assertR3T2SqlIncludes("tracker.unauthenticated");
+assertR3T2SqlIncludes("tracker.unauthorized");
+assertR3T2SqlIncludes("tracker.version_conflict");
+assertR3T2SqlIncludes("tracker.invalid_transition");
+assertR3T2SqlIncludes("tracker.materialization_conflict");
+assertR3T2SqlIncludes("tracker.cuti_stock_exhausted");
+assertR3T2SqlIncludes("from public.worker_status as ws");
+assertR3T2SqlIncludes("for update");
+assertR3T2SqlIncludes("perform 1");
+assertR3T2SqlIncludes("from public.worker_attendance as wa");
+assertR3T2SqlIncludes("for update");
+assertR3T2SqlIncludes("v_from_status not in ('cuti', 'sakit', 'pending')");
+assertR3T2SqlIncludes("when 'cuti' then v_cuti_set_date");
+assertR3T2SqlIncludes("when 'sakit' then (v_sakit_started_at at time zone 'Asia/Jakarta')::date");
+assertR3T2SqlIncludes("when 'pending' then (v_pending_started_at at time zone 'Asia/Jakarta')::date");
+assertR3T2SqlIncludes("v_expected_source_action");
+assertR3T2SqlIncludes("when 'pending' then 'tracker.izin'");
+assertR3T2SqlIncludes("generate_series(v_marker_date, v_current_attendance_date, interval '1 day')");
+assertR3T2SqlIncludes("on conflict on constraint worker_attendance_user_date_key do nothing");
+assertR3T2SqlIncludes("status, source, source_action, created_at, updated_at");
+assertR3T2SqlIncludes("insert into public.worker_records");
+assertR3T2SqlIncludes("on conflict (user_id, period_month) do update");
+assertR3T2SqlIncludes("sakit_days = public.worker_records.sakit_days + excluded.sakit_days");
+assertR3T2SqlIncludes("pending_days = public.worker_records.pending_days + excluded.pending_days");
+assertR3T2SqlIncludes("cuti_stock_snapshot = coalesce(excluded.cuti_stock_snapshot, public.worker_records.cuti_stock_snapshot)");
+assertR3T2SqlIncludes("update public.worker_profiles as wp");
+assertR3T2SqlIncludes("cuti_stock = cuti_stock - v_inserted_count");
+assertR3T2SqlIncludes("v_audit_id := app_private.write_audit_log(");
+assertR3T2SqlIncludes("'tracker.materialize_absence_days'");
+assertR3T2SqlIncludes("'inserted_count', v_inserted_count");
+assertR3T2SqlIncludes("'inserted_dates', v_inserted_dates");
+assertR3T2SqlIncludes("'skipped_existing_dates', v_skipped_existing_dates");
+assertR3T2SqlIncludes("'skipped_canceled_dates', v_skipped_canceled_dates");
+assertR3T2SqlIncludes("'cuti_stock_delta', v_cuti_stock_delta");
+assertR3T2SqlIncludes("'audit_id', v_audit_id");
+assert.equal(
+  /\bgrant\s+update\s+on\s+public\.worker_(attendance|records|profiles|status)\s+to\s+authenticated\b/i.test(
+    r3T2MigrationSql,
+  ),
+  false,
+  "R3-T2 must not grant direct table update privileges to authenticated.",
+);
+assert.equal(
+  /\b(current_status|status)\s*=\s*'late'\b/i.test(r3T2MigrationSql),
+  false,
+  "R3-T2 must not store LATE.",
+);
+assert.equal(
+  /\bapply_tracker_correction\b/i.test(r3T2PrivateFunctionSql),
+  false,
+  "R3-T2 materialization must not call tracker correction RPCs.",
+);
+assert.equal(
+  /\bapply_tracker_absence_close\b/i.test(r3T2PrivateFunctionSql),
+  false,
+  "R3-T2 materialization must not call expired close RPCs.",
+);
+
 console.log("Tracker RPC migration static tests passed.");
 
 function readR2CBMigration() {
@@ -435,6 +528,22 @@ function readR3T1Migration() {
   assert.ok(
     migrationFiles.length > 0,
     "R3-T1 expired absence close migration not found.",
+  );
+
+  return migrationFiles
+    .map((migrationFile) => readFileSync(join(migrationsDir, migrationFile), "utf8"))
+    .join("\n\n");
+}
+
+function readR3T2Migration() {
+  const migrationsDir = resolve(process.cwd(), "supabase/migrations");
+  const migrationFiles = readdirSync(migrationsDir)
+    .filter((entry) => entry.endsWith("_r3_t2_absence_attendance_materialization.sql"))
+    .sort();
+
+  assert.ok(
+    migrationFiles.length > 0,
+    "R3-T2 absence attendance materialization migration not found.",
   );
 
   return migrationFiles
@@ -497,6 +606,13 @@ function assertR3T1SqlIncludes(fragment: string) {
   assert.ok(
     normalizedR3T1MigrationSql.includes(normalizeSql(fragment)),
     `Missing R3-T1 SQL fragment: ${fragment}`,
+  );
+}
+
+function assertR3T2SqlIncludes(fragment: string) {
+  assert.ok(
+    normalizedR3T2MigrationSql.includes(normalizeSql(fragment)),
+    `Missing R3-T2 SQL fragment: ${fragment}`,
   );
 }
 
