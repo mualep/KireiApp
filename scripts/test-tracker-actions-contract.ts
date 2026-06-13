@@ -18,6 +18,13 @@ import {
   trackerCorrectionSourceActions,
   trackerCorrectionStatuses,
 } from "../lib/workers/tracker-corrections";
+import {
+  evaluateTrackerExpiredAbsenceCloseTransition,
+  getTrackerCorrectionWindowState,
+  isTrackerExpiredAbsenceCloseAction,
+  trackerExpiredAbsenceCloseActions,
+  trackerExpiredAbsenceCloseStatuses,
+} from "../lib/workers/tracker-absence-close";
 
 const expectedTrackerActions = [
   "START",
@@ -277,6 +284,120 @@ assert.deepEqual(
     storedStatus: "cuti",
   }),
   { ok: false, reason: "invalid_source_status" },
+);
+
+assert.deepEqual(trackerExpiredAbsenceCloseActions, ["CLOSE_EXPIRED_ABSENCE"]);
+assert.deepEqual(trackerExpiredAbsenceCloseStatuses, ["cuti", "sakit", "pending"]);
+assert.equal(isTrackerExpiredAbsenceCloseAction("CLOSE_EXPIRED_ABSENCE"), true);
+assert.equal(isTrackerExpiredAbsenceCloseAction("CANCEL_CUTI"), false);
+assert.equal(isTrackerExpiredAbsenceCloseAction("LEMBUR"), false);
+assert.deepEqual(
+  evaluateTrackerExpiredAbsenceCloseTransition({
+    action: "CLOSE_EXPIRED_ABSENCE",
+    actorTier: "owner",
+    isExpired: true,
+    storedStatus: "cuti",
+  }),
+  { ok: true, targetStatus: "off" },
+);
+assert.deepEqual(
+  evaluateTrackerExpiredAbsenceCloseTransition({
+    action: "CLOSE_EXPIRED_ABSENCE",
+    actorTier: "admin",
+    isExpired: true,
+    storedStatus: "pending",
+  }),
+  { ok: true, targetStatus: "off" },
+);
+assert.deepEqual(
+  evaluateTrackerExpiredAbsenceCloseTransition({
+    action: "CLOSE_EXPIRED_ABSENCE",
+    actorTier: "member",
+    isExpired: true,
+    storedStatus: "sakit",
+  }),
+  { ok: false, reason: "member_read_only" },
+);
+assert.equal(
+  Object.values(trackerActionTargetStatuses).includes("late" as never),
+  false,
+  "Expired absence close must not introduce a stored LATE transition.",
+);
+assert.equal(
+  evaluateTrackerExpiredAbsenceCloseTransition({
+    action: "CLOSE_EXPIRED_ABSENCE",
+    actorTier: "owner",
+    isExpired: true,
+    storedStatus: "sakit",
+  }).ok,
+  true,
+  "Expired SAKIT close must stay operational-only and separate from correction reversal.",
+);
+assert.deepEqual(
+  evaluateTrackerExpiredAbsenceCloseTransition({
+    action: "CLOSE_EXPIRED_ABSENCE",
+    actorTier: "owner",
+    isExpired: false,
+    storedStatus: "cuti",
+  }),
+  { ok: false, reason: "not_expired" },
+);
+assert.deepEqual(
+  evaluateTrackerExpiredAbsenceCloseTransition({
+    action: "CLOSE_EXPIRED_ABSENCE",
+    actorTier: "owner",
+    isExpired: true,
+    storedStatus: "off",
+  }),
+  { ok: false, reason: "invalid_source_status" },
+);
+assert.equal(
+  getTrackerCorrectionWindowState({
+    attendanceDate: "2026-06-13",
+    isFlexible: true,
+    now: new Date("2026-06-13T10:00:00.000Z"),
+    shiftEndHour: null,
+    shiftEndMinute: null,
+    shiftStartHour: null,
+    shiftStartMinute: null,
+  }),
+  "open",
+);
+assert.equal(
+  getTrackerCorrectionWindowState({
+    attendanceDate: "2026-06-12",
+    isFlexible: true,
+    now: new Date("2026-06-13T10:00:00.000Z"),
+    shiftEndHour: null,
+    shiftEndMinute: null,
+    shiftStartHour: null,
+    shiftStartMinute: null,
+  }),
+  "expired",
+);
+assert.equal(
+  getTrackerCorrectionWindowState({
+    attendanceDate: "2026-06-13",
+    isFlexible: false,
+    now: new Date("2026-06-13T09:59:00.000Z"),
+    shiftEndHour: 17,
+    shiftEndMinute: 0,
+    shiftStartHour: 8,
+    shiftStartMinute: 0,
+  }),
+  "open",
+);
+assert.equal(
+  getTrackerCorrectionWindowState({
+    attendanceDate: "2026-06-13",
+    isFlexible: false,
+    now: new Date("2026-06-13T10:00:00.000Z"),
+    shiftEndHour: 17,
+    shiftEndMinute: 0,
+    shiftStartHour: 8,
+    shiftStartMinute: 0,
+  }),
+  "expired",
 );
 
 console.log("Tracker action contract tests passed.");

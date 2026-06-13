@@ -230,11 +230,12 @@ assertOrderedFragments(ownerNavSource, [
   'label: "Content"',
 ]);
 assertOrderedFragments(memberNavSource, [
-  'label: "Profile"',
-  'label: "Tracker"',
-  'label: "Absensi"',
-  'label: "Records"',
+  'label: "Performance"',
 ]);
+assertNoPattern(
+  memberNavSource,
+  /href:\s*["']\/admin\/(?:records|profile)["']|label:\s*["'](?:Records|Profile)["']/,
+);
 
 assertNoPattern(
   recordsAllSource,

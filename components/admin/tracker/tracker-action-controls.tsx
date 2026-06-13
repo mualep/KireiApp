@@ -16,8 +16,10 @@ import {
 import {
   applyTrackerAction,
   applyTrackerCorrection,
+  applyTrackerExpiredAbsenceClose,
   type ApplyTrackerActionResult,
   type ApplyTrackerCorrectionResult,
+  type ApplyTrackerExpiredAbsenceCloseResult,
 } from "@/app/admin/(shell)/tracker/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +28,7 @@ import {
 } from "@/lib/tracker/break-timer";
 import { cn } from "@/lib/utils";
 import type { TrackerAction } from "@/lib/workers/tracker-actions";
+import type { TrackerExpiredAbsenceCloseAction } from "@/lib/workers/tracker-absence-close";
 import type { TrackerCorrectionAction } from "@/lib/workers/tracker-corrections";
 import type { TrackerCardDTO } from "@/lib/workers";
 
@@ -72,7 +75,18 @@ type CorrectionControlConfig = {
   tone: ControlTone;
 };
 
-type TrackerControlConfig = ActionControlConfig | CorrectionControlConfig;
+type ExpiredAbsenceCloseControlConfig = {
+  className?: string;
+  expiredAbsenceCloseAction: TrackerExpiredAbsenceCloseAction;
+  icon: React.ReactNode;
+  label: string;
+  tone: ControlTone;
+};
+
+type TrackerControlConfig =
+  | ActionControlConfig
+  | CorrectionControlConfig
+  | ExpiredAbsenceCloseControlConfig;
 
 const genericFailure: ApplyTrackerActionResult = {
   code: "generic_error",
@@ -88,14 +102,26 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   );
   const [pendingCorrectionAction, setPendingCorrectionAction] =
     useState<TrackerCorrectionAction | null>(null);
+  const [pendingExpiredAbsenceCloseAction, setPendingExpiredAbsenceCloseAction] =
+    useState<TrackerExpiredAbsenceCloseAction | null>(null);
+  const [selectedCorrectionAction, setSelectedCorrectionAction] =
+    useState<TrackerCorrectionAction | null>(null);
+  const [correctionReason, setCorrectionReason] = useState("");
+  const [correctionReasonError, setCorrectionReasonError] = useState<string | null>(
+    null,
+  );
   const [result, setResult] = useState<
-    ApplyTrackerActionResult | ApplyTrackerCorrectionResult | null
+    | ApplyTrackerActionResult
+    | ApplyTrackerCorrectionResult
+    | ApplyTrackerExpiredAbsenceCloseResult
+    | null
   >(null);
   const controlGroups = getActiveControlGroups(card);
   const isPending =
     isTransitionPending ||
     pendingAction !== null ||
-    pendingCorrectionAction !== null;
+    pendingCorrectionAction !== null ||
+    pendingExpiredAbsenceCloseAction !== null;
   const isBreakCard =
     card.storedStatus === "break" && card.displayStatus === "BREAK";
   const [nowMs, setNowMs] = useState<number | null>(null);
@@ -156,13 +182,27 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       return;
     }
 
-    const reason = window.prompt("Reason for tracker correction:");
+    setResult(null);
+    setCorrectionReason("");
+    setCorrectionReasonError(null);
+    setSelectedCorrectionAction(action);
+  }
 
-    if (!reason?.trim()) {
+  function submitTrackerCorrection() {
+    if (isPending || !card.activeTrackerAttendanceId || !selectedCorrectionAction) {
+      return;
+    }
+
+    const action = selectedCorrectionAction;
+    const reason = correctionReason.trim();
+
+    if (!reason) {
+      setCorrectionReasonError("Reason is required before canceling tracker status.");
       return;
     }
 
     setResult(null);
+    setCorrectionReasonError(null);
     setPendingCorrectionAction(action);
 
     startTransition(async () => {
@@ -187,6 +227,41 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         setResult(genericFailure);
       } finally {
         setPendingCorrectionAction(null);
+        setSelectedCorrectionAction(null);
+        setCorrectionReason("");
+      }
+    });
+  }
+
+  function runTrackerExpiredAbsenceClose(action: TrackerExpiredAbsenceCloseAction) {
+    if (isPending) {
+      return;
+    }
+
+    setResult(null);
+    setPendingExpiredAbsenceCloseAction(action);
+
+    startTransition(async () => {
+      try {
+        const nextResult = await applyTrackerExpiredAbsenceClose({
+          action,
+          attendanceId: card.activeTrackerAttendanceId ?? null,
+          expectedVersion: card.version,
+          targetUserId: card.userId,
+        });
+
+        setResult(nextResult);
+
+        if (
+          nextResult.code === "success" ||
+          nextResult.code === "version_conflict"
+        ) {
+          router.refresh();
+        }
+      } catch {
+        setResult(genericFailure);
+      } finally {
+        setPendingExpiredAbsenceCloseAction(null);
       }
     });
   }
@@ -242,7 +317,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           {group.map((control) => (
             <Button
               key={
-                "action" in control ? control.action : control.correctionAction
+                "action" in control
+                  ? control.action
+                  : "correctionAction" in control
+                    ? control.correctionAction
+                    : control.expiredAbsenceCloseAction
               }
               type="button"
               disabled={isPending}
@@ -255,14 +334,21 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
               onClick={() =>
                 "action" in control
                   ? runTrackerAction(control.action)
-                  : runTrackerCorrection(control.correctionAction)
+                  : "correctionAction" in control
+                    ? runTrackerCorrection(control.correctionAction)
+                    : runTrackerExpiredAbsenceClose(
+                        control.expiredAbsenceCloseAction,
+                      )
               }
             >
               {control.icon}
               <span className="truncate">
                 {("action" in control && pendingAction === control.action) ||
                 ("correctionAction" in control &&
-                  pendingCorrectionAction === control.correctionAction)
+                  pendingCorrectionAction === control.correctionAction) ||
+                ("expiredAbsenceCloseAction" in control &&
+                  pendingExpiredAbsenceCloseAction ===
+                    control.expiredAbsenceCloseAction)
                   ? "Working…"
                   : control.label}
               </span>
@@ -270,6 +356,60 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           ))}
         </div>
       ))}
+
+      {selectedCorrectionAction ? (
+        <div className="rounded-md border border-status-alpha/25 bg-status-alpha/8 p-2">
+          <label className="flex flex-col gap-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            Correction reason
+            <textarea
+              className="min-h-16 rounded-sm border border-border/80 bg-background/70 px-2 py-1.5 text-xs font-medium normal-case tracking-normal text-foreground outline-none transition focus-visible:border-status-alpha/70 focus-visible:ring-2 focus-visible:ring-status-alpha/20 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isPending}
+              maxLength={500}
+              name="tracker-correction-reason"
+              autoComplete="off"
+              onChange={(event) => {
+                setCorrectionReason(event.target.value);
+                if (correctionReasonError) {
+                  setCorrectionReasonError(null);
+                }
+              }}
+              placeholder="Reason is required…"
+              value={correctionReason}
+            />
+          </label>
+          {correctionReasonError ? (
+            <p className="mt-1.5 text-xs font-medium text-status-alpha" role="alert">
+              {correctionReasonError}
+            </p>
+          ) : null}
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            <Button
+              type="button"
+              disabled={isPending}
+              variant="outline"
+              className="tracker-action-btn h-8 rounded-sm border px-2 text-xs font-bold"
+              data-tone="danger"
+              onClick={submitTrackerCorrection}
+            >
+              KONFIRMASI BATAL
+            </Button>
+            <Button
+              type="button"
+              disabled={isPending}
+              variant="outline"
+              className="tracker-action-btn h-8 rounded-sm border px-2 text-xs font-bold"
+              data-tone="muted"
+              onClick={() => {
+                setSelectedCorrectionAction(null);
+                setCorrectionReason("");
+                setCorrectionReasonError(null);
+              }}
+            >
+              CANCEL
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {result ? (
         <p
@@ -364,7 +504,11 @@ function getActiveControlGroups(
     ];
   }
 
-  if (card.activeTrackerAttendanceId && card.storedStatus === "cuti") {
+  if (
+    card.activeTrackerAttendanceId &&
+    card.storedStatus === "cuti" &&
+    card.isTrackerCorrectionAvailable
+  ) {
     return [
       [
         {
@@ -377,7 +521,27 @@ function getActiveControlGroups(
     ];
   }
 
-  if (card.activeTrackerAttendanceId && card.storedStatus === "sakit") {
+  if (
+    card.storedStatus === "cuti" &&
+    card.isExpiredAbsenceCloseAvailable
+  ) {
+    return [
+      [
+        {
+          expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
+          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+          label: "SELESAIKAN STATUS",
+          tone: "danger",
+        },
+      ],
+    ];
+  }
+
+  if (
+    card.activeTrackerAttendanceId &&
+    card.storedStatus === "sakit" &&
+    card.isTrackerCorrectionAvailable
+  ) {
     return [
       [
         {
@@ -390,13 +554,49 @@ function getActiveControlGroups(
     ];
   }
 
-  if (card.activeTrackerAttendanceId && card.storedStatus === "pending") {
+  if (
+    card.storedStatus === "sakit" &&
+    card.isExpiredAbsenceCloseAvailable
+  ) {
+    return [
+      [
+        {
+          expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
+          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+          label: "SELESAIKAN STATUS",
+          tone: "danger",
+        },
+      ],
+    ];
+  }
+
+  if (
+    card.activeTrackerAttendanceId &&
+    card.storedStatus === "pending" &&
+    card.isTrackerCorrectionAvailable
+  ) {
     return [
       [
         {
           correctionAction: "CANCEL_IZIN",
           icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
           label: "BATAL PENDING",
+          tone: "danger",
+        },
+      ],
+    ];
+  }
+
+  if (
+    card.storedStatus === "pending" &&
+    card.isExpiredAbsenceCloseAvailable
+  ) {
+    return [
+      [
+        {
+          expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
+          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+          label: "SELESAIKAN STATUS",
           tone: "danger",
         },
       ],

@@ -81,6 +81,8 @@ export type TrackerCardDTO = {
   gid: string;
   alphaCount: number;
   isFlexible: boolean;
+  isExpiredAbsenceCloseAvailable: boolean;
+  isTrackerCorrectionAvailable: boolean;
   lemburUnits: number;
   name: string;
   pendingDays: number;

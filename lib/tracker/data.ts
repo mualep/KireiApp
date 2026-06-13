@@ -4,6 +4,7 @@ import type { StaffTier } from "@/lib/auth/tiers";
 import { createClient } from "@/lib/supabase/server";
 import {
   computeWorkerDisplayStatus,
+  getTrackerCorrectionWindowState,
   getShiftDefinition,
   isWorkerRole,
   isWorkerShift,
@@ -35,6 +36,10 @@ type WorkerProfileRow = {
   gid: string;
   is_flexible: boolean;
   shift: string;
+  shift_end_hour: number | null;
+  shift_end_min: number | null;
+  shift_start_hour: number | null;
+  shift_start_min: number | null;
   show_card: boolean;
   user_id: string;
 };
@@ -45,6 +50,9 @@ type WorkerStatusRow = {
   break_started_at: string | null;
   break_timer_running: boolean;
   current_status: string;
+  cuti_set_date: string | null;
+  pending_started_at: string | null;
+  sakit_started_at: string | null;
   updated_at: string;
   user_id: string;
   version: number | string;
@@ -58,6 +66,7 @@ type UserRow = {
 };
 
 type ActiveTrackerAttendanceRow = {
+  attendance_date: string;
   id: string;
   source_action: string;
   status: string;
@@ -79,7 +88,9 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   const supabase = await createClient();
   const { data: profiles, error: profilesError } = await supabase
     .from("worker_profiles")
-    .select("user_id,gid,employee_role,shift,is_flexible,show_card,cuti_stock")
+    .select(
+      "user_id,gid,employee_role,shift,is_flexible,shift_start_hour,shift_start_min,shift_end_hour,shift_end_min,show_card,cuti_stock",
+    )
     .eq("show_card", true)
     .returns<WorkerProfileRow[]>();
 
@@ -113,13 +124,13 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
       supabase
         .from("worker_status")
         .select(
-          "user_id,version,current_status,alpha_done,updated_at,break_started_at,break_timer_running,break_accumulated_secs",
+          "user_id,version,current_status,alpha_done,updated_at,break_started_at,break_timer_running,break_accumulated_secs,cuti_set_date,sakit_started_at,pending_started_at",
         )
         .in("user_id", userIds)
         .returns<WorkerStatusRow[]>(),
       supabase
         .from("worker_attendance")
-        .select("id,user_id,status,source_action")
+        .select("id,user_id,attendance_date,status,source_action")
         .in("user_id", userIds)
         .eq("source", "tracker")
         .eq("is_canceled", false)
@@ -210,14 +221,26 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
     }
 
     const shift = getShiftDefinition(profile.shift);
+    const activeTrackerAttendance = getMatchingTrackerAttendance(
+      activeTrackerAttendancesByUserId.get(profile.user_id),
+      status.current_status,
+    );
+    const trackerAbsenceMarkerDate = getTrackerAbsenceMarkerDate(status);
+    const correctionWindowState = getTrackerCorrectionWindowState({
+      attendanceDate: activeTrackerAttendance?.attendance_date ?? trackerAbsenceMarkerDate,
+      isFlexible: profile.is_flexible,
+      now,
+      shiftEndHour: profile.shift_end_hour,
+      shiftEndMinute: profile.shift_end_min,
+      shiftStartHour: profile.shift_start_hour,
+      shiftStartMinute: profile.shift_start_min,
+    });
+    const isTrackerAbsenceCloseIdentified =
+      activeTrackerAttendance !== null || trackerAbsenceMarkerDate !== null;
 
     return [
       {
-        activeTrackerAttendanceId:
-          getMatchingTrackerAttendanceId(
-            activeTrackerAttendancesByUserId.get(profile.user_id),
-            status.current_status,
-          ),
+        activeTrackerAttendanceId: activeTrackerAttendance?.id ?? null,
         breakAccumulatedSecs: status.break_accumulated_secs,
         breakLateSeconds: record?.break_late_seconds ?? 0,
         breakStartedAt: status.break_started_at,
@@ -234,6 +257,10 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         gid: profile.gid,
         alphaCount: record?.alpha_count ?? 0,
         isFlexible: profile.is_flexible,
+        isExpiredAbsenceCloseAvailable:
+          isTrackerAbsenceCloseIdentified && correctionWindowState === "expired",
+        isTrackerCorrectionAvailable:
+          activeTrackerAttendance !== null && correctionWindowState === "open",
         lemburUnits: record?.lembur_units ?? 0,
         name: user.name,
         pendingDays: record?.pending_days ?? 0,
@@ -258,10 +285,50 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   };
 }
 
-function getMatchingTrackerAttendanceId(
+function getTrackerAbsenceMarkerDate(status: WorkerStatusRow): string | null {
+  if (status.current_status === "cuti") {
+    return isIsoDate(status.cuti_set_date) ? status.cuti_set_date : null;
+  }
+
+  if (status.current_status === "sakit") {
+    return getWibDateFromTimestamp(status.sakit_started_at);
+  }
+
+  if (status.current_status === "pending") {
+    return getWibDateFromTimestamp(status.pending_started_at);
+  }
+
+  return null;
+}
+
+function getWibDateFromTimestamp(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const timestamp = Date.parse(value);
+
+  if (Number.isNaN(timestamp)) {
+    return null;
+  }
+
+  const wibDate = new Date(timestamp + 7 * 60 * 60 * 1000);
+
+  return [
+    wibDate.getUTCFullYear(),
+    String(wibDate.getUTCMonth() + 1).padStart(2, "0"),
+    String(wibDate.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function isIsoDate(value: string | null): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function getMatchingTrackerAttendance(
   attendance: ActiveTrackerAttendanceRow | undefined,
   storedStatus: string,
-): string | null {
+): ActiveTrackerAttendanceRow | null {
   if (!attendance) {
     return null;
   }
@@ -273,6 +340,6 @@ function getMatchingTrackerAttendanceId(
   }[storedStatus];
 
   return attendance.status === storedStatus && attendance.source_action === expectedSourceAction
-    ? attendance.id
+    ? attendance
     : null;
 }

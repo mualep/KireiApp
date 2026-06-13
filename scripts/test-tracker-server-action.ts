@@ -44,17 +44,22 @@ assertIncludes("canStaffTierPerformTrackerAction");
 assertIncludes("trackerActions");
 assertIncludes("export async function applyTrackerAction(input: unknown)");
 assertIncludes("export async function applyTrackerCorrection(");
+assertIncludes("export async function applyTrackerExpiredAbsenceClose(");
 assertIncludes("export type ApplyTrackerActionInput");
 assertIncludes("export type ApplyTrackerActionResult");
 assertIncludes("export type TrackerActionResultCode");
 assertIncludes("z.enum(trackerActions)");
+assertIncludes("z.enum(trackerExpiredAbsenceCloseActions)");
 assertIncludes("targetUserId: z.string().uuid()");
+assertIncludes("attendanceId: z.string().uuid().nullable()");
 assertIncludes("expectedVersion: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER)");
 assertIncludes('supabase.rpc("apply_tracker_action"');
 assertIncludes('supabase.rpc("apply_tracker_correction"');
+assertIncludes('supabase.rpc("apply_tracker_absence_close"');
 assertIncludes("p_target_user_id: parsed.data.targetUserId");
 assertIncludes("p_action: parsed.data.action");
 assertIncludes("p_expected_version: parsed.data.expectedVersion");
+assertIncludes("p_attendance_id: parsed.data.attendanceId");
 assertIncludes('revalidatePath("/admin/tracker")');
 assertIncludes("mapTrackerRpcError(error.message)");
 assertOrderedFragments(
@@ -74,6 +79,7 @@ for (const code of [
   "alpha_rejected",
   "attendance_conflict",
   "attendance_missing",
+  "absence_close_not_expired",
   "cuti_stock_exhausted",
   "generic_error",
 ]) {
@@ -90,6 +96,7 @@ for (const rpcError of [
   "tracker.alpha_rejected",
   "tracker.attendance_conflict",
   "tracker.attendance_missing",
+  "tracker.absence_close_not_expired",
   "tracker.cuti_stock_exhausted",
 ]) {
   assertIncludes(`"${rpcError}"`);
@@ -142,6 +149,20 @@ assert.ok(
 assert.ok(
   normalize(trackerActionControlsSource).includes(normalize("applyTrackerCorrection({")),
   "R2C-C controls must call applyTrackerCorrection.",
+);
+assert.ok(
+  normalize(trackerActionControlsSource).includes(normalize("applyTrackerExpiredAbsenceClose({")),
+  "R3-T1 controls must call applyTrackerExpiredAbsenceClose for expired operational closes.",
+);
+assert.equal(
+  /applyTrackerExpiredAbsenceClose[\s\S]{0,700}applyTrackerCorrection/.test(actionSource),
+  false,
+  "R3-T1 expired close action must not call applyTrackerCorrection.",
+);
+assert.equal(
+  /applyTrackerExpiredAbsenceClose[\s\S]{0,900}apply_tracker_correction/.test(actionSource),
+  false,
+  "R3-T1 expired close action must not call the correction RPC.",
 );
 assert.equal(
   /from\s+["'][^"']*tracker\/actions["']|from\s+["']\.\/actions["']|applyTrackerAction/.test(

@@ -11,6 +11,10 @@ import {
   type TrackerAction,
 } from "@/lib/workers/tracker-actions";
 import {
+  trackerExpiredAbsenceCloseActions,
+  type TrackerExpiredAbsenceCloseAction,
+} from "@/lib/workers/tracker-absence-close";
+import {
   trackerCorrectionActions,
   type TrackerCorrectionAction,
 } from "@/lib/workers/tracker-corrections";
@@ -26,6 +30,13 @@ const applyTrackerCorrectionSchema = z.object({
   attendanceId: z.string().uuid(),
   expectedVersion: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
   reason: z.string().trim().min(1).max(500),
+  targetUserId: z.string().uuid(),
+});
+
+const applyTrackerExpiredAbsenceCloseSchema = z.object({
+  action: z.enum(trackerExpiredAbsenceCloseActions),
+  attendanceId: z.string().uuid().nullable(),
+  expectedVersion: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
   targetUserId: z.string().uuid(),
 });
 
@@ -45,6 +56,7 @@ export type TrackerActionResultCode =
   | "alpha_rejected"
   | "attendance_conflict"
   | "attendance_missing"
+  | "absence_close_not_expired"
   | "correction_expired"
   | "cuti_stock_exhausted"
   | "generic_error"
@@ -82,7 +94,23 @@ export type ApplyTrackerCorrectionResult =
       ok: false;
     };
 
+export type ApplyTrackerExpiredAbsenceCloseResult =
+  | {
+      action: TrackerExpiredAbsenceCloseAction;
+      code: "success";
+      message: string;
+      ok: true;
+      targetUserId: string;
+    }
+  | {
+      code: TrackerActionErrorCode;
+      fieldErrors?: Record<string, string[] | undefined>;
+      message: string;
+      ok: false;
+    };
+
 const RESULT_MESSAGES = {
+  absence_close_not_expired: "This tracker status can still be canceled before expiry.",
   alpha_rejected: "Manual tracker actions are not allowed after ALPHA is set.",
   attendance_conflict: "Attendance already exists for this worker and date.",
   attendance_missing: "Attendance could not be found for this action.",
@@ -106,6 +134,7 @@ const RPC_ERROR_CODES: Partial<Record<string, TrackerActionErrorCode>> = {
   "tracker.alpha_rejected": "alpha_rejected",
   "tracker.attendance_conflict": "attendance_conflict",
   "tracker.attendance_missing": "attendance_missing",
+  "tracker.absence_close_not_expired": "absence_close_not_expired",
   "tracker.correction_expired": "correction_expired",
   "tracker.cuti_stock_exhausted": "cuti_stock_exhausted",
   "tracker.invalid_action": "invalid_action",
@@ -201,6 +230,47 @@ export async function applyTrackerCorrection(
   };
 }
 
+export async function applyTrackerExpiredAbsenceClose(
+  input: unknown,
+): Promise<ApplyTrackerExpiredAbsenceCloseResult> {
+  const staff = await getCurrentStaffUser();
+
+  if (!staff) {
+    return actionError("unauthenticated");
+  }
+
+  if (!canStaffTierPerformTrackerAction(staff.profile.tier)) {
+    return actionError("unauthorized");
+  }
+
+  const parsed = applyTrackerExpiredAbsenceCloseSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return actionError("invalid_input", parsed.error.flatten().fieldErrors);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("apply_tracker_absence_close", {
+    p_attendance_id: parsed.data.attendanceId,
+    p_expected_version: parsed.data.expectedVersion,
+    p_target_user_id: parsed.data.targetUserId,
+  });
+
+  if (error) {
+    return actionError(mapTrackerRpcError(error.message));
+  }
+
+  revalidatePath("/admin/tracker");
+
+  return {
+    action: parsed.data.action,
+    code: "success",
+    message: "Tracker status closed.",
+    ok: true,
+    targetUserId: parsed.data.targetUserId,
+  };
+}
+
 function mapTrackerRpcError(message: string): TrackerActionErrorCode {
   return RPC_ERROR_CODES[message] ?? "generic_error";
 }
@@ -208,7 +278,12 @@ function mapTrackerRpcError(message: string): TrackerActionErrorCode {
 function actionError(
   code: TrackerActionErrorCode,
   fieldErrors?: Record<string, string[] | undefined>,
-): Extract<ApplyTrackerActionResult, { ok: false }> {
+): Extract<
+  | ApplyTrackerActionResult
+  | ApplyTrackerCorrectionResult
+  | ApplyTrackerExpiredAbsenceCloseResult,
+  { ok: false }
+> {
   return {
     code,
     fieldErrors,

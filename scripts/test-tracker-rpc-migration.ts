@@ -17,6 +17,16 @@ const r2cDPrivateFunctionSql = extractFunctionSqlFrom(
   r2cDMigrationSql,
   "app_private.apply_tracker_action_impl",
 );
+const r3T1MigrationSql = readR3T1Migration();
+const normalizedR3T1MigrationSql = normalizeSql(r3T1MigrationSql);
+const r3T1PublicFunctionSql = extractFunctionSqlFrom(
+  r3T1MigrationSql,
+  "public.apply_tracker_absence_close",
+);
+const r3T1PrivateFunctionSql = extractFunctionSqlFrom(
+  r3T1MigrationSql,
+  "app_private.apply_tracker_absence_close_impl",
+);
 
 assertFunctionShape(publicFunctionSql, expectedPublicSignature);
 assertFunctionShape(privateFunctionSql, expectedPrivateSignature);
@@ -302,6 +312,93 @@ assert.equal(
   "R2C-D must not replace the stable public tracker RPC.",
 );
 
+assertFunctionShape(
+  r3T1PublicFunctionSql,
+  "public.apply_tracker_absence_close(p_target_user_id uuid, p_expected_version bigint, p_attendance_id uuid)",
+);
+assertFunctionShape(
+  r3T1PrivateFunctionSql,
+  "app_private.apply_tracker_absence_close_impl(p_actor_user_id uuid, p_target_user_id uuid, p_expected_version bigint, p_attendance_id uuid, p_now timestamptz)",
+);
+assertR3T1SqlIncludes(
+  "revoke execute on function public.apply_tracker_absence_close(uuid, bigint, uuid) from public",
+);
+assertR3T1SqlIncludes(
+  "revoke execute on function public.apply_tracker_absence_close(uuid, bigint, uuid) from anon",
+);
+assertR3T1SqlIncludes(
+  "grant execute on function public.apply_tracker_absence_close(uuid, bigint, uuid) to authenticated",
+);
+assertR3T1SqlIncludes(
+  "revoke execute on function app_private.apply_tracker_absence_close_impl(uuid, uuid, bigint, uuid, timestamptz) from public",
+);
+assertR3T1SqlIncludes(
+  "revoke execute on function app_private.apply_tracker_absence_close_impl(uuid, uuid, bigint, uuid, timestamptz) from authenticated",
+);
+assertR3T1SqlIncludes("auth.uid()");
+assertR3T1SqlIncludes("u.tier in ('owner', 'admin')");
+assertR3T1SqlIncludes("tracker.unauthenticated");
+assertR3T1SqlIncludes("tracker.unauthorized");
+assertR3T1SqlIncludes("tracker.absence_close_not_expired");
+assertR3T1SqlIncludes("tracker.version_conflict");
+assertR3T1SqlIncludes("tracker.invalid_transition");
+assertR3T1SqlIncludes("tracker.attendance_missing");
+assertR3T1SqlIncludes("from public.worker_status as ws");
+assertR3T1SqlIncludes("for update");
+assertR3T1SqlIncludes("v_from_status not in ('cuti', 'sakit', 'pending')");
+assertR3T1SqlIncludes("v_expected_source_action");
+assertR3T1SqlIncludes("v_status_marker_date");
+assertR3T1SqlIncludes("when 'pending' then 'tracker.izin'");
+assertR3T1SqlIncludes("if p_attendance_id is not null then");
+assertR3T1SqlIncludes("wa.is_canceled");
+assertR3T1SqlIncludes("v_attendance_source <> 'tracker'");
+assertR3T1SqlIncludes("v_attendance_source_action <> v_expected_source_action");
+assertR3T1SqlIncludes("when 'cuti' then v_cuti_set_date");
+assertR3T1SqlIncludes("when 'sakit' then (v_sakit_started_at at time zone 'Asia/Jakarta')::date");
+assertR3T1SqlIncludes("when 'pending' then (v_pending_started_at at time zone 'Asia/Jakarta')::date");
+assertR3T1SqlIncludes("v_attendance_date := coalesce(v_attendance_date, v_status_marker_date)");
+assertR3T1SqlIncludes("if v_is_flexible then");
+assertR3T1SqlIncludes("(p_now at time zone 'Asia/Jakarta')::date = v_attendance_date");
+assertR3T1SqlIncludes("if p_now < v_shift_ends_at then");
+assertR3T1SqlIncludes("current_status = 'off'");
+assertR3T1SqlIncludes("version = v_from_version + 1");
+assertR3T1SqlIncludes("shift_active_date = null");
+assertR3T1SqlIncludes("break_started_at = null");
+assertR3T1SqlIncludes("sakit_started_at = null");
+assertR3T1SqlIncludes("pending_started_at = null");
+assertR3T1SqlIncludes("cuti_set_date = null");
+assertR3T1SqlIncludes("v_audit_id := app_private.write_audit_log(");
+assertR3T1SqlIncludes("'tracker.close_expired_absence'");
+assertR3T1SqlIncludes("'attendance_id', p_attendance_id");
+assertR3T1SqlIncludes("'from_status', v_from_status");
+assertR3T1SqlIncludes("'to_status', 'off'");
+assertR3T1SqlIncludes("'audit_id', v_audit_id");
+assert.equal(
+  /\b(update|insert\s+into|delete\s+from)\s+public\.worker_attendance\b/i.test(r3T1MigrationSql),
+  false,
+  "R3-T1 close must not mutate worker_attendance.",
+);
+assert.equal(
+  /\b(update|insert\s+into|delete\s+from)\s+public\.worker_records\b/i.test(r3T1MigrationSql),
+  false,
+  "R3-T1 close must not mutate worker_records.",
+);
+assert.equal(
+  /\bupdate\s+public\.worker_profiles\b/i.test(r3T1MigrationSql),
+  false,
+  "R3-T1 close must not mutate cuti stock or worker_profiles.",
+);
+assert.equal(
+  /\bis_canceled\s*=\s*true\b/i.test(r3T1MigrationSql),
+  false,
+  "R3-T1 close must not cancel attendance rows.",
+);
+assert.equal(
+  /\bapply_tracker_correction\b/i.test(r3T1PrivateFunctionSql),
+  false,
+  "R3-T1 close must not call tracker correction RPCs.",
+);
+
 console.log("Tracker RPC migration static tests passed.");
 
 function readR2CBMigration() {
@@ -327,6 +424,22 @@ function readR2CDMigration() {
   assert.ok(migrationFile, "R2C-D tracker BREAK_LATE migration not found.");
 
   return readFileSync(join(migrationsDir, migrationFile), "utf8");
+}
+
+function readR3T1Migration() {
+  const migrationsDir = resolve(process.cwd(), "supabase/migrations");
+  const migrationFiles = readdirSync(migrationsDir)
+    .filter((entry) => entry.endsWith("_r3_t1_expired_absence_close_action.sql"))
+    .sort();
+
+  assert.ok(
+    migrationFiles.length > 0,
+    "R3-T1 expired absence close migration not found.",
+  );
+
+  return migrationFiles
+    .map((migrationFile) => readFileSync(join(migrationsDir, migrationFile), "utf8"))
+    .join("\n\n");
 }
 
 function assertFunctionShape(functionSql: string, expectedSignature: string) {
@@ -361,12 +474,12 @@ function extractFunctionSql(functionName: string) {
 function extractFunctionSqlFrom(sql: string, functionName: string) {
   const pattern = new RegExp(
     `create\\s+or\\s+replace\\s+function\\s+${escapeRegExp(functionName)}\\s*\\([\\s\\S]*?\\n\\$\\$;`,
-    "i",
+    "gi",
   );
-  const match = sql.match(pattern);
+  const matches = sql.match(pattern);
 
-  assert.ok(match, `Missing function body for ${functionName}.`);
-  return match[0];
+  assert.ok(matches?.length, `Missing function body for ${functionName}.`);
+  return matches[matches.length - 1];
 }
 
 function assertSqlIncludes(fragment: string) {
@@ -377,6 +490,13 @@ function assertR2CDSqlIncludes(fragment: string) {
   assert.ok(
     normalizedR2CDMigrationSql.includes(normalizeSql(fragment)),
     `Missing R2C-D SQL fragment: ${fragment}`,
+  );
+}
+
+function assertR3T1SqlIncludes(fragment: string) {
+  assert.ok(
+    normalizedR3T1MigrationSql.includes(normalizeSql(fragment)),
+    `Missing R3-T1 SQL fragment: ${fragment}`,
   );
 }
 
