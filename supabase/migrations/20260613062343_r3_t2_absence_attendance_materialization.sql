@@ -250,7 +250,7 @@ begin
     for update;
 
     if coalesce(v_cuti_stock_before, 0) < v_inserted_count then
-      raise exception 'tracker.cuti_stock_exhausted' using errcode = '23514';
+      raise exception 'tracker.cuti_stock_insufficient_for_range' using errcode = '23514';
     end if;
 
     update public.worker_profiles as wp
@@ -259,6 +259,7 @@ begin
       updated_at = p_now
     where wp.user_id = p_target_user_id
     returning wp.cuti_stock into v_cuti_stock_after;
+
 
     v_cuti_stock_delta := -v_inserted_count;
   elsif v_from_status = 'cuti' then

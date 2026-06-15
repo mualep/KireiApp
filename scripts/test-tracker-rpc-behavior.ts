@@ -2203,9 +2203,9 @@ select pg_temp.assert_true(
 );
 
 select pg_temp.expect_error(
-  'insufficient CUTI stock materialization',
+  'insufficient CUTI stock for materialization range',
   'select app_private.materialize_tracker_absence_days_impl(''${ids.owner}''::uuid, ''${ids.materializeCutiLow}''::uuid, 0::bigint, ''2026-06-13T05:00:00+07''::timestamptz)',
-  'tracker.cuti_stock_exhausted'
+  'tracker.cuti_stock_insufficient_for_range'
 );
 select pg_temp.assert_true(
   (select count(*) from public.worker_attendance where user_id = '${ids.materializeCutiLow}'::uuid) = 1

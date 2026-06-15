@@ -70,6 +70,7 @@ export type TrackerActionResultCode =
   | "absence_close_not_expired"
   | "correction_expired"
   | "cuti_stock_exhausted"
+  | "cuti_stock_insufficient_for_range"
   | "generic_error"
   | "materialization_conflict"
   | "records_missing";
@@ -144,6 +145,7 @@ const RESULT_MESSAGES = {
   attendance_missing: "Attendance could not be found for this action.",
   correction_expired: "This tracker correction is no longer available after shift end.",
   cuti_stock_exhausted: "This worker has no remaining CUTI stock.",
+  cuti_stock_insufficient_for_range: "CUTI stock is insufficient to cover all missing absence days.",
   generic_error: "We could not apply that tracker action. Please try again.",
   invalid_action: "Choose a valid tracker action.",
   invalid_correction_action: "Choose a valid tracker correction.",
@@ -166,6 +168,7 @@ const RPC_ERROR_CODES: Partial<Record<string, TrackerActionErrorCode>> = {
   "tracker.absence_close_not_expired": "absence_close_not_expired",
   "tracker.correction_expired": "correction_expired",
   "tracker.cuti_stock_exhausted": "cuti_stock_exhausted",
+  "tracker.cuti_stock_insufficient_for_range": "cuti_stock_insufficient_for_range",
   "tracker.invalid_action": "invalid_action",
   "tracker.invalid_correction_action": "invalid_correction_action",
   "tracker.invalid_correction_input": "invalid_correction_input",

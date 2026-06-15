@@ -54,6 +54,24 @@ assertIncludes(actionSource, "insertedCount");
 assertIncludes(actionSource, '"materialization_conflict"');
 assertIncludes(actionSource, '"tracker.materialization_conflict"');
 
+// R3-T2 QA fix: insufficient CUTI stock for multi-day materialization range must be
+// differentiated from zero-stock initial CUTI action with its own result code.
+assertIncludes(
+  actionSource,
+  '"cuti_stock_insufficient_for_range"',
+  "actions.ts must declare cuti_stock_insufficient_for_range result code to differentiate multi-day materialization shortage from zero-stock CUTI.",
+);
+assertIncludes(
+  actionSource,
+  '"tracker.cuti_stock_insufficient_for_range"',
+  "actions.ts RPC_ERROR_CODES must map tracker.cuti_stock_insufficient_for_range to the new result code.",
+);
+assertNoPattern(
+  actionSource,
+  /cuti_stock_insufficient_for_range[\s\S]{0,300}no remaining CUTI/i,
+  "The insufficient-for-range message must not reuse 'no remaining CUTI stock' wording.",
+);
+
 assertNoPattern(
   actionSource,
   /materializeTrackerAbsenceDays[\s\S]{0,900}apply_tracker_correction/i,
@@ -124,12 +142,13 @@ assertIncludes(dataSource, "staff.profile.tier");
 
 console.log("Tracker absence materialization static tests passed.");
 
-function assertIncludes(source: string, fragment: string) {
+function assertIncludes(source: string, fragment: string, message?: string) {
   assert.ok(
     normalize(source).includes(normalize(fragment)),
-    `Missing source fragment: ${fragment}`,
+    message ?? `Missing source fragment: ${fragment}`,
   );
 }
+
 
 function assertNoPattern(source: string, pattern: RegExp, message: string) {
   assert.equal(pattern.test(source), false, message);

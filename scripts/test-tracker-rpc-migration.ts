@@ -439,7 +439,7 @@ assertR3T2SqlIncludes("tracker.unauthorized");
 assertR3T2SqlIncludes("tracker.version_conflict");
 assertR3T2SqlIncludes("tracker.invalid_transition");
 assertR3T2SqlIncludes("tracker.materialization_conflict");
-assertR3T2SqlIncludes("tracker.cuti_stock_exhausted");
+assertR3T2SqlIncludes("tracker.cuti_stock_insufficient_for_range");
 assertR3T2SqlIncludes("from public.worker_status as ws");
 assertR3T2SqlIncludes("for update");
 assertR3T2SqlIncludes("perform 1");
