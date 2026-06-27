@@ -30,7 +30,9 @@
     "test:member-profile-performance-readonly": "tsx scripts/test-member-profile-performance-readonly.ts",
     "test:brand-identity": "tsx scripts/test-brand-identity.ts",
     "test:tracker-readonly": "tsx scripts/test-tracker-readonly.ts",
-    "test:worker-helpers": "tsx scripts/test-worker-helpers.ts"
+    "test:worker-helpers": "tsx scripts/test-worker-helpers.ts",
+    "test:records-override-contract": "tsx scripts/test-records-override-contract.ts",
+    "test:records-override-truth-table": "tsx scripts/test-records-override-truth-table.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
