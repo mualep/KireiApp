@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { RecordsOverrideDialog } from "@/components/admin/records/records-override-dialog";
 import type { RecordsRowDTO } from "@/lib/records/data";
 import {
   formatRecordsDuration,
@@ -10,8 +14,10 @@ import {
 import { cn } from "@/lib/utils";
 
 type RecordsTableProps = {
+  canCorrectRecords?: boolean;
   emptyDescription?: string;
   emptyTitle?: string;
+  monthParam?: string;
   monthLabel: string;
   rows: RecordsRowDTO[];
 };
@@ -38,11 +44,15 @@ const recordsMetricToneClasses = {
 type RecordsMetricTone = keyof typeof recordsMetricToneClasses;
 
 export function RecordsTable({
+  canCorrectRecords = false,
   emptyDescription = "Read-only monthly records appear after worker records are available.",
   emptyTitle = "No records available.",
+  monthParam = "",
   monthLabel,
   rows,
 }: RecordsTableProps) {
+  const [overrideTarget, setOverrideTarget] = useState<{ id: string; name: string } | null>(null);
+
   if (rows.length === 0) {
     return (
       <Card className="tracker-glass-panel rounded-2xl border">
@@ -57,128 +67,141 @@ export function RecordsTable({
   }
 
   return (
-    <section
-      aria-label="Read-only monthly worker records"
-      className="tracker-glass-panel overflow-hidden rounded-2xl border"
-    >
-      <div className="flex items-center justify-between gap-3 border-b border-border/75 px-3 py-2">
-        <div className="min-w-0">
-          <h2 className="truncate text-sm font-bold">Records</h2>
-          <p className="text-xs text-muted-foreground">{monthLabel}</p>
+    <>
+      <section
+        aria-label="Read-only monthly worker records"
+        className="tracker-glass-panel overflow-hidden rounded-2xl border"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-border/75 px-3 py-2">
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-bold">Records</h2>
+            <p className="text-xs text-muted-foreground">{monthLabel}</p>
+          </div>
+          <Badge
+            variant="outline"
+            className="h-6 border-border bg-background/35 px-2 text-[0.65rem] text-muted-foreground"
+          >
+            {rows.length} records
+          </Badge>
         </div>
-        <Badge
-          variant="outline"
-          className="h-6 border-border bg-background/35 px-2 text-[0.65rem] text-muted-foreground"
-        >
-          {rows.length} records
-        </Badge>
-      </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[72rem] border-collapse text-left text-xs">
-          <thead>
-            <tr className="border-b border-border/75 bg-background/35 text-muted-foreground">
-              <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 font-semibold backdrop-blur">
-                Worker
-              </th>
-              <th className="px-3 py-2 text-center font-semibold">Work Late</th>
-              <th className="px-3 py-2 text-center font-semibold">Break Late</th>
-              <th className="px-3 py-2 text-center font-semibold">Alpha</th>
-              <th className="px-3 py-2 text-center font-semibold">Sakit</th>
-              <th className="px-3 py-2 text-center font-semibold">Pending</th>
-              <th className="px-3 py-2 text-center font-semibold">Lembur</th>
-              <th className="px-3 py-2 text-center font-semibold">Cuti</th>
-              <th className="px-3 py-2 text-center font-semibold">Updated</th>
-              <th className="px-3 py-2 text-right font-semibold">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.userId}
-                className="border-b border-border/55 last:border-b-0"
-              >
-                <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 backdrop-blur">
-                  <div className="min-w-0">
-                    <div
-                      className="tracker-worker-name min-w-0 truncate font-bold leading-tight text-foreground"
-                      translate="no"
-                    >
-                      {row.name}
-                    </div>
-                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
-                      <Badge
-                        variant="outline"
-                        className="tracker-role-shift-badge h-6 max-w-[14rem] rounded-sm border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground"
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[72rem] border-collapse text-left text-xs">
+            <thead>
+              <tr className="border-b border-border/75 bg-background/35 text-muted-foreground">
+                <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 font-semibold backdrop-blur">
+                  Worker
+                </th>
+                <th className="px-3 py-2 text-center font-semibold">Work Late</th>
+                <th className="px-3 py-2 text-center font-semibold">Break Late</th>
+                <th className="px-3 py-2 text-center font-semibold">Alpha</th>
+                <th className="px-3 py-2 text-center font-semibold">Sakit</th>
+                <th className="px-3 py-2 text-center font-semibold">Pending</th>
+                <th className="px-3 py-2 text-center font-semibold">Lembur</th>
+                <th className="px-3 py-2 text-center font-semibold">Cuti</th>
+                <th className="px-3 py-2 text-center font-semibold">Updated</th>
+                <th className="px-3 py-2 text-right font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr
+                  key={row.userId}
+                  className="border-b border-border/55 last:border-b-0"
+                >
+                  <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 backdrop-blur">
+                    <div className="min-w-0">
+                      <div
+                        className="tracker-worker-name min-w-0 truncate font-bold leading-tight text-foreground"
                         translate="no"
                       >
-                        <span className="hidden truncate @[14rem]:inline">
-                          {row.roleShiftLabel}
-                        </span>
-                        <span className="truncate @[14rem]:hidden">
-                          {row.compactRoleShiftLabel}
-                        </span>
-                      </Badge>
-                      {row.shiftTimeLabel ? (
-                        <span
-                          className="text-[0.6rem] font-medium text-muted-foreground/70"
+                        {row.name}
+                      </div>
+                      <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+                        <Badge
+                          variant="outline"
+                          className="tracker-role-shift-badge h-6 max-w-[14rem] rounded-sm border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground"
                           translate="no"
                         >
-                          {row.shiftTimeLabel}
-                        </span>
-                      ) : null}
+                          <span className="hidden truncate @[14rem]:inline">
+                            {row.roleShiftLabel}
+                          </span>
+                          <span className="truncate @[14rem]:hidden">
+                            {row.compactRoleShiftLabel}
+                          </span>
+                        </Badge>
+                        {row.shiftTimeLabel ? (
+                          <span
+                            className="text-[0.6rem] font-medium text-muted-foreground/70"
+                            translate="no"
+                          >
+                            {row.shiftTimeLabel}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                </th>
-                <td className="px-3 py-2 text-center">
-                  <MetricValue
-                    metric={row.workLateSeconds}
-                    tone="workLate"
-                    type="duration"
-                  />
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <MetricValue
-                    metric={row.breakLateSeconds}
-                    tone="breakLate"
-                    type="duration"
-                  />
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <MetricValue metric={row.alphaCount} tone="alpha" />
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <MetricValue metric={row.sakitDays} tone="sakit" />
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <MetricValue metric={row.pendingDays} tone="pending" />
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <MetricValue metric={row.lemburUnits} tone="lembur" />
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <MetricValue metric={row.cutiStockSnapshot} tone="cuti" />
-                </td>
-                <td className="px-3 py-2 text-center font-sans text-[0.7rem] tabular-nums text-muted-foreground">
-                  {row.updatedAt
-                    ? updatedAtFormatter.format(new Date(row.updatedAt))
-                    : "-"}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <Button
-                    aria-disabled="true"
-                    disabled
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-3 text-[0.7rem]"
-                  >Edit</Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
+                  </th>
+                  <td className="px-3 py-2 text-center">
+                    <MetricValue
+                      metric={row.workLateSeconds}
+                      tone="workLate"
+                      type="duration"
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <MetricValue
+                      metric={row.breakLateSeconds}
+                      tone="breakLate"
+                      type="duration"
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <MetricValue metric={row.alphaCount} tone="alpha" />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <MetricValue metric={row.sakitDays} tone="sakit" />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <MetricValue metric={row.pendingDays} tone="pending" />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <MetricValue metric={row.lemburUnits} tone="lembur" />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <MetricValue metric={row.cutiStockSnapshot} tone="cuti" />
+                  </td>
+                  <td className="px-3 py-2 text-center font-sans text-[0.7rem] tabular-nums text-muted-foreground">
+                    {row.updatedAt
+                      ? updatedAtFormatter.format(new Date(row.updatedAt))
+                      : "-"}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <Button
+                      aria-disabled={!canCorrectRecords}
+                      disabled={!canCorrectRecords}
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-3 text-[0.7rem]"
+                      onClick={() => setOverrideTarget({ id: row.userId, name: row.name })}
+                    >Edit</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {overrideTarget ? (
+        <RecordsOverrideDialog
+          isOpen={!!overrideTarget}
+          onOpenChange={(open) => !open && setOverrideTarget(null)}
+          periodMonth={monthParam}
+          targetName={overrideTarget.name}
+          targetUserId={overrideTarget.id}
+        />
+      ) : null}
+    </>
   );
 }
 
