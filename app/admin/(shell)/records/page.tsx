@@ -41,6 +41,8 @@ export default async function AdminRecordsPage({
     redirect("/admin/login");
   }
 
+  const canCorrectRecords = staff.profile.tier !== "member";
+
   const params = await searchParams;
   const monthParam = typeof params.month === "string" ? params.month : undefined;
   const filters = parseRecordsFilters(params);
@@ -73,8 +75,10 @@ export default async function AdminRecordsPage({
       <RecordsSummaryCards rows={filteredRows} />
 
       <RecordsTable
+        canCorrectRecords={canCorrectRecords}
         emptyDescription={emptyDescription}
         emptyTitle={emptyTitle}
+        monthParam={data.month.monthParam}
         monthLabel={data.month.monthLabel}
         rows={filteredRows}
       />
