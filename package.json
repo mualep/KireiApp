@@ -32,7 +32,9 @@
     "test:tracker-readonly": "tsx scripts/test-tracker-readonly.ts",
     "test:worker-helpers": "tsx scripts/test-worker-helpers.ts",
     "test:records-override-contract": "tsx scripts/test-records-override-contract.ts",
-    "test:records-override-truth-table": "tsx scripts/test-records-override-truth-table.ts"
+    "test:records-override-truth-table": "tsx scripts/test-records-override-truth-table.ts",
+    "test:records-override-rpc-migration": "tsx scripts/test-records-override-rpc-migration.ts",
+    "test:records-override-rpc-behavior": "tsx scripts/test-records-override-rpc-behavior.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
