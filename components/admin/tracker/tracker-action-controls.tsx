@@ -7,6 +7,7 @@ import {
   HourglassIcon,
   PauseCircleIcon,
   PlayIcon,
+  RefreshCwIcon,
   SquareIcon,
   TimerIcon,
   TrendingUpIcon,
@@ -17,7 +18,9 @@ import {
   applyTrackerAction,
   applyTrackerCorrection,
   applyTrackerExpiredAbsenceClose,
+  materializeTrackerAbsenceDays,
   type ApplyTrackerActionResult,
+  type ApplyTrackerAbsenceMaterializationResult,
   type ApplyTrackerCorrectionResult,
   type ApplyTrackerExpiredAbsenceCloseResult,
 } from "@/app/admin/(shell)/tracker/actions";
@@ -28,6 +31,7 @@ import {
 } from "@/lib/tracker/break-timer";
 import { cn } from "@/lib/utils";
 import type { TrackerAction } from "@/lib/workers/tracker-actions";
+import type { TrackerAbsenceMaterializationAction } from "@/lib/workers/tracker-absence-materialization";
 import type { TrackerExpiredAbsenceCloseAction } from "@/lib/workers/tracker-absence-close";
 import type { TrackerCorrectionAction } from "@/lib/workers/tracker-corrections";
 import type { TrackerCardDTO } from "@/lib/workers";
@@ -83,10 +87,19 @@ type ExpiredAbsenceCloseControlConfig = {
   tone: ControlTone;
 };
 
+type AbsenceMaterializationControlConfig = {
+  absenceMaterializationAction: TrackerAbsenceMaterializationAction;
+  className?: string;
+  icon: React.ReactNode;
+  label: string;
+  tone: ControlTone;
+};
+
 type TrackerControlConfig =
   | ActionControlConfig
   | CorrectionControlConfig
-  | ExpiredAbsenceCloseControlConfig;
+  | ExpiredAbsenceCloseControlConfig
+  | AbsenceMaterializationControlConfig;
 
 const genericFailure: ApplyTrackerActionResult = {
   code: "generic_error",
@@ -104,6 +117,10 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
     useState<TrackerCorrectionAction | null>(null);
   const [pendingExpiredAbsenceCloseAction, setPendingExpiredAbsenceCloseAction] =
     useState<TrackerExpiredAbsenceCloseAction | null>(null);
+  const [
+    pendingAbsenceMaterializationAction,
+    setPendingAbsenceMaterializationAction,
+  ] = useState<TrackerAbsenceMaterializationAction | null>(null);
   const [selectedCorrectionAction, setSelectedCorrectionAction] =
     useState<TrackerCorrectionAction | null>(null);
   const [correctionReason, setCorrectionReason] = useState("");
@@ -112,6 +129,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   );
   const [result, setResult] = useState<
     | ApplyTrackerActionResult
+    | ApplyTrackerAbsenceMaterializationResult
     | ApplyTrackerCorrectionResult
     | ApplyTrackerExpiredAbsenceCloseResult
     | null
@@ -121,7 +139,8 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
     isTransitionPending ||
     pendingAction !== null ||
     pendingCorrectionAction !== null ||
-    pendingExpiredAbsenceCloseAction !== null;
+    pendingExpiredAbsenceCloseAction !== null ||
+    pendingAbsenceMaterializationAction !== null;
   const isBreakCard =
     card.storedStatus === "break" && card.displayStatus === "BREAK";
   const [nowMs, setNowMs] = useState<number | null>(null);
@@ -266,6 +285,40 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
     });
   }
 
+  function runTrackerAbsenceMaterialization(
+    action: TrackerAbsenceMaterializationAction,
+  ) {
+    if (isPending) {
+      return;
+    }
+
+    setResult(null);
+    setPendingAbsenceMaterializationAction(action);
+
+    startTransition(async () => {
+      try {
+        const nextResult = await materializeTrackerAbsenceDays({
+          action,
+          expectedVersion: card.version,
+          targetUserId: card.userId,
+        });
+
+        setResult(nextResult);
+
+        if (
+          nextResult.code === "success" ||
+          nextResult.code === "version_conflict"
+        ) {
+          router.refresh();
+        }
+      } catch {
+        setResult(genericFailure);
+      } finally {
+        setPendingAbsenceMaterializationAction(null);
+      }
+    });
+  }
+
   if (controlGroups.length === 0) {
     return (
       <div className="rounded-md border border-border/75 bg-background/35 px-2 py-1.5 text-xs font-medium text-muted-foreground">
@@ -321,9 +374,16 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
                   ? control.action
                   : "correctionAction" in control
                     ? control.correctionAction
-                    : control.expiredAbsenceCloseAction
+                    : "expiredAbsenceCloseAction" in control
+                      ? control.expiredAbsenceCloseAction
+                      : control.absenceMaterializationAction
               }
               type="button"
+              aria-label={
+                "absenceMaterializationAction" in control
+                  ? `${control.label} ${card.absenceMaterializationMissingDays} hari`
+                  : undefined
+              }
               disabled={isPending}
               variant="outline"
               className={cn(
@@ -336,9 +396,13 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
                   ? runTrackerAction(control.action)
                   : "correctionAction" in control
                     ? runTrackerCorrection(control.correctionAction)
-                    : runTrackerExpiredAbsenceClose(
-                        control.expiredAbsenceCloseAction,
-                      )
+                    : "expiredAbsenceCloseAction" in control
+                      ? runTrackerExpiredAbsenceClose(
+                          control.expiredAbsenceCloseAction,
+                        )
+                      : runTrackerAbsenceMaterialization(
+                          control.absenceMaterializationAction,
+                        )
               }
             >
               {control.icon}
@@ -348,7 +412,10 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
                   pendingCorrectionAction === control.correctionAction) ||
                 ("expiredAbsenceCloseAction" in control &&
                   pendingExpiredAbsenceCloseAction ===
-                    control.expiredAbsenceCloseAction)
+                    control.expiredAbsenceCloseAction) ||
+                ("absenceMaterializationAction" in control &&
+                  pendingAbsenceMaterializationAction ===
+                    control.absenceMaterializationAction)
                   ? "Working…"
                   : control.label}
               </span>
@@ -509,7 +576,7 @@ function getActiveControlGroups(
     card.storedStatus === "cuti" &&
     card.isTrackerCorrectionAvailable
   ) {
-    return [
+    return withAbsenceMaterializationGroup(card, [
       [
         {
           correctionAction: "CANCEL_CUTI",
@@ -518,14 +585,14 @@ function getActiveControlGroups(
           tone: "danger",
         },
       ],
-    ];
+    ]);
   }
 
   if (
     card.storedStatus === "cuti" &&
     card.isExpiredAbsenceCloseAvailable
   ) {
-    return [
+    return withAbsenceMaterializationGroup(card, [
       [
         {
           expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
@@ -534,7 +601,7 @@ function getActiveControlGroups(
           tone: "danger",
         },
       ],
-    ];
+    ]);
   }
 
   if (
@@ -542,7 +609,7 @@ function getActiveControlGroups(
     card.storedStatus === "sakit" &&
     card.isTrackerCorrectionAvailable
   ) {
-    return [
+    return withAbsenceMaterializationGroup(card, [
       [
         {
           correctionAction: "CANCEL_SAKIT",
@@ -551,14 +618,14 @@ function getActiveControlGroups(
           tone: "danger",
         },
       ],
-    ];
+    ]);
   }
 
   if (
     card.storedStatus === "sakit" &&
     card.isExpiredAbsenceCloseAvailable
   ) {
-    return [
+    return withAbsenceMaterializationGroup(card, [
       [
         {
           expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
@@ -567,7 +634,7 @@ function getActiveControlGroups(
           tone: "danger",
         },
       ],
-    ];
+    ]);
   }
 
   if (
@@ -575,7 +642,7 @@ function getActiveControlGroups(
     card.storedStatus === "pending" &&
     card.isTrackerCorrectionAvailable
   ) {
-    return [
+    return withAbsenceMaterializationGroup(card, [
       [
         {
           correctionAction: "CANCEL_IZIN",
@@ -584,14 +651,14 @@ function getActiveControlGroups(
           tone: "danger",
         },
       ],
-    ];
+    ]);
   }
 
   if (
     card.storedStatus === "pending" &&
     card.isExpiredAbsenceCloseAvailable
   ) {
-    return [
+    return withAbsenceMaterializationGroup(card, [
       [
         {
           expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
@@ -600,8 +667,29 @@ function getActiveControlGroups(
           tone: "danger",
         },
       ],
-    ];
+    ]);
   }
 
-  return [];
+  return withAbsenceMaterializationGroup(card, []);
+}
+
+function withAbsenceMaterializationGroup(
+  card: TrackerCardDTO,
+  groups: TrackerControlConfig[][],
+): TrackerControlConfig[][] {
+  if (!card.isAbsenceMaterializationAvailable) {
+    return groups;
+  }
+
+  return [
+    [
+      {
+        absenceMaterializationAction: "MATERIALIZE_ABSENCE_DAYS",
+        icon: <RefreshCwIcon data-icon="inline-start" aria-hidden="true" />,
+        label: "SINKRONKAN ABSENSI",
+        tone: "pending",
+      },
+    ],
+    ...groups,
+  ];
 }

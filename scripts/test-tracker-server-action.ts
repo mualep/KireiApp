@@ -45,21 +45,27 @@ assertIncludes("trackerActions");
 assertIncludes("export async function applyTrackerAction(input: unknown)");
 assertIncludes("export async function applyTrackerCorrection(");
 assertIncludes("export async function applyTrackerExpiredAbsenceClose(");
+assertIncludes("export async function materializeTrackerAbsenceDays(");
 assertIncludes("export type ApplyTrackerActionInput");
 assertIncludes("export type ApplyTrackerActionResult");
+assertIncludes("export type ApplyTrackerAbsenceMaterializationResult");
 assertIncludes("export type TrackerActionResultCode");
 assertIncludes("z.enum(trackerActions)");
 assertIncludes("z.enum(trackerExpiredAbsenceCloseActions)");
+assertIncludes("z.enum(trackerAbsenceMaterializationActions)");
 assertIncludes("targetUserId: z.string().uuid()");
 assertIncludes("attendanceId: z.string().uuid().nullable()");
 assertIncludes("expectedVersion: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER)");
 assertIncludes('supabase.rpc("apply_tracker_action"');
 assertIncludes('supabase.rpc("apply_tracker_correction"');
 assertIncludes('supabase.rpc("apply_tracker_absence_close"');
+assertIncludes('supabase.rpc("materialize_tracker_absence_days"');
 assertIncludes("p_target_user_id: parsed.data.targetUserId");
 assertIncludes("p_action: parsed.data.action");
 assertIncludes("p_expected_version: parsed.data.expectedVersion");
 assertIncludes("p_attendance_id: parsed.data.attendanceId");
+assertIncludes('revalidatePath("/admin/absensi")');
+assertIncludes('revalidatePath("/admin/records")');
 assertIncludes('revalidatePath("/admin/tracker")');
 assertIncludes("mapTrackerRpcError(error.message)");
 assertOrderedFragments(
@@ -81,6 +87,7 @@ for (const code of [
   "attendance_missing",
   "absence_close_not_expired",
   "cuti_stock_exhausted",
+  "materialization_conflict",
   "generic_error",
 ]) {
   assertIncludes(`"${code}"`);
@@ -98,6 +105,7 @@ for (const rpcError of [
   "tracker.attendance_missing",
   "tracker.absence_close_not_expired",
   "tracker.cuti_stock_exhausted",
+  "tracker.materialization_conflict",
 ]) {
   assertIncludes(`"${rpcError}"`);
 }
@@ -154,6 +162,10 @@ assert.ok(
   normalize(trackerActionControlsSource).includes(normalize("applyTrackerExpiredAbsenceClose({")),
   "R3-T1 controls must call applyTrackerExpiredAbsenceClose for expired operational closes.",
 );
+assert.ok(
+  normalize(trackerActionControlsSource).includes(normalize("materializeTrackerAbsenceDays({")),
+  "R3-T2 controls must call materializeTrackerAbsenceDays for explicit absence sync.",
+);
 assert.equal(
   /applyTrackerExpiredAbsenceClose[\s\S]{0,700}applyTrackerCorrection/.test(actionSource),
   false,
@@ -163,6 +175,26 @@ assert.equal(
   /applyTrackerExpiredAbsenceClose[\s\S]{0,900}apply_tracker_correction/.test(actionSource),
   false,
   "R3-T1 expired close action must not call the correction RPC.",
+);
+assert.equal(
+  /materializeTrackerAbsenceDays[\s\S]{0,900}applyTrackerCorrection/.test(actionSource),
+  false,
+  "R3-T2 materialization action must not call applyTrackerCorrection.",
+);
+assert.equal(
+  /materializeTrackerAbsenceDays[\s\S]{0,900}applyTrackerExpiredAbsenceClose/.test(actionSource),
+  false,
+  "R3-T2 materialization action must not call the expired close action.",
+);
+assert.equal(
+  /materializeTrackerAbsenceDays[\s\S]{0,900}apply_tracker_correction/.test(actionSource),
+  false,
+  "R3-T2 materialization action must not call the correction RPC.",
+);
+assert.equal(
+  /materializeTrackerAbsenceDays[\s\S]{0,900}apply_tracker_absence_close/.test(actionSource),
+  false,
+  "R3-T2 materialization action must not call the expired close RPC.",
 );
 assert.equal(
   /from\s+["'][^"']*tracker\/actions["']|from\s+["']\.\/actions["']|applyTrackerAction/.test(

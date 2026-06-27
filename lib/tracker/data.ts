@@ -3,9 +3,13 @@ import "server-only";
 import type { StaffTier } from "@/lib/auth/tiers";
 import { createClient } from "@/lib/supabase/server";
 import {
+  canStaffTierMaterializeTrackerAbsence,
   computeWorkerDisplayStatus,
+  deriveTrackerAttendanceDate,
+  getTrackerAbsenceMaterializationMissingDates,
   getTrackerCorrectionWindowState,
   getShiftDefinition,
+  isTrackerAbsenceMaterializationStatus,
   isWorkerRole,
   isWorkerShift,
   isWorkerStoredStatus,
@@ -68,6 +72,8 @@ type UserRow = {
 type ActiveTrackerAttendanceRow = {
   attendance_date: string;
   id: string;
+  is_canceled: boolean;
+  source: string;
   source_action: string;
   status: string;
   user_id: string;
@@ -130,10 +136,8 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         .returns<WorkerStatusRow[]>(),
       supabase
         .from("worker_attendance")
-        .select("id,user_id,attendance_date,status,source_action")
+        .select("id,user_id,attendance_date,status,source,source_action,is_canceled")
         .in("user_id", userIds)
-        .eq("source", "tracker")
-        .eq("is_canceled", false)
         .order("attendance_date", { ascending: false })
         .returns<ActiveTrackerAttendanceRow[]>(),
       supabase
@@ -167,10 +171,20 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
     (statuses ?? []).map((status) => [status.user_id, status]),
   );
   const activeTrackerAttendancesByUserId = new Map<string, ActiveTrackerAttendanceRow>();
+  const trackerAttendanceDatesByUserId = new Map<string, Set<string>>();
   const recordsByUserId = new Map((records ?? []).map((record) => [record.user_id, record]));
 
   for (const attendance of activeTrackerAttendances ?? []) {
-    if (!activeTrackerAttendancesByUserId.has(attendance.user_id)) {
+    const attendanceDates =
+      trackerAttendanceDatesByUserId.get(attendance.user_id) ?? new Set<string>();
+    attendanceDates.add(attendance.attendance_date);
+    trackerAttendanceDatesByUserId.set(attendance.user_id, attendanceDates);
+
+    if (
+      attendance.source === "tracker" &&
+      !attendance.is_canceled &&
+      !activeTrackerAttendancesByUserId.has(attendance.user_id)
+    ) {
       activeTrackerAttendancesByUserId.set(attendance.user_id, attendance);
     }
   }
@@ -237,6 +251,22 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
     });
     const isTrackerAbsenceCloseIdentified =
       activeTrackerAttendance !== null || trackerAbsenceMarkerDate !== null;
+    const currentAttendanceDate = deriveTrackerAttendanceDate({
+      now,
+      shift,
+    });
+    const absenceMaterializationMissingDates =
+      isTrackerAbsenceMaterializationStatus(status.current_status)
+        ? getTrackerAbsenceMaterializationMissingDates({
+            currentAttendanceDate,
+            existingAttendanceDates:
+              trackerAttendanceDatesByUserId.get(profile.user_id) ?? new Set<string>(),
+            markerDate: trackerAbsenceMarkerDate,
+          })
+        : [];
+    const isAbsenceMaterializationAvailable =
+      canStaffTierMaterializeTrackerAbsence(staff.profile.tier) &&
+      absenceMaterializationMissingDates.length > 0;
 
     return [
       {
@@ -256,7 +286,9 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         employeeRole: profile.employee_role,
         gid: profile.gid,
         alphaCount: record?.alpha_count ?? 0,
+        absenceMaterializationMissingDays: absenceMaterializationMissingDates.length,
         isFlexible: profile.is_flexible,
+        isAbsenceMaterializationAvailable: isAbsenceMaterializationAvailable,
         isExpiredAbsenceCloseAvailable:
           isTrackerAbsenceCloseIdentified && correctionWindowState === "expired",
         isTrackerCorrectionAvailable:

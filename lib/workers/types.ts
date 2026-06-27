@@ -80,7 +80,9 @@ export type TrackerCardDTO = {
   employeeRole: WorkerRole;
   gid: string;
   alphaCount: number;
+  absenceMaterializationMissingDays: number;
   isFlexible: boolean;
+  isAbsenceMaterializationAvailable: boolean;
   isExpiredAbsenceCloseAvailable: boolean;
   isTrackerCorrectionAvailable: boolean;
   lemburUnits: number;
