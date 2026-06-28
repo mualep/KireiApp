@@ -51,7 +51,7 @@ export function RecordsTable({
   monthLabel,
   rows,
 }: RecordsTableProps) {
-  const [overrideTarget, setOverrideTarget] = useState<{ id: string; name: string } | null>(null);
+  const [overrideTarget, setOverrideTarget] = useState<RecordsRowDTO | null>(null);
 
   if (rows.length === 0) {
     return (
@@ -86,7 +86,7 @@ export function RecordsTable({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[72rem] border-collapse text-left text-xs">
+          <table className="w-full min-w-[64rem] border-collapse text-left text-xs">
             <thead>
               <tr className="border-b border-border/75 bg-background/35 text-muted-foreground">
                 <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 font-semibold backdrop-blur">
@@ -100,7 +100,9 @@ export function RecordsTable({
                 <th className="px-3 py-2 text-center font-semibold">Lembur</th>
                 <th className="px-3 py-2 text-center font-semibold">Cuti</th>
                 <th className="px-3 py-2 text-center font-semibold">Updated</th>
-                <th className="px-3 py-2 text-right font-semibold">Action</th>
+                {canCorrectRecords ? (
+                  <th className="px-3 py-2 text-right font-semibold">Action</th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -175,16 +177,18 @@ export function RecordsTable({
                       ? updatedAtFormatter.format(new Date(row.updatedAt))
                       : "-"}
                   </td>
-                  <td className="px-3 py-2 text-right">
-                    <Button
-                      aria-disabled={!canCorrectRecords}
-                      disabled={!canCorrectRecords}
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-3 text-[0.7rem]"
-                      onClick={() => setOverrideTarget({ id: row.userId, name: row.name })}
-                    >Edit</Button>
-                  </td>
+                  {canCorrectRecords ? (
+                    <td className="px-3 py-2 text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-3 text-[0.7rem]"
+                        onClick={() => setOverrideTarget(row)}
+                      >
+                        Edit
+                      </Button>
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -197,8 +201,7 @@ export function RecordsTable({
           isOpen={!!overrideTarget}
           onOpenChange={(open) => !open && setOverrideTarget(null)}
           periodMonth={monthParam}
-          targetName={overrideTarget.name}
-          targetUserId={overrideTarget.id}
+          row={overrideTarget}
         />
       ) : null}
     </>
@@ -220,7 +223,7 @@ function MetricValue({
       : formatRecordsNumber(metric.value);
 
   return (
-    <span className="inline-flex min-w-0 items-center justify-center gap-1.5">
+    <span className="inline-flex min-w-0 items-center justify-center">
       <span
         className={cn(
           "font-sans font-bold tabular-nums",
@@ -232,14 +235,6 @@ function MetricValue({
       >
         {value}
       </span>
-      {metric.isOverride ? (
-        <Badge
-          variant="outline"
-          className="h-5 rounded-md border-primary/35 bg-primary/10 px-1.5 text-[0.6rem] text-primary"
-        >
-          Override
-        </Badge>
-      ) : null}
     </span>
   );
 }
