@@ -33,6 +33,11 @@ const ownerAdminNavItems: AdminShellNavItem[] = [
     label: "Content",
     icon: "content",
   },
+  {
+    href: "/admin/users",
+    label: "Users",
+    icon: "users",
+  },
 ];
 
 const memberNavItems: AdminShellNavItem[] = [

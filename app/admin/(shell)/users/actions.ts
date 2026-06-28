@@ -13,7 +13,7 @@ const createWorkerSchema = z.object({
   cutiStock: z.number().int().min(0),
   email: z.string().email(),
   employeeRole: z.enum(workerRoles),
-  gid: z.string().min(1),
+  gid: z.string().nullable().optional(),
   isFlexible: z.boolean(),
   name: z.string().min(1),
   password: z.string().min(6),
@@ -24,7 +24,7 @@ const createWorkerSchema = z.object({
 const editWorkerSchema = z.object({
   cutiStock: z.number().int().min(0),
   employeeRole: z.enum(workerRoles),
-  gid: z.string().min(1),
+  gid: z.string().nullable().optional(),
   isFlexible: z.boolean(),
   name: z.string().min(1),
   shift: z.enum(workerShifts),
@@ -72,8 +72,7 @@ export async function createWorker(payload: unknown) {
       return { ok: false, error: authError?.message || "Failed to create auth user" };
     }
 
-    const supabase = await createClient();
-    const { error: insertUserError } = await supabase.from("users").insert({
+    const { error: insertUserError } = await adminClient.from("users").insert({
       email,
       id: authData.user.id,
       is_deleted: false,
@@ -82,7 +81,7 @@ export async function createWorker(payload: unknown) {
     });
     if (insertUserError) return { ok: false, error: insertUserError.message };
 
-    const { error: insertProfileError } = await supabase.from("worker_profiles").insert({
+    const { error: insertProfileError } = await adminClient.from("worker_profiles").insert({
       cuti_stock: cutiStock,
       employee_role: employeeRole,
       gid,
@@ -185,7 +184,6 @@ export async function reactivateWorker(userId: string) {
 
 export async function issueSp(
   userId: string,
-  level: number,
   reason: string,
   expiresAt: string,
 ) {
@@ -195,7 +193,7 @@ export async function issueSp(
     const { error } = await supabase.rpc("issue_worker_sp", {
       p_expires_at: expiresAt,
       p_reason: reason,
-      p_sp_level: level,
+      p_sp_level: 1,
       p_target_user_id: userId,
     });
     if (error) return { ok: false, error: error.message };

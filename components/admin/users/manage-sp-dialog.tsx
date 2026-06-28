@@ -12,6 +12,7 @@ import {
 import { issueSp, revokeSp, fetchWorkerSpLogsAction } from "@/app/admin/(shell)/users/actions";
 import type { SpLogDTO, UsersManagerRowDTO } from "@/lib/users/data";
 import { Badge } from "@/components/ui/badge";
+import { TriangleAlertIcon } from "lucide-react";
 
 type ManageSpDialogProps = {
   onOpenChange: (open: boolean) => void;
@@ -22,7 +23,9 @@ type ManageSpDialogProps = {
 export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps) {
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<SpLogDTO[]>([]);
-  
+  const [error, setError] = useState<string | null>(null);
+  const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
+
   useEffect(() => {
     if (open) {
       fetchWorkerSpLogsAction(row.id).then((res) => {
@@ -34,34 +37,36 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
   async function onIssueSp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const formData = new FormData(e.currentTarget);
-    const level = Number(formData.get("level"));
     const reason = formData.get("reason") as string;
-    
+
     // Default expiration: 6 months from now
     const expiresDate = new Date();
     expiresDate.setMonth(expiresDate.getMonth() + 6);
     const expiresAt = expiresDate.toISOString();
 
-    const res = await issueSp(row.id, level, reason, expiresAt);
+    const res = await issueSp(row.id, reason, expiresAt);
     if (res.ok) {
       const fetchRes = await fetchWorkerSpLogsAction(row.id);
       if (fetchRes.ok && fetchRes.data) setLogs(fetchRes.data);
+      (e.target as HTMLFormElement).reset();
     } else {
-      alert(res.error);
+      setError(res.error || "Unknown error occurred");
     }
     setLoading(false);
   }
 
   async function onRevokeSp(spId: string) {
-    if (!confirm("Are you sure you want to revoke this SP?")) return;
     setLoading(true);
+    setError(null);
     const res = await revokeSp(spId);
     if (res.ok) {
       const fetchRes = await fetchWorkerSpLogsAction(row.id);
       if (fetchRes.ok && fetchRes.data) setLogs(fetchRes.data);
+      setConfirmRevokeId(null);
     } else {
-      alert(res.error);
+      setError(res.error || "Unknown error occurred");
     }
     setLoading(false);
   }
@@ -76,20 +81,17 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
           </DialogDescription>
         </DialogHeader>
 
+        {error && <div className="text-sm text-destructive font-medium">{error}</div>}
+
         <form onSubmit={onIssueSp} className="flex gap-2 items-end mt-4">
           <div className="flex-1 space-y-2">
-            <label className="text-xs">SP Level</label>
-            <select name="level" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" required>
-              <option value="1">SP 1</option>
-              <option value="2">SP 2</option>
-              <option value="3">SP 3</option>
-            </select>
-          </div>
-          <div className="flex-[3] space-y-2">
             <label className="text-xs">Reason</label>
             <input name="reason" placeholder="Describe the violation" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" />
           </div>
-          <Button type="submit" disabled={loading} variant="destructive">Issue SP</Button>
+          <Button type="submit" disabled={loading} variant="destructive">
+            <TriangleAlertIcon className="size-4 mr-2" />
+            Issue SP
+          </Button>
         </form>
 
         <div className="mt-6 space-y-4 max-h-[40vh] overflow-y-auto">
@@ -97,8 +99,10 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
           {logs.length === 0 && <p className="text-sm text-muted-foreground">No SP records found.</p>}
           {logs.map((log) => {
             const isActive = !log.revokedAt && new Date(log.expiresAt) > new Date();
+            const isConfirming = confirmRevokeId === log.id;
+
             return (
-              <div key={log.id} className={`p-4 border rounded-xl text-sm ${isActive ? "border-status-sakit/50 bg-status-sakit/10" : "opacity-75"}`}>
+              <div key={log.id} className={`p-4 border rounded-xl text-sm transition-all ${isActive ? "border-status-sakit/50 bg-status-sakit/10" : "opacity-75"}`}>
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex gap-2 items-center">
                     <span className="font-semibold text-base">SP {log.spLevel}</span>
@@ -107,9 +111,16 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
                     </Badge>
                   </div>
                   {isActive && (
-                    <Button size="sm" variant="outline" onClick={() => onRevokeSp(log.id)} disabled={loading}>
-                      Revoke
-                    </Button>
+                    isConfirming ? (
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setConfirmRevokeId(null)} disabled={loading}>Batal</Button>
+                        <Button size="sm" variant="destructive" onClick={() => onRevokeSp(log.id)} disabled={loading}>Ya, Hapus</Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={() => setConfirmRevokeId(log.id)} disabled={loading}>
+                        Hapus SP
+                      </Button>
+                    )
                   )}
                 </div>
                 <p className="text-muted-foreground">{log.reason}</p>
