@@ -8,7 +8,6 @@ export type UsersManagerRowDTO = {
   activeSpCount: number;
   email: string;
   employeeRole: WorkerRole | null;
-  gid: string | null;
   id: string;
   isDeleted: boolean;
   name: string;
@@ -34,7 +33,7 @@ export async function getUsersManagerList(): Promise<UsersManagerRowDTO[]> {
 
   const [usersRes, profilesRes, statusesRes, spsRes] = await Promise.all([
     supabase.from("users").select("id, name, email, tier, is_deleted").neq("tier", "owner"),
-    supabase.from("worker_profiles").select("user_id, gid, employee_role, shift"),
+    supabase.from("worker_profiles").select("user_id, employee_role, shift"),
     supabase.from("worker_status").select("user_id, status"),
     supabase
       .from("worker_sp_logs")
@@ -60,7 +59,6 @@ export async function getUsersManagerList(): Promise<UsersManagerRowDTO[]> {
         activeSpCount: spsCountMap.get(u.id) ?? 0,
         email: u.email,
         employeeRole: (profile?.employee_role as WorkerRole) ?? null,
-        gid: profile?.gid ?? null,
         id: u.id,
         isDeleted: u.is_deleted,
         name: u.name,
