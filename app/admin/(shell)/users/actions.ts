@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { workerRoles, workerShifts } from "@/lib/workers/constants";
 import { staffTierSchema } from "@/lib/auth/tiers";
+import { getWorkerSpLogs } from "@/lib/users/data";
 
 const createWorkerSchema = z.object({
   cutiStock: z.number().int().min(0),
@@ -215,6 +216,16 @@ export async function revokeSp(spId: string) {
 
     revalidatePath("/admin/users");
     return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+export async function fetchWorkerSpLogsAction(userId: string) {
+  try {
+    await requirePrivilegedUser();
+    const data = await getWorkerSpLogs(userId);
+    return { ok: true, data };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Unknown error" };
   }

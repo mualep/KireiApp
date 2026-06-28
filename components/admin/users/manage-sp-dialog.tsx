@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { issueSp, revokeSp } from "@/app/admin/(shell)/users/actions";
-import { getWorkerSpLogs, type SpLogDTO, type UsersManagerRowDTO } from "@/lib/users/data";
+import { issueSp, revokeSp, fetchWorkerSpLogsAction } from "@/app/admin/(shell)/users/actions";
+import type { SpLogDTO, UsersManagerRowDTO } from "@/lib/users/data";
 import { Badge } from "@/components/ui/badge";
 
 type ManageSpDialogProps = {
@@ -25,7 +25,9 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
   
   useEffect(() => {
     if (open) {
-      getWorkerSpLogs(row.id).then(setLogs).catch(console.error);
+      fetchWorkerSpLogsAction(row.id).then((res) => {
+        if (res.ok && res.data) setLogs(res.data);
+      }).catch(console.error);
     }
   }, [open, row.id]);
 
@@ -43,7 +45,8 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
 
     const res = await issueSp(row.id, level, reason, expiresAt);
     if (res.ok) {
-      getWorkerSpLogs(row.id).then(setLogs);
+      const fetchRes = await fetchWorkerSpLogsAction(row.id);
+      if (fetchRes.ok && fetchRes.data) setLogs(fetchRes.data);
     } else {
       alert(res.error);
     }
@@ -55,7 +58,8 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
     setLoading(true);
     const res = await revokeSp(spId);
     if (res.ok) {
-      getWorkerSpLogs(row.id).then(setLogs);
+      const fetchRes = await fetchWorkerSpLogsAction(row.id);
+      if (fetchRes.ok && fetchRes.data) setLogs(fetchRes.data);
     } else {
       alert(res.error);
     }
