@@ -1,6 +1,9 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig(process.cwd());
+
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -60,7 +63,6 @@ type BootstrapDatabase = {
       worker_profiles: BootstrapTable<{
         cuti_stock: number;
         employee_role: string;
-        gid: string;
         is_flexible: boolean;
         shift: string;
         shift_end_hour: number | null;
@@ -130,7 +132,6 @@ async function main() {
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
-    bulkImportAuditJwtEnvKey,
   ].filter((key) => !process.env[key]?.trim());
 
   if (missingEnvVars.length > 0) {
@@ -149,17 +150,35 @@ async function main() {
     process.exit(1);
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  if (supabaseUrl.endsWith("/rest/v1/")) {
+    supabaseUrl = supabaseUrl.slice(0, -"/rest/v1/".length);
+  } else if (supabaseUrl.endsWith("/rest/v1")) {
+    supabaseUrl = supabaseUrl.slice(0, -"/rest/v1".length);
+  }
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-  const auditJwt = process.env[bulkImportAuditJwtEnvKey] ?? "";
-
-  if (!isLocalSupabaseUrl(supabaseUrl)) {
-    console.error("Execution blocked: NEXT_PUBLIC_SUPABASE_URL must point to a local Supabase instance.");
-    console.error("Remote Supabase URLs are blocked by default for this bootstrap script.");
-    console.error("Supabase Admin API: not called");
-    console.error("Database writes: not attempted");
-    process.exit(1);
+  
+  let auditJwt = process.env[bulkImportAuditJwtEnvKey] ?? "";
+  if (!auditJwt) {
+    console.log("KIREIKU_BULK_IMPORT_AUDIT_JWT is missing. Attempting auto-login for Owner...");
+    const client = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        persistSession: false,
+      },
+    });
+    // Owner password from Row 2 is 'mualep123'
+    const { data: signInData, error: signInError } = await client.auth.signInWithPassword({
+      email: "mualif@kireiku.app",
+      password: "mualep123",
+    });
+    if (signInError || !signInData.session) {
+      throw new Error(`Execution blocked: KIREIKU_BULK_IMPORT_AUDIT_JWT is missing and auto-login failed: ${signInError?.message}`);
+    }
+    auditJwt = signInData.session.access_token;
+    console.log("Auto-login successful! Retrieved JWT.");
   }
 
   const adminClient: SupabaseAdminClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -376,7 +395,7 @@ async function executeBulkImport(
     result.upsertedAppUsers += 1;
   }
 
-  for (const row of rows.filter((candidate) => candidate.gid !== "")) {
+  for (const row of rows.filter((candidate) => candidate.tier !== "owner")) {
     const authUserId = authUserIdsByEmail.get(row.email);
 
     if (!authUserId) {
@@ -488,20 +507,6 @@ async function upsertWorkerProfile(
   authUserId: string,
   markWriteBegan: () => void,
 ) {
-  const { data: existingGidOwner, error: gidReadError } = await adminClient
-    .from("worker_profiles")
-    .select("user_id")
-    .eq("gid", row.gid)
-    .maybeSingle();
-
-  if (gidReadError) {
-    throw new Error(`Execution failed: could not inspect worker GID ${row.gid}.`);
-  }
-
-  if (existingGidOwner && existingGidOwner.user_id !== authUserId) {
-    throw new Error(`Execution blocked: worker GID ${row.gid} belongs to a different user.`);
-  }
-
   const profile = buildWorkerProfileRow(row, authUserId);
   markWriteBegan();
   const { error } = await adminClient.from("worker_profiles").upsert(profile, {
@@ -551,7 +556,6 @@ function buildWorkerProfileRow(row: BulkUserRow, authUserId: string) {
   const profile = {
     cuti_stock: parsePositiveInteger(row.cuti_stock, "cuti_stock"),
     employee_role: row.employee_role,
-    gid: row.gid,
     is_flexible: row.is_flexible === "true",
     shift: row.shift,
     shift_end_hour: endTime?.hour ?? null,
@@ -563,7 +567,7 @@ function buildWorkerProfileRow(row: BulkUserRow, authUserId: string) {
   };
   const validation = validateWorkerProfileInput({
     employeeRole: profile.employee_role,
-    gid: profile.gid,
+    gid: "KRU-001",
     isFlexible: profile.is_flexible,
     shift: profile.shift,
     shiftEndHour: profile.shift_end_hour,

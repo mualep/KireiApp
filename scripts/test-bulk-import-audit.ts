@@ -59,8 +59,8 @@ assert.equal(serializedPayload.includes("api_key"), false);
 console.log("Bulk import audit tests passed.");
 
 function buildValidationResult(): BulkUserValidationResult {
-  const owners = Array.from({ length: 2 }, (_, index) => buildRow("owner", "", index + 1));
-  const workers = Array.from({ length: 75 }, (_, index) => buildRow("member", `KRU-${String(index + 1).padStart(3, "0")}`, index + 3));
+  const owners = Array.from({ length: 2 }, (_, index) => buildRow("owner", index + 1));
+  const workers = Array.from({ length: 75 }, (_, index) => buildRow("member", index + 3));
   const rows = [...owners, ...workers];
 
   return {
@@ -73,21 +73,21 @@ function buildValidationResult(): BulkUserValidationResult {
   };
 }
 
-function buildRow(tier: "member" | "owner", gid: string, index: number): BulkUserRow {
+function buildRow(tier: "member" | "owner", index: number): BulkUserRow {
+  const isWorker = tier === "member";
   return {
     avatar_initials: `U${index}`,
-    cuti_stock: gid === "" ? "" : "2",
+    cuti_stock: isWorker ? "2" : "",
     email: `user-${index}@example.test`,
-    employee_role: gid === "" ? "" : "Professional Player",
-    gid,
+    employee_role: isWorker ? "Professional Player" : "",
     is_deleted: "false",
-    is_flexible: gid === "" ? "" : "false",
+    is_flexible: isWorker ? "false" : "",
     name: `User ${index}`,
     password: "not-in-audit",
-    shift: gid === "" ? "" : "A",
-    shift_end: gid === "" ? "" : "14:00",
-    shift_start: gid === "" ? "" : "06:00",
-    show_card: gid === "" ? "" : "true",
+    shift: isWorker ? "A" : "",
+    shift_end: isWorker ? "14:00" : "",
+    shift_start: isWorker ? "06:00" : "",
+    show_card: isWorker ? "true" : "",
     tier,
   };
 }
