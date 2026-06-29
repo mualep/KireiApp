@@ -42,11 +42,13 @@
     "test:users-manager-rpc-migration": "tsx scripts/test-users-manager-rpc-migration.ts",
     "test:users-manager-rpc-behavior": "tsx scripts/test-users-manager-rpc-behavior.ts",
     "test:users-manager-server-actions": "tsx scripts/test-users-manager-server-actions.ts",
-    "test:users-manager-ui": "tsx scripts/test-users-manager-ui.ts"
+    "test:users-manager-ui": "tsx scripts/test-users-manager-ui.ts",
+    "test:cron-rpc-behavior": "tsx scripts/test-cron-rpc-behavior.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.1",
+    "@upstash/redis": "^1.38.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.11.0",
