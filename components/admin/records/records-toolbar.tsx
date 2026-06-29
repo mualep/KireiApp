@@ -4,14 +4,11 @@ import type React from "react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type {
   RecordsFilters,
@@ -103,12 +100,13 @@ export function RecordsToolbar({
     <Card size="sm" className="tracker-glass-panel gap-0 rounded-xl border py-0">
       <CardContent className="flex flex-col gap-2 p-0">
         <div className="records-toolbar-row flex flex-col gap-2 lg:flex-row lg:items-center">
-          <FieldGroup className="records-toolbar-controls grid flex-1 gap-2 md:grid-cols-[minmax(13rem,1fr)_minmax(9rem,auto)_auto]">
-            <Field>
-              <FieldLabel htmlFor="records-search" className="sr-only">
+          <div className="grid flex-1 gap-2 md:grid-cols-[minmax(13rem,1fr)_minmax(9rem,auto)_auto]">
+            {/* Search */}
+            <div role="group">
+              <label htmlFor="records-search" className="sr-only">
                 Search
-              </FieldLabel>
-              <Input
+              </label>
+              <input
                 id="records-search"
                 name="q"
                 type="search"
@@ -116,35 +114,45 @@ export function RecordsToolbar({
                 onChange={(event) => setQueryDraft(event.currentTarget.value)}
                 placeholder="Search worker name..."
                 autoComplete="off"
-                className="h-9 bg-background/55"
+                className="w-full min-w-0 rounded-lg border border-input px-2.5 py-1 text-base h-9 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
               />
-            </Field>
+            </div>
 
-            <Field>
-              <FieldLabel htmlFor="records-sort" className="sr-only">
+            {/* Sort */}
+            <div role="group" className="relative">
+              <label htmlFor="records-sort" className="sr-only">
                 Sort
-              </FieldLabel>
-              <Select
+              </label>
+              <select
                 id="records-sort"
                 aria-label="Sort order"
                 value={sortDraft}
                 onChange={handleSortChange}
-                className="h-9 bg-background/55"
+                className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="name-asc">Name &#x2192; A-Z</option>
                 <option value="name-desc">Name &#x2192; Z-A</option>
-              </Select>
-            </Field>
+              </select>
+              <ChevronDownIcon
+                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground size-4"
+                aria-hidden="true"
+              />
+            </div>
 
+            {/* Clear */}
             <div className="flex items-center gap-2">
-              <Button asChild variant="outline" className="h-9 w-full sm:w-auto">
+              <Button
+                asChild
+                variant="outline"
+                className="h-9 w-full sm:w-auto px-2.5 gap-1.5 border-border bg-background hover:bg-muted hover:text-foreground"
+              >
                 <Link href={clearFiltersHref}>
-                  <XIcon data-icon="inline-start" aria-hidden="true" />
+                  <XIcon className="size-4" aria-hidden="true" />
                   Clear Filters
                 </Link>
               </Button>
             </div>
-          </FieldGroup>
+          </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="icon-sm">

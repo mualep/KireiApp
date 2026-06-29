@@ -113,6 +113,15 @@ export async function createWorker(payload: unknown) {
       return { ok: false, error: insertProfileError.message };
     }
 
+    const { error: insertStatusError } = await adminClient.from("worker_status").insert({
+      current_status: "off",
+      user_id: authData.user.id,
+    });
+    if (insertStatusError) {
+      await adminClient.auth.admin.deleteUser(authData.user.id);
+      return { ok: false, error: insertStatusError.message };
+    }
+
     revalidatePath("/admin/users");
     return { ok: true };
   } catch (err) {

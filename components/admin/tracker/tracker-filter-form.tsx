@@ -4,13 +4,10 @@ import type React from "react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowDownAZIcon, XIcon } from "lucide-react";
+import { ArrowDownAZIcon, ChevronDownIcon, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type {
   TrackerFilters,
@@ -153,12 +150,13 @@ export function TrackerFilterForm({
     >
       <CardContent className="flex flex-col gap-2 p-0">
         <div className="flex flex-col gap-2">
-          <FieldGroup className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.3fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_auto_auto]">
-            <Field>
-              <FieldLabel htmlFor="tracker-search" className="sr-only">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.3fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_auto_auto]">
+            {/* Search */}
+            <div role="group">
+              <label htmlFor="tracker-search" className="sr-only">
                 Search
-              </FieldLabel>
-              <Input
+              </label>
+              <input
                 id="tracker-search"
                 name="q"
                 type="search"
@@ -166,20 +164,21 @@ export function TrackerFilterForm({
                 onChange={(event) => setQueryDraft(event.currentTarget.value)}
                 placeholder="Search worker name…"
                 autoComplete="off"
-                className="h-9 bg-background/55"
+                className="w-full min-w-0 rounded-lg border border-input px-2.5 py-1 text-base h-9 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
               />
-            </Field>
+            </div>
 
-            <Field>
-              <FieldLabel htmlFor="tracker-shift" className="sr-only">
+            {/* Shift */}
+            <div role="group" className="relative">
+              <label htmlFor="tracker-shift" className="sr-only">
                 Shift
-              </FieldLabel>
-              <Select
+              </label>
+              <select
                 id="tracker-shift"
                 name="shift"
                 value={shiftDraft}
                 onChange={handleShiftChange}
-                className="h-9 bg-background/55"
+                className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="">All Shifts</option>
                 {workerShifts.map((shift) => (
@@ -187,19 +186,24 @@ export function TrackerFilterForm({
                     {shift === "flexible" ? "Flexible" : shift}
                   </option>
                 ))}
-              </Select>
-            </Field>
+              </select>
+              <ChevronDownIcon
+                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground size-4"
+                aria-hidden="true"
+              />
+            </div>
 
-            <Field>
-              <FieldLabel htmlFor="tracker-status" className="sr-only">
+            {/* Status */}
+            <div role="group" className="relative">
+              <label htmlFor="tracker-status" className="sr-only">
                 Status
-              </FieldLabel>
-              <Select
+              </label>
+              <select
                 id="tracker-status"
                 name="status"
                 value={statusDraft}
                 onChange={handleStatusChange}
-                className="h-9 bg-background/55"
+                className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="">All Statuses</option>
                 {workerDisplayStatuses.map((status) => (
@@ -207,19 +211,24 @@ export function TrackerFilterForm({
                     {status}
                   </option>
                 ))}
-              </Select>
-            </Field>
+              </select>
+              <ChevronDownIcon
+                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground size-4"
+                aria-hidden="true"
+              />
+            </div>
 
-            <Field>
-              <FieldLabel htmlFor="tracker-sort" className="sr-only">
+            {/* Sort */}
+            <div role="group" className="relative">
+              <label htmlFor="tracker-sort" className="sr-only">
                 Sort
-              </FieldLabel>
-              <Select
+              </label>
+              <select
                 id="tracker-sort"
                 aria-label="Sort order"
                 value={sortDraft}
                 onChange={handleSortChange}
-                className="h-9 bg-background/55"
+                className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="name-asc">Name &#x2192; A-Z</option>
                 <option value="name-desc">Name &#x2192; Z-A</option>
@@ -227,22 +236,26 @@ export function TrackerFilterForm({
                 <option value="status-not-urgent">
                   Status &#x2192; Tidak Urgent
                 </option>
-              </Select>
-            </Field>
-
-            <div className="flex items-center gap-2">
-              <Button
-                asChild
-                variant="outline"
-                className="h-9 w-full sm:w-auto"
-              >
-                <Link href={pathname}>
-                  <XIcon data-icon="inline-start" aria-hidden="true" />
-                  Clear
-                </Link>
-              </Button>
+              </select>
+              <ChevronDownIcon
+                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground size-4"
+                aria-hidden="true"
+              />
             </div>
 
+            {/* Clear */}
+            <Button
+              asChild
+              variant="outline"
+              className="h-9 w-full sm:w-auto px-2.5 gap-1.5 border-border bg-background hover:bg-muted hover:text-foreground"
+            >
+              <Link href={pathname}>
+                <XIcon className="size-4" aria-hidden="true" />
+                Clear
+              </Link>
+            </Button>
+
+            {/* Counter */}
             <div className="flex h-9 items-center justify-end gap-2 rounded-lg border border-border/75 bg-background/35 px-3 text-xs text-muted-foreground">
               <ArrowDownAZIcon aria-hidden="true" />
               <span className="font-mono tabular-nums" translate="no">
@@ -250,7 +263,7 @@ export function TrackerFilterForm({
               </span>
               <span className="hidden sm:inline">workers</span>
             </div>
-          </FieldGroup>
+          </div>
         </div>
 
         <nav aria-label="Tracker role groups" className="w-full">
