@@ -199,9 +199,7 @@ export function printRedactedValidationSummary(
   console.log("Errors:");
   for (const issue of issues) {
     const row = issue.row
-      ? ` name=${issue.row.name || "(blank)"} email=${issue.row.email || "(blank)"} gid=${
-          issue.row.gid || "(blank)"
-        }`
+      ? ` name=${issue.row.name || "(blank)"} email=${issue.row.email || "(blank)"}`
       : "";
     console.log(`- ${issue.check}: ${issue.message}${row}`);
   }
