@@ -1,0 +1,78 @@
+name,email,password,tier,is_deleted,avatar_initials,employee_role,shift,shift_start,shift_end,is_flexible,show_card,cuti_stock
+MUALIF,mualif@kireiku.app,mualep123,owner,false,MU,,,,,,,
+GILANG,gilang@kireiku.app,Agentkazuto123,owner,false,GI,,,,,,,
+ROPIK,ropik@kireiku.app,!K1re1ku.Rop1k!,member,false,RO,Professional Player,A,06:00,14:00,false,true,2
+KIWIL,kiwil@kireiku.app,!K1re1ku.K1w1l!,member,false,KI,Professional Player,A,06:00,14:00,false,true,2
+WILSON,wilson@kireiku.app,!K1re1ku.W1lson!,member,false,WI,Professional Player,A,06:00,14:00,false,true,2
+JEFRI,jefri@kireiku.app,!K1re1ku.Jefr1!,member,false,JE,Professional Player,A,06:00,14:00,false,true,2
+EGI,egi@kireiku.app,!K1re1ku.Eg1!,member,false,EG,Professional Player,A,06:00,14:00,false,true,2
+RAIS,rais@kireiku.app,!K1re1ku.R41s!,member,false,RA,Professional Player,A,06:00,14:00,false,true,2
+AMEL,amel@kireiku.app,!K1re1ku.Amel!,member,false,AM,Professional Player,A,06:00,14:00,false,true,2
+ROBBY,robby@kireiku.app,!K1re1ku.Robby!,member,false,RO,Professional Player,A,06:00,14:00,false,true,2
+CHANIA,chania@kireiku.app,!K1re1ku.Ch4n14!,member,false,CH,Professional Player,A,06:00,14:00,false,true,2
+AFIF,afif@kireiku.app,!K1re1ku.Af1f!,member,false,AF,Professional Player,A,06:00,14:00,false,true,2
+RAMA,rama@kireiku.app,!K1re1ku.R4m4!,member,false,RA,Professional Player,A,06:00,14:00,false,true,2
+ROHMAN,rohman@kireiku.app,!K1re1ku.Rohm4n!,member,false,RO,Professional Player,B,08:00,16:00,false,true,2
+MAKRUF,makruf@kireiku.app,!K1re1ku.M4kruf!,member,false,MA,Professional Player,B,08:00,16:00,false,true,2
+ICHSAN,ichsan@kireiku.app,!K1re1ku.Ichs4n!,member,false,IC,Professional Player,B,08:00,16:00,false,true,2
+ENGGAR,enggar@kireiku.app,!K1re1ku.Engg4r!,member,false,EN,Professional Player,B,08:00,16:00,false,true,2
+ALFIN,alfin@kireiku.app,!K1re1ku.Alf1n!,member,false,AL,Internship,B,08:00,16:00,false,true,2
+HERWIN,herwin@kireiku.app,!K1re1ku.Herw1n!,member,false,HE,Internship,B,08:00,16:00,false,true,2
+RIZAL,rizal@kireiku.app,!K1re1ku.R1z4l!,member,false,RI,Professional Player,B,08:00,16:00,false,true,2
+FIKRI,fikri@kireiku.app,!K1re1ku.F1kr1!,member,false,FI,Professional Player,B,08:00,16:00,false,true,2
+TIARA,tiara@kireiku.app,!K1re1ku.T14r4!,member,false,TI,Internship,B,08:00,16:00,false,true,2
+DICKY,dicky@kireiku.app,!K1re1ku.D1cky!,member,false,DI,Professional Player,B,08:00,16:00,false,true,2
+AYIS,ayis@kireiku.app,!K1re1ku.Ay1s!,member,false,AY,Internship,C,14:00,22:00,false,true,2
+IRGI,irgi@kireiku.app,!K1re1ku.Irg1!,member,false,IR,Internship,C,14:00,22:00,false,true,2
+ARJA,arja@kireiku.app,!K1re1ku.Arj4!,member,false,AR,Professional Player,C,14:00,22:00,false,true,2
+JESSICA,jessica@kireiku.app,!K1re1ku.Jess1c4!,member,false,JE,Internship,C,14:00,22:00,false,true,2
+HENDRAS,hendras@kireiku.app,!K1re1ku.Hendr4s!,member,false,HE,Professional Player,C,14:00,22:00,false,true,2
+LINDA,linda@kireiku.app,!K1re1ku.L1nd4!,member,false,LI,Professional Player,C,14:00,22:00,false,true,2
+NICO,nico@kireiku.app,!K1re1ku.N1co!,member,false,NI,Professional Player,C,14:00,22:00,false,true,2
+MICKY,micky@kireiku.app,!K1re1ku.M1cky!,member,false,MI,Internship,C,14:00,22:00,false,true,2
+ALFIAN,alfian@kireiku.app,!K1re1ku.Alf14n!,member,false,AL,Internship,C,14:00,22:00,false,true,2
+DAVID,david@kireiku.app,!K1re1ku.D4v1d!,member,false,DA,Internship,C,14:00,22:00,false,true,2
+AGUS,agus@kireiku.app,!K1re1ku.Agus!,member,false,AG,Internship,C,14:00,22:00,false,true,2
+YOGA,yoga@kireiku.app,!K1re1ku.Yog4!,member,false,YO,Professional Player,D,16:00,00:00,false,true,2
+ARGIST,argist@kireiku.app,!K1re1ku.Arg1st!,member,false,AR,Internship,D,16:00,00:00,false,true,2
+FADLI,fadli@kireiku.app,!K1re1ku.F4dl1!,member,false,FA,Professional Player,D,16:00,00:00,false,true,2
+WILDAN,wildan@kireiku.app,!K1re1ku.W1ld4n!,member,false,WI,Internship,D,16:00,00:00,false,true,2
+MIKO,miko@kireiku.app,!K1re1ku.M1ko!,member,false,MI,Internship,D,16:00,00:00,false,true,2
+DWI,dwi@kireiku.app,!K1re1ku.Dw1!,member,false,DW,Internship,D,16:00,00:00,false,true,2
+TOBIAS,tobias@kireiku.app,!K1re1ku.Tob14s!,member,false,TO,Professional Player,D,16:00,00:00,false,true,2
+KEVIN,kevin@kireiku.app,!K1re1ku.Kev1n!,member,false,KE,Professional Player,D,16:00,00:00,false,true,2
+ZAGI,zagi@kireiku.app,!K1re1ku.Z4g1!,member,false,ZA,Professional Player,E,22:00,06:00,false,true,2
+PUTRA,putra@kireiku.app,!K1re1ku.Putr4!,member,false,PU,Professional Player,E,22:00,06:00,false,true,2
+ARIF,arif@kireiku.app,!K1re1ku.Ar1f!,member,false,AR,Professional Player,E,22:00,06:00,false,true,2
+IQBAL,iqbal@kireiku.app,!K1re1ku.Iqb4l!,member,false,IQ,Professional Player,E,22:00,06:00,false,true,2
+JAMKI,jamki@kireiku.app,!K1re1ku.J4mk1!,member,false,JA,Internship,E,22:00,06:00,false,true,2
+BAYU,bayu@kireiku.app,!K1re1ku.B4yu!,member,false,BA,Internship,E,22:00,06:00,false,true,2
+ROMA,roma@kireiku.app,!K1re1ku.Rom4!,member,false,RO,Internship,E,22:00,06:00,false,true,2
+DEVIN,devin@kireiku.app,!K1re1ku.Dev1n!,member,false,DE,Internship,E,22:00,06:00,false,true,2
+CIO,cio@kireiku.app,!K1re1ku.C1o!,member,false,CI,Internship,E,22:00,06:00,false,true,2
+MAT,mat@kireiku.app,!K1re1ku.M4t!,member,false,MA,Internship,E,22:00,06:00,false,true,2
+AGUNG,agung@kireiku.app,!K1re1ku.Agung!,member,false,AG,Internship,E,22:00,06:00,false,true,2
+FREDO,fredo@kireiku.app,!K1re1ku.Fredo!,member,false,FR,Internship,E,22:00,06:00,false,true,2
+MINTHOEL,minthoel@kireiku.app,!K1re1ku.M1nthoel!,member,false,MI,Internship,F,00:00,08:00,false,true,2
+FAHMI,fahmi@kireiku.app,!K1re1ku.F4hm1!,member,false,FA,Internship,F,00:00,08:00,false,true,2
+ANGGER,angger@kireiku.app,!K1re1ku.Angger!,member,false,AN,Internship,F,00:00,08:00,false,true,2
+AQMAL,aqmal@kireiku.app,!K1re1ku.Aqm4l!,member,false,AQ,Internship,F,00:00,08:00,false,true,2
+NURISKI,nuriski@kireiku.app,!K1re1ku.Nur1sk1!,member,false,NU,Internship,F,00:00,08:00,false,true,2
+FEBRI,febri@kireiku.app,!K1re1ku.Febr1!,member,false,FE,Internship,F,00:00,08:00,false,true,2
+BAGUS,bagus@kireiku.app,!K1re1ku.B4gus!,member,false,BA,Internship,F,00:00,08:00,false,true,2
+NATAN,natan@kireiku.app,!K1re1ku.N4t4n!,member,false,NA,Internship,F,00:00,08:00,false,true,2
+GHOZY,ghozy@kireiku.app,!K1re1ku.Ghozy!,member,false,GH,Internship,F,00:00,08:00,false,true,2
+INDRA,indra@kireiku.app,!K1re1ku.Indr4!,member,false,IN,Expert Player,1,07:00,15:00,false,true,2
+ALI,ali@kireiku.app,!K1re1ku.Al1!,member,false,AL,Expert Player,1,07:00,15:00,false,true,2
+GALIH,galih@kireiku.app,!K1re1ku.G4l1h!,member,false,GA,Expert Player,2,15:00,23:00,false,true,2
+SANDI,sandi@kireiku.app,!K1re1ku.S4nd1!,member,false,SA,Expert Player,2,15:00,23:00,false,true,2
+KURO,kuro@kireiku.app,!K1re1ku.Kuro!,member,false,KU,Expert Player,2,15:00,23:00,false,true,2
+RIZKY,rizky@kireiku.app,!K1re1ku.R1zky!,member,false,RI,Expert Player,3,23:00,07:00,false,true,2
+WIDI,widi@kireiku.app,!K1re1ku.W1d1!,member,false,WI,Expert Player,3,23:00,07:00,false,true,2
+TAUFIQ,taufiq@kireiku.app,!K1re1ku.T4uf1q!,member,false,TA,Expert Player,3,23:00,07:00,false,true,2
+ARUN,arun@kireiku.app,!K1re1ku.Arun!,admin,false,AR,Customer Service,1,07:00,15:00,false,true,2
+VIRA,vira@kireiku.app,!K1re1ku.V1r4!,admin,false,VI,Customer Service,2,15:00,23:00,false,true,2
+DIMAS,dimas@kireiku.app,!K1re1ku.D1m4s!,admin,false,DI,Customer Service,3,23:00,07:00,false,true,2
+EDI,edi@kireiku.app,!K1re1ku.Ed1!,member,false,ED,Explorer,flexible,,,true,true,2
+ANGGA,angga@kireiku.app,!K1re1ku.Angg4!,member,false,AN,Security,flexible,,,true,true,2
+REGA,rega@kireiku.app,!K1re1ku.Reg4!,member,false,RE,Cleaning Service,flexible,,,true,true,2

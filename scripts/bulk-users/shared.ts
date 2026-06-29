@@ -10,7 +10,6 @@ export const expectedHeader = [
   "tier",
   "is_deleted",
   "avatar_initials",
-  "gid",
   "employee_role",
   "shift",
   "shift_start",
@@ -26,7 +25,6 @@ export type BulkUserRow = Record<ColumnName, string>;
 export type RowRef = {
   name: string;
   email: string;
-  gid: string;
 };
 
 export type ValidationIssue = {
@@ -92,7 +90,6 @@ const validTiers = new Set(["owner", "admin", "member"]);
 const validShifts = new Set(Object.keys(expectedShiftCounts));
 const expectedFlexibleNames = new Set(["EDI", "ANGGA", "REGA"]);
 const ownerWorkerProfileFields = [
-  "gid",
   "employee_role",
   "shift",
   "shift_start",
@@ -136,7 +133,7 @@ export function validateBulkUsersCsvText(csvText: string, sourcePath = bulkUsers
   }
 
   const rows = headerMatches ? toRows(records, issues) : [];
-  const workers = rows.filter((row) => row.gid !== "");
+  const workers = rows.filter((row) => row.tier !== "owner");
   const owners = rows.filter((row) => row.tier === "owner");
 
   const checklist: ChecklistItem[] = [
@@ -148,7 +145,6 @@ export function validateBulkUsersCsvText(csvText: string, sourcePath = bulkUsers
     checkCounts("role counts", countBy(workers, "employee_role"), expectedRoleCounts, issues),
     checkCounts("shift counts", countBy(workers, "shift"), expectedShiftCounts, issues),
     checkUniqueEmails(rows, issues),
-    checkWorkerGids(workers, issues),
     checkValidTiers(rows, issues),
     checkValidShifts(workers, issues),
     checkCustomerServiceTier(workers, issues),
@@ -273,7 +269,6 @@ function toRows(records: string[][], issues: ValidationIssue[]) {
         row: {
           name: record[0] ?? "",
           email: record[1] ?? "",
-          gid: record[6] ?? "",
         },
       });
       return [];
@@ -340,37 +335,6 @@ function checkUniqueEmails(rows: BulkUserRow[], issues: ValidationIssue[]) {
   return { label: "unique emails", pass: duplicates.size === 0 };
 }
 
-function checkWorkerGids(workers: BulkUserRow[], issues: ValidationIssue[]) {
-  const expectedGids = Array.from({ length: 75 }, (_, index) => `KRU-${String(index + 1).padStart(3, "0")}`);
-  const actualGids = workers.map((row) => row.gid).sort();
-  const duplicateGids = findDuplicates(workers.map((row) => row.gid));
-  const pass = sameValues(actualGids, expectedGids) && duplicateGids.length === 0;
-
-  for (const duplicateGid of duplicateGids) {
-    for (const row of workers.filter((worker) => worker.gid === duplicateGid)) {
-      issues.push({
-        check: "worker GIDs",
-        message: "Duplicate worker GID found.",
-        row: rowRef(row),
-      });
-    }
-  }
-
-  if (!sameValues(actualGids, expectedGids)) {
-    const actualSet = new Set(actualGids);
-    const expectedSet = new Set(expectedGids);
-    const missing = expectedGids.filter((gid) => !actualSet.has(gid));
-    const unexpected = actualGids.filter((gid) => !expectedSet.has(gid));
-    issues.push({
-      check: "worker GIDs",
-      message: `Expected exactly KRU-001 through KRU-075. Missing: ${missing.join(", ") || "none"}. Unexpected: ${
-        unexpected.join(", ") || "none"
-      }.`,
-    });
-  }
-
-  return { label: "worker GIDs unique and exactly KRU-001 through KRU-075", pass };
-}
 
 function checkValidTiers(rows: BulkUserRow[], issues: ValidationIssue[]) {
   const invalidRows = rows.filter((row) => !validTiers.has(row.tier));
@@ -534,7 +498,6 @@ function rowRef(row: BulkUserRow): RowRef {
   return {
     name: row.name,
     email: row.email,
-    gid: row.gid,
   };
 }
 
