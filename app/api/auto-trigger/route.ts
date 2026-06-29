@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { redis } from "@/lib/redis/client";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -44,8 +45,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // TODO: State-machine rules and DB processing stub
-    console.log("Cron execution: DB processing stub");
+    // Call execute_cron_state_machine RPC
+    const adminClient = createAdminClient();
+    const { error } = await adminClient.rpc("execute_cron_state_machine", {
+      p_now: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error("Database cron execution failed:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
