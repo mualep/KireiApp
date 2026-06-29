@@ -36,7 +36,13 @@
     "test:records-override-rpc-migration": "tsx scripts/test-records-override-rpc-migration.ts",
     "test:records-override-rpc-behavior": "tsx scripts/test-records-override-rpc-behavior.ts",
     "test:records-override-server-action": "tsx scripts/test-records-override-server-action.ts",
-    "test:records-override-ui": "tsx scripts/test-records-override-ui.ts"
+    "test:records-override-ui": "tsx scripts/test-records-override-ui.ts",
+    "test:users-manager-contract": "tsx scripts/test-users-manager-contract.ts",
+    "test:sp-manager-contract": "tsx scripts/test-sp-manager-contract.ts",
+    "test:users-manager-rpc-migration": "tsx scripts/test-users-manager-rpc-migration.ts",
+    "test:users-manager-rpc-behavior": "tsx scripts/test-users-manager-rpc-behavior.ts",
+    "test:users-manager-server-actions": "tsx scripts/test-users-manager-server-actions.ts",
+    "test:users-manager-ui": "tsx scripts/test-users-manager-ui.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

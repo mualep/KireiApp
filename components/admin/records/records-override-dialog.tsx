@@ -26,15 +26,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { RecordsRowDTO } from "@/lib/records/data";
+import { formatRecordsDuration, formatRecordsNumber } from "@/lib/records/helpers";
 
 const overrideFieldOptions = [
-  { value: "work_late_override_seconds", label: "Work Late (Seconds)" },
-  { value: "break_late_override_seconds", label: "Break Late (Seconds)" },
-  { value: "alpha_override_count", label: "Alpha Count" },
-  { value: "sakit_override_days", label: "Sakit Days" },
-  { value: "pending_override_days", label: "Pending Days" },
-  { value: "lembur_override_units", label: "Lembur Units" },
-  { value: "cuti_stock_override_snapshot", label: "Cuti Stock" },
+  { value: "work_late_override_seconds", label: "Work Late", isDuration: true },
+  { value: "break_late_override_seconds", label: "Break Late", isDuration: true },
+  { value: "alpha_override_count", label: "Alpha Count", isDuration: false },
+  { value: "sakit_override_days", label: "Sakit Days", isDuration: false },
+  { value: "pending_override_days", label: "Pending Days", isDuration: false },
+  { value: "lembur_override_units", label: "Lembur Units", isDuration: false },
+  { value: "cuti_stock_override_snapshot", label: "Cuti Stock", isDuration: false },
 ] as const;
 
 type OverrideFieldName = typeof overrideFieldOptions[number]["value"];
@@ -42,16 +44,43 @@ type OverrideFieldName = typeof overrideFieldOptions[number]["value"];
 export type RecordsOverrideDialogProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  targetUserId: string;
-  targetName: string;
+  row: RecordsRowDTO;
   periodMonth: string;
 };
+
+function getMetricForField(row: RecordsRowDTO, field: OverrideFieldName) {
+  switch (field) {
+    case "work_late_override_seconds":
+      return row.workLateSeconds;
+    case "break_late_override_seconds":
+      return row.breakLateSeconds;
+    case "alpha_override_count":
+      return row.alphaCount;
+    case "sakit_override_days":
+      return row.sakitDays;
+    case "pending_override_days":
+      return row.pendingDays;
+    case "lembur_override_units":
+      return row.lemburUnits;
+    case "cuti_stock_override_snapshot":
+      return row.cutiStockSnapshot;
+  }
+}
+
+function isDurationField(field: OverrideFieldName): boolean {
+  return overrideFieldOptions.find((o) => o.value === field)?.isDuration ?? false;
+}
+
+function formatCurrentValue(field: OverrideFieldName, value: number | null): string {
+  if (value === null) return "-";
+  if (isDurationField(field)) return formatRecordsDuration(value);
+  return formatRecordsNumber(value);
+}
 
 export function RecordsOverrideDialog({
   isOpen,
   onOpenChange,
-  targetUserId,
-  targetName,
+  row,
   periodMonth,
 }: RecordsOverrideDialogProps) {
   const router = useRouter();
@@ -60,26 +89,59 @@ export function RecordsOverrideDialog({
   const [globalError, setGlobalError] = useState<string | null>(null);
 
   const [fieldName, setFieldName] = useState<OverrideFieldName>("work_late_override_seconds");
-  const [beforeValueStr, setBeforeValueStr] = useState("0");
+  // Duration fields: separate hour/minute inputs (0 minutes = 0 seconds)
+  const [afterHours, setAfterHours] = useState("");
+  const [afterMinutes, setAfterMinutes] = useState("");
+  // Number fields: single input
   const [afterValueStr, setAfterValueStr] = useState("");
   const [reason, setReason] = useState("");
 
   const reasonLength = reason.trim().length;
+  const metric = getMetricForField(row, fieldName);
+  const isDuration = isDurationField(fieldName);
+  const currentDisplayValue = formatCurrentValue(fieldName, metric.value);
+
+  // beforeValue: existing override value, or null if auto-aggregated
+  const beforeValue: number | null = metric.isOverride ? metric.value : null;
+
+  // Compute afterValue in the correct unit (seconds for duration, plain int otherwise)
+  const afterValue: number | null = (() => {
+    if (isDuration) {
+      const h = afterHours === "" ? null : Number(afterHours);
+      const m = afterMinutes === "" ? null : Number(afterMinutes);
+      if (h === null && m === null) return null;
+      return ((h ?? 0) * 3600) + ((m ?? 0) * 60);
+    }
+    return afterValueStr === "" ? null : Number(afterValueStr);
+  })();
+
+  const isAfterEmpty = isDuration
+    ? afterHours === "" && afterMinutes === ""
+    : afterValueStr === "";
+
+  const isAfterSameAsBefore = !isAfterEmpty && afterValue === beforeValue;
+  const isSaveDisabled = isPending || isAfterEmpty || isAfterSameAsBefore || reasonLength > 20;
 
   useEffect(() => {
-    if (!successMessage) {
-      return;
-    }
-
+    if (!successMessage) return;
     const closeTimer = window.setTimeout(() => {
       onOpenChange(false);
       router.refresh();
     }, 1500);
-
-    return () => {
-      window.clearTimeout(closeTimer);
-    };
+    return () => window.clearTimeout(closeTimer);
   }, [onOpenChange, successMessage, router]);
+
+  function resetNewValue() {
+    setAfterHours("");
+    setAfterMinutes("");
+    setAfterValueStr("");
+  }
+
+  function handleFieldChange(newField: OverrideFieldName) {
+    setFieldName(newField);
+    resetNewValue();
+    setGlobalError(null);
+  }
 
   function handleOpenChange(open: boolean) {
     if (isPending) return;
@@ -87,16 +149,17 @@ export function RecordsOverrideDialog({
       setSuccessMessage(null);
       setGlobalError(null);
       setFieldName("work_late_override_seconds");
-      setBeforeValueStr("0");
-      setAfterValueStr("");
+      resetNewValue();
       setReason("");
     }
     onOpenChange(open);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  function submitOverride(
+    overrideAfterValue: number | null,
+    event?: FormEvent<HTMLFormElement>,
+  ) {
+    event?.preventDefault();
     setGlobalError(null);
     setSuccessMessage(null);
 
@@ -105,22 +168,14 @@ export function RecordsOverrideDialog({
       return;
     }
 
-    const beforeValue = beforeValueStr ? Number(beforeValueStr) : null;
-    const afterValue = afterValueStr ? Number(afterValueStr) : null;
-
-    if (beforeValue === afterValue) {
-      setGlobalError("New value must be different from current value.");
-      return;
-    }
-
     startTransition(async () => {
       try {
         const result = await applyRecordsOverride({
-          targetUserId,
-          periodMonth,
+          targetUserId: row.userId,
+          periodMonth: `${periodMonth}-01`,
           fieldName,
           beforeValue,
-          afterValue,
+          afterValue: overrideAfterValue,
           reason: reason.trim() || undefined,
         });
 
@@ -129,7 +184,9 @@ export function RecordsOverrideDialog({
           return;
         }
 
-        setSuccessMessage("Record updated successfully");
+        setSuccessMessage(
+          overrideAfterValue === null ? "Override dihapus." : "Record berhasil diperbarui.",
+        );
       } catch {
         setGlobalError("An unexpected error occurred.");
       }
@@ -140,9 +197,9 @@ export function RecordsOverrideDialog({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Override Record</DialogTitle>
+          <DialogTitle>Edit Record</DialogTitle>
           <DialogDescription>
-            Modify record for <span className="font-semibold">{targetName}</span>.
+            Updating record for <span className="font-semibold">{row.name}</span>.
           </DialogDescription>
         </DialogHeader>
 
@@ -165,15 +222,18 @@ export function RecordsOverrideDialog({
         ) : null}
 
         {!successMessage ? (
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => submitOverride(afterValue, e)}
+          >
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="override-field">Field to Override</FieldLabel>
+                <FieldLabel htmlFor="override-field">Field</FieldLabel>
                 <Select
                   id="override-field"
                   name="fieldName"
                   value={fieldName}
-                  onChange={(e) => setFieldName(e.target.value as OverrideFieldName)}
+                  onChange={(e) => handleFieldChange(e.target.value as OverrideFieldName)}
                   disabled={isPending}
                 >
                   {overrideFieldOptions.map((option) => (
@@ -184,32 +244,72 @@ export function RecordsOverrideDialog({
                 </Select>
               </Field>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Field>
-                  <FieldLabel htmlFor="override-before">Current Value</FieldLabel>
-                  <Input
-                    id="override-before"
-                    name="beforeValue"
-                    type="number"
-                    value={beforeValueStr}
-                    onChange={(e) => setBeforeValueStr(e.target.value)}
-                    disabled={isPending}
-                  />
-                </Field>
+              {/* Current Value — strictly read-only display */}
+              <Field>
+                <FieldLabel htmlFor="override-before">Current Value</FieldLabel>
+                <Input
+                  id="override-before"
+                  readOnly
+                  type="text"
+                  value={currentDisplayValue}
+                  className="select-none"
+                  aria-label="Current value (read-only)"
+                />
+              </Field>
 
-                <Field data-invalid={beforeValueStr === afterValueStr ? true : undefined}>
+              {/* New Value — duration: H + M inputs; number: single input */}
+              {isDuration ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <Field>
+                    <FieldLabel htmlFor="override-after-h">Hours</FieldLabel>
+                    <Input
+                      id="override-after-h"
+                      name="afterHours"
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={afterHours}
+                      onChange={(e) => setAfterHours(e.target.value)}
+                      disabled={isPending}
+                      placeholder="0"
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="override-after-m">Minutes</FieldLabel>
+                    <Input
+                      id="override-after-m"
+                      name="afterMinutes"
+                      type="number"
+                      min={0}
+                      max={59}
+                      step={1}
+                      value={afterMinutes}
+                      onChange={(e) => setAfterMinutes(e.target.value)}
+                      disabled={isPending}
+                      placeholder="0"
+                    />
+                  </Field>
+                </div>
+              ) : (
+                <Field data-invalid={isAfterSameAsBefore ? true : undefined}>
                   <FieldLabel htmlFor="override-after">New Value</FieldLabel>
                   <Input
                     id="override-after"
                     name="afterValue"
                     type="number"
+                    min={0}
+                    step={1}
                     value={afterValueStr}
                     onChange={(e) => setAfterValueStr(e.target.value)}
                     disabled={isPending}
-                    aria-invalid={beforeValueStr === afterValueStr ? true : undefined}
+                    placeholder="Enter value"
+                    aria-invalid={isAfterSameAsBefore ? true : undefined}
                   />
+                  {isAfterSameAsBefore ? (
+                    <FieldError>New value must differ from current override.</FieldError>
+                  ) : null}
                 </Field>
-              </div>
+              )}
 
               <Field data-invalid={reasonLength > 20 ? true : undefined}>
                 <FieldLabel htmlFor="override-reason">
@@ -234,7 +334,19 @@ export function RecordsOverrideDialog({
               </Field>
             </FieldGroup>
 
-            <DialogFooter>
+            <DialogFooter className="gap-2 sm:gap-0">
+              {metric.isOverride ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={isPending}
+                  onClick={() => submitOverride(null)}
+                  className="mr-auto"
+                >
+                  Batal Override (Kembali Otomatis)
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -243,7 +355,7 @@ export function RecordsOverrideDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending || beforeValueStr === afterValueStr}>
+              <Button type="submit" disabled={isSaveDisabled}>
                 {isPending ? "Saving..." : "Save Changes"}
               </Button>
             </DialogFooter>

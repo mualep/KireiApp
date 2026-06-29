@@ -37,7 +37,6 @@ export type TrackerDataStaff = {
 type WorkerProfileRow = {
   cuti_stock: number;
   employee_role: string;
-  gid: string;
   is_flexible: boolean;
   shift: string;
   shift_end_hour: number | null;
@@ -95,7 +94,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   const { data: profiles, error: profilesError } = await supabase
     .from("worker_profiles")
     .select(
-      "user_id,gid,employee_role,shift,is_flexible,shift_start_hour,shift_start_min,shift_end_hour,shift_end_min,show_card,cuti_stock",
+      "user_id,employee_role,shift,is_flexible,shift_start_hour,shift_start_min,shift_end_hour,shift_end_min,show_card,cuti_stock",
     )
     .eq("show_card", true)
     .returns<WorkerProfileRow[]>();
@@ -197,7 +196,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
 
     if (!user) {
       issues.push({
-        message: `Worker ${profile.gid} is missing a readable staff profile.`,
+        message: `Worker ${profile.user_id} is missing a readable staff profile.`,
       });
       return [];
     }
@@ -208,28 +207,28 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
 
     if (!status) {
       issues.push({
-        message: `Worker ${profile.gid} is missing a readable status row.`,
+        message: `Worker ${profile.user_id} is missing a readable status row.`,
       });
       return [];
     }
 
     if (!isWorkerRole(profile.employee_role)) {
       issues.push({
-        message: `Worker ${profile.gid} has an unsupported role.`,
+        message: `Worker ${profile.user_id} has an unsupported role.`,
       });
       return [];
     }
 
     if (!isWorkerShift(profile.shift)) {
       issues.push({
-        message: `Worker ${profile.gid} has an unsupported shift.`,
+        message: `Worker ${profile.user_id} has an unsupported shift.`,
       });
       return [];
     }
 
     if (!isWorkerStoredStatus(status.current_status)) {
       issues.push({
-        message: `Worker ${profile.gid} has an unsupported stored status.`,
+        message: `Worker ${profile.user_id} has an unsupported stored status.`,
       });
       return [];
     }
@@ -284,7 +283,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
           shift,
         }),
         employeeRole: profile.employee_role,
-        gid: profile.gid,
+        gid: profile.user_id,
         alphaCount: record?.alpha_count ?? 0,
         absenceMaterializationMissingDays: absenceMaterializationMissingDates.length,
         isFlexible: profile.is_flexible,

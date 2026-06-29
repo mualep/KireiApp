@@ -29,6 +29,11 @@ const ownerAdminNavItems: AdminShellNavItem[] = [
     icon: "records",
   },
   {
+    href: "/admin/users",
+    label: "Users Manager",
+    icon: "users",
+  },
+  {
     href: "/admin/content",
     label: "Content",
     icon: "content",

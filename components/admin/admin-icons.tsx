@@ -8,6 +8,7 @@ import {
   SidebarCloseIcon,
   SidebarOpenIcon,
   UserRoundIcon,
+  UsersIcon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -18,7 +19,8 @@ export type AdminNavIconKey =
   | "performance"
   | "profile"
   | "records"
-  | "tracker";
+  | "tracker"
+  | "users";
 
 type AdminNavIconProps = {
   "aria-hidden"?: true;
@@ -34,6 +36,7 @@ const adminNavIcons: Record<AdminNavIconKey, LucideIcon> = {
   profile: UserRoundIcon,
   records: ClipboardListIcon,
   tracker: MousePointerClickIcon,
+  users: UsersIcon,
 };
 
 export function AdminNavIcon({

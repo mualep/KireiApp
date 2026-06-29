@@ -27,7 +27,6 @@ export type RecordsRowDTO = {
   compactRoleShiftLabel: string;
   cutiStockSnapshot: EffectiveRecordMetric<number | null>;
   employeeRole: WorkerRole;
-  gid: string;
   lastSource: WorkerAttendanceSource | null;
   lastSourceAction: string | null;
   lemburUnits: EffectiveRecordMetric;
@@ -52,7 +51,6 @@ export type RecordsDataResult = {
 type WorkerProfileRow = {
   cuti_stock: number;
   employee_role: string;
-  gid: string;
   shift: string;
   user_id: string;
 };
@@ -115,7 +113,7 @@ export async function getRecordsData({
 
   let profilesQuery = supabase
     .from("worker_profiles")
-    .select("user_id,gid,employee_role,shift,cuti_stock")
+    .select("user_id,employee_role,shift,cuti_stock")
     .eq("show_card", true);
 
   if (staff.profile.tier === "member") {
@@ -123,7 +121,7 @@ export async function getRecordsData({
   }
 
   const { data: profiles, error: profilesError } = await profilesQuery
-    .order("gid", { ascending: true })
+    .order("user_id", { ascending: true })
     .returns<WorkerProfileRow[]>();
 
   if (profilesError) {
@@ -196,7 +194,7 @@ export async function getRecordsData({
 
     if (!user) {
       issues.push({
-        message: `Worker ${profile.gid} is missing a readable staff profile.`,
+        message: `Worker ${profile.user_id} is missing a readable staff profile.`,
       });
       return [];
     }
@@ -207,14 +205,14 @@ export async function getRecordsData({
 
     if (!isWorkerRole(profile.employee_role)) {
       issues.push({
-        message: `Worker ${profile.gid} has an unsupported role.`,
+        message: `Worker ${profile.user_id} has an unsupported role.`,
       });
       return [];
     }
 
     if (!isWorkerShift(profile.shift)) {
       issues.push({
-        message: `Worker ${profile.gid} has an unsupported shift.`,
+        message: `Worker ${profile.user_id} has an unsupported shift.`,
       });
       return [];
     }
@@ -248,7 +246,6 @@ export async function getRecordsData({
           workerRecord.cuti_stock_override_snapshot,
         ),
         employeeRole: profile.employee_role,
-        gid: profile.gid,
         lastSource: parseRecordSource(workerRecord.last_source),
         lastSourceAction: workerRecord.last_source_action,
         lemburUnits: getEffectiveRecordMetric(
