@@ -5,28 +5,51 @@ import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { workerRoles, workerShifts } from "@/lib/workers/constants";
-import { staffTierSchema } from "@/lib/auth/tiers";
+import { workerRoles, workerShifts, workerShiftDefinitions } from "@/lib/workers/constants";
 import { getWorkerSpLogs } from "@/lib/users/data";
 
+// Constraint: worker_profiles_flexible_shift_shape_check
+// flexible shift => is_flexible=true, all hour fields NULL
+// non-flexible   => is_flexible=false, all four hour fields NOT NULL
+function getShiftFields(shift: string) {
+  const def = workerShiftDefinitions[shift as keyof typeof workerShiftDefinitions];
+  if (!def || def.isFlexible) {
+    return {
+      is_flexible: true,
+      shift_end_hour: null,
+      shift_end_min: null,
+      shift_start_hour: null,
+      shift_start_min: null,
+    };
+  }
+  return {
+    is_flexible: false,
+    shift_end_hour: def.endHour,
+    shift_end_min: def.endMinute,
+    shift_start_hour: def.startHour,
+    shift_start_min: def.startMinute,
+  };
+}
+
+// Business rule: Customer Service → admin, everyone else → member
+function deriveTierFromRole(role: string): "admin" | "member" {
+  return role === "Customer Service" ? "admin" : "member";
+}
+
 const createWorkerSchema = z.object({
-  cutiStock: z.number().int().min(0),
   email: z.string().email(),
   employeeRole: z.enum(workerRoles),
   name: z.string().min(1),
   password: z.string().min(6),
   shift: z.enum(workerShifts),
-  tier: staffTierSchema,
 });
 
 const editWorkerSchema = z.object({
-  cutiStock: z.number().int().min(0),
   email: z.string().email().optional(),
   employeeRole: z.enum(workerRoles),
   name: z.string().min(1),
   newPassword: z.string().min(6).optional().or(z.literal("")),
   shift: z.enum(workerShifts),
-  tier: staffTierSchema,
 });
 
 async function requirePrivilegedUser() {
@@ -46,16 +69,13 @@ export async function createWorker(payload: unknown) {
     await requirePrivilegedUser();
 
     const parsed = createWorkerSchema.safeParse(payload);
-    if (!parsed.success) return { ok: false, error: "Payload tidak valid: " + parsed.error.issues.map(i => i.message).join(", ") };
-    const {
-      cutiStock,
-      email,
-      employeeRole,
-      name,
-      password,
-      shift,
-      tier,
-    } = parsed.data;
+    if (!parsed.success) {
+      return { ok: false, error: "Payload tidak valid: " + parsed.error.issues.map((i) => i.message).join(", ") };
+    }
+    const { email, employeeRole, name, password, shift } = parsed.data;
+
+    const tier = deriveTierFromRole(employeeRole);
+    const shiftFields = getShiftFields(shift);
 
     const adminClient = createAdminClient();
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
@@ -76,18 +96,17 @@ export async function createWorker(payload: unknown) {
       tier,
     });
     if (insertUserError) {
-      // Rollback auth user on failure
       await adminClient.auth.admin.deleteUser(authData.user.id);
       return { ok: false, error: insertUserError.message };
     }
 
     const { error: insertProfileError } = await adminClient.from("worker_profiles").insert({
-      cuti_stock: cutiStock,
+      cuti_stock: 0,
       employee_role: employeeRole,
-      is_flexible: shift === "flexible",
       shift,
       show_card: true,
       user_id: authData.user.id,
+      ...shiftFields,
     });
     if (insertProfileError) {
       await adminClient.auth.admin.deleteUser(authData.user.id);
@@ -106,8 +125,13 @@ export async function editWorker(userId: string, payload: unknown) {
     await requirePrivilegedUser();
 
     const parsed = editWorkerSchema.safeParse(payload);
-    if (!parsed.success) return { ok: false, error: "Payload tidak valid: " + parsed.error.issues.map(i => i.message).join(", ") };
-    const { cutiStock, email, employeeRole, name, newPassword, shift, tier } = parsed.data;
+    if (!parsed.success) {
+      return { ok: false, error: "Payload tidak valid: " + parsed.error.issues.map((i) => i.message).join(", ") };
+    }
+    const { email, employeeRole, name, newPassword, shift } = parsed.data;
+
+    const tier = deriveTierFromRole(employeeRole);
+    const shiftFields = getShiftFields(shift);
 
     const adminClient = createAdminClient();
 
@@ -139,13 +163,13 @@ export async function editWorker(userId: string, payload: unknown) {
     if (userError) return { ok: false, error: userError.message };
 
     // Update worker_profiles via admin client (bypasses RLS)
+    // Do NOT update cuti_stock — managed exclusively in Records
     const { error: profileError } = await adminClient
       .from("worker_profiles")
       .update({
-        cuti_stock: cutiStock,
         employee_role: employeeRole,
-        is_flexible: shift === "flexible",
         shift,
+        ...shiftFields,
       })
       .eq("user_id", userId);
     if (profileError) return { ok: false, error: profileError.message };

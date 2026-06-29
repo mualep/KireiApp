@@ -146,8 +146,7 @@ export function filterTrackerCards(
     }
 
     return (
-      card.name.toLocaleLowerCase("id-ID").includes(normalizedSearch) ||
-      card.gid.toLocaleLowerCase("id-ID").includes(normalizedSearch)
+      card.name.toLocaleLowerCase("id-ID").includes(normalizedSearch)
     );
   });
 }

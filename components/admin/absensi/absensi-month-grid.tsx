@@ -253,7 +253,7 @@ function AbsensiCell({
             expectedAttendanceId: null,
             expectedAttendanceUpdatedAt: null,
             targetUserId: row.userId,
-            workerGid: row.gid,
+            workerGid: row.userId,
             workerName: row.name,
           });
           return;
@@ -270,7 +270,7 @@ function AbsensiCell({
           expectedAttendanceId: cell.attendanceId,
           expectedAttendanceUpdatedAt: cell.attendanceUpdatedAt,
           targetUserId: row.userId,
-          workerGid: row.gid,
+          workerGid: row.userId,
           workerName: row.name,
         });
       }}

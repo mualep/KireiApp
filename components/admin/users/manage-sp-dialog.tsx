@@ -103,7 +103,7 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
               className="flex h-10 w-full rounded-md border border-input bg-background/55 px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </div>
-          <Button type="submit" disabled={loading} variant="destructive" className="shrink-0">
+          <Button type="submit" disabled={loading} className="shrink-0">
             <TriangleAlertIcon className="size-4 mr-1.5" />
             Beri SP
           </Button>
@@ -166,7 +166,6 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
                         </Button>
                         <Button
                           size="sm"
-                          variant="destructive"
                           onClick={() => onConfirmRevoke(log.id)}
                           disabled={loading}
                         >

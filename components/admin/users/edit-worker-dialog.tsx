@@ -59,13 +59,11 @@ export function EditWorkerDialog({ onOpenChange, open, row }: EditWorkerDialogPr
     const fd = new FormData(e.currentTarget);
     const newPassword = (fd.get("newPassword") as string) ?? "";
     const payload = {
-      cutiStock: Number(fd.get("cutiStock") ?? 0),
       email: (fd.get("email") as string) || undefined,
       employeeRole: fd.get("employeeRole"),
       name: fd.get("name"),
       newPassword: newPassword || undefined,
       shift: fd.get("shift"),
-      tier: fd.get("tier"),
     };
 
     const res = await editWorker(row.id, payload);
@@ -106,15 +104,6 @@ export function EditWorkerDialog({ onOpenChange, open, row }: EditWorkerDialogPr
                 required
                 className={inputCls()}
               />
-            </div>
-
-            <div className="col-span-2 sm:col-span-1">
-              <FieldLabel htmlFor="ew-tier">Tier</FieldLabel>
-              <select id="ew-tier" name="tier" defaultValue={row.tier} required className={selectCls()}>
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-                <option value="owner">Owner</option>
-              </select>
             </div>
 
             <div className="col-span-2 sm:col-span-1">
@@ -171,19 +160,6 @@ export function EditWorkerDialog({ onOpenChange, open, row }: EditWorkerDialogPr
                   <option key={shift} value={shift}>{shiftLabel(shift)}</option>
                 ))}
               </select>
-            </div>
-
-            <div className="col-span-2 sm:col-span-1">
-              <FieldLabel htmlFor="ew-cuti">Saldo Cuti (hari)</FieldLabel>
-              <input
-                id="ew-cuti"
-                name="cutiStock"
-                type="number"
-                defaultValue={0}
-                min={0}
-                required
-                className={inputCls()}
-              />
             </div>
           </div>
 

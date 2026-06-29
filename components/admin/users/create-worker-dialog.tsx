@@ -56,13 +56,11 @@ export function CreateWorkerDialog({ open, onOpenChange }: CreateWorkerDialogPro
 
     const fd = new FormData(e.currentTarget);
     const payload = {
-      cutiStock: Number(fd.get("cutiStock") ?? 0),
       email: fd.get("email"),
       employeeRole: fd.get("employeeRole"),
       name: fd.get("name"),
       password: fd.get("password"),
       shift: fd.get("shift"),
-      tier: "member",
     };
 
     const res = await createWorker(payload);
@@ -108,10 +106,6 @@ export function CreateWorkerDialog({ open, onOpenChange }: CreateWorkerDialogPro
               <input id="cw-password" name="password" type="password" placeholder="Min. 6 karakter" required minLength={6} className={inputCls()} />
             </div>
 
-            <div className="col-span-2 sm:col-span-1">
-              <FieldLabel htmlFor="cw-cuti">Saldo Cuti (hari)</FieldLabel>
-              <input id="cw-cuti" name="cutiStock" type="number" defaultValue={0} min={0} required className={inputCls()} />
-            </div>
 
             <div className="col-span-2 sm:col-span-1">
               <FieldLabel htmlFor="cw-role">Role</FieldLabel>

@@ -47,7 +47,7 @@ export function DeactivationDialog({ onOpenChange, open, row }: DeactivationDial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="tracker-glass-panel">
         <DialogHeader>
-          <DialogTitle className={isDeactivating ? "text-destructive" : ""}>
+          <DialogTitle>
             {isDeactivating ? "Pecat / Nonaktifkan Worker" : "Aktifkan Kembali Worker"}
           </DialogTitle>
           <DialogDescription className="mt-2">
@@ -90,7 +90,7 @@ export function DeactivationDialog({ onOpenChange, open, row }: DeactivationDial
             <Button
               type="submit"
               disabled={loading}
-              variant={isDeactivating ? "destructive" : "default"}
+              variant="default"
             >
               {isDeactivating ? (
                 <>

@@ -30,7 +30,6 @@ export type AbsensiWorkerRowDTO = {
   cellsByDate: Record<string, AbsensiCellDTO>;
   compactRoleShiftLabel: string;
   employeeRole: WorkerRole;
-  gid: string;
   name: string;
   roleShiftLabel: string;
   shift: WorkerShift;
@@ -46,7 +45,6 @@ export type AbsensiDataResult = {
 
 type WorkerProfileRow = {
   employee_role: string;
-  gid: string;
   shift: string;
   user_id: string;
 };
@@ -97,7 +95,7 @@ export async function getAbsensiData({
 
   let profilesQuery = supabase
     .from("worker_profiles")
-    .select("user_id,gid,employee_role,shift")
+    .select("user_id,employee_role,shift")
     .eq("show_card", true);
 
   if (staff.profile.tier === "member") {
@@ -105,7 +103,7 @@ export async function getAbsensiData({
   }
 
   const { data: profiles, error: profilesError } = await profilesQuery
-    .order("gid", { ascending: true })
+    .order("user_id", { ascending: true })
     .returns<WorkerProfileRow[]>();
 
   if (profilesError) {
@@ -189,7 +187,7 @@ export async function getAbsensiData({
 
     if (!user) {
       issues.push({
-        message: `Worker ${profile.gid} is missing a readable staff profile.`,
+        message: `Worker ${profile.user_id} is missing a readable staff profile.`,
       });
       return [];
     }
@@ -200,14 +198,14 @@ export async function getAbsensiData({
 
     if (!isWorkerRole(profile.employee_role)) {
       issues.push({
-        message: `Worker ${profile.gid} has an unsupported role.`,
+        message: `Worker ${profile.user_id} has an unsupported role.`,
       });
       return [];
     }
 
     if (!isWorkerShift(profile.shift)) {
       issues.push({
-        message: `Worker ${profile.gid} has an unsupported shift.`,
+        message: `Worker ${profile.user_id} has an unsupported shift.`,
       });
       return [];
     }
@@ -227,7 +225,6 @@ export async function getAbsensiData({
         cellsByDate: cellsByUserId.get(profile.user_id) ?? {},
         compactRoleShiftLabel,
         employeeRole: profile.employee_role,
-        gid: profile.gid,
         name: user.name,
         roleShiftLabel,
         shift: profile.shift,
