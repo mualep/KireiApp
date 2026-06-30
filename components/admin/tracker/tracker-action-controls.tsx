@@ -30,6 +30,7 @@ import {
   getBreakRemainingSeconds,
 } from "@/lib/tracker/break-timer";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
 import { type TrackerAction, isLemburAvailable } from "@/lib/workers/tracker-actions";
 import type { TrackerAbsenceMaterializationAction } from "@/lib/workers/tracker-absence-materialization";
 import type { TrackerExpiredAbsenceCloseAction } from "@/lib/workers/tracker-absence-close";
@@ -40,14 +41,14 @@ const BREAK_WARNING_THRESHOLD_SECONDS = 600;
 
 function getBreakTimerColorClass(remainingSeconds: number): string {
   if (remainingSeconds < 0) {
-    return "tracker-timer-overdue";
+    return "text-red-500";
   }
 
   if (remainingSeconds <= BREAK_WARNING_THRESHOLD_SECONDS) {
-    return "tracker-timer-warning";
+    return "text-yellow-500";
   }
 
-  return "tracker-timer-normal";
+  return "text-foreground";
 }
 
 type TrackerActionControlsProps = {
@@ -110,6 +111,7 @@ const genericFailure: ApplyTrackerActionResult = {
 
 export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isTransitionPending, startTransition] = useTransition();
   const [pendingAction, setPendingAction] = useState<TrackerAction | null>(
     null,
@@ -128,13 +130,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   const [correctionReasonError, setCorrectionReasonError] = useState<string | null>(
     null,
   );
-  const [result, setResult] = useState<
-    | ApplyTrackerActionResult
-    | ApplyTrackerAbsenceMaterializationResult
-    | ApplyTrackerCorrectionResult
-    | ApplyTrackerExpiredAbsenceCloseResult
-    | null
-  >(null);
   const controlGroups = getActiveControlGroups(card);
   const isPending =
     isTransitionPending ||
@@ -170,7 +165,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       return;
     }
 
-    setResult(null);
     setPendingAction(action);
 
     startTransition(async () => {
@@ -181,7 +175,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           targetUserId: card.userId,
         });
 
-        setResult(nextResult);
+        toast({
+          title: nextResult.ok ? "Berhasil" : "Gagal",
+          description: nextResult.message,
+          variant: nextResult.ok ? "default" : "destructive",
+        });
 
         if (
           nextResult.code === "success" ||
@@ -190,7 +188,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           router.refresh();
         }
       } catch {
-        setResult(genericFailure);
+        toast({
+          title: "Gagal",
+          description: genericFailure.message,
+          variant: "destructive",
+        });
       } finally {
         setPendingAction(null);
       }
@@ -202,7 +204,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       return;
     }
 
-    setResult(null);
     setCorrectionReason("");
     setCorrectionReasonError(null);
     setSelectedCorrectionAction(action);
@@ -221,7 +222,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       return;
     }
 
-    setResult(null);
     setCorrectionReasonError(null);
     setPendingCorrectionAction(action);
 
@@ -235,7 +235,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           targetUserId: card.userId,
         });
 
-        setResult(nextResult);
+        toast({
+          title: nextResult.ok ? "Berhasil" : "Gagal",
+          description: nextResult.message,
+          variant: nextResult.ok ? "default" : "destructive",
+        });
 
         if (
           nextResult.code === "success" ||
@@ -244,7 +248,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           router.refresh();
         }
       } catch {
-        setResult(genericFailure);
+        toast({
+          title: "Gagal",
+          description: genericFailure.message,
+          variant: "destructive",
+        });
       } finally {
         setPendingCorrectionAction(null);
         setSelectedCorrectionAction(null);
@@ -258,7 +266,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       return;
     }
 
-    setResult(null);
     setPendingExpiredAbsenceCloseAction(action);
 
     startTransition(async () => {
@@ -270,7 +277,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           targetUserId: card.userId,
         });
 
-        setResult(nextResult);
+        toast({
+          title: nextResult.ok ? "Berhasil" : "Gagal",
+          description: nextResult.message,
+          variant: nextResult.ok ? "default" : "destructive",
+        });
 
         if (
           nextResult.code === "success" ||
@@ -279,7 +290,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           router.refresh();
         }
       } catch {
-        setResult(genericFailure);
+        toast({
+          title: "Gagal",
+          description: genericFailure.message,
+          variant: "destructive",
+        });
       } finally {
         setPendingExpiredAbsenceCloseAction(null);
       }
@@ -293,7 +308,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       return;
     }
 
-    setResult(null);
     setPendingAbsenceMaterializationAction(action);
 
     startTransition(async () => {
@@ -304,7 +318,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           targetUserId: card.userId,
         });
 
-        setResult(nextResult);
+        toast({
+          title: nextResult.ok ? "Berhasil" : "Gagal",
+          description: nextResult.message,
+          variant: nextResult.ok ? "default" : "destructive",
+        });
 
         if (
           nextResult.code === "success" ||
@@ -313,7 +331,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           router.refresh();
         }
       } catch {
-        setResult(genericFailure);
+        toast({
+          title: "Gagal",
+          description: genericFailure.message,
+          variant: "destructive",
+        });
       } finally {
         setPendingAbsenceMaterializationAction(null);
       }
@@ -477,21 +499,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
             </Button>
           </div>
         </div>
-      ) : null}
-
-      {result ? (
-        <p
-          aria-live="polite"
-          className={cn(
-            "rounded-md border px-2 py-1.5 text-xs font-medium",
-            result.ok
-              ? "border-status-on/25 bg-status-on/10 text-status-on"
-              : "border-status-alpha/25 bg-status-alpha/10 text-status-alpha",
-          )}
-          role="status"
-        >
-          {result.message}
-        </p>
       ) : null}
     </div>
   );

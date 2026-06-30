@@ -46,6 +46,7 @@
     "test:cron-rpc-behavior": "tsx scripts/test-cron-rpc-behavior.ts"
   },
   "dependencies": {
+    "@radix-ui/react-toast": "^1.2.17",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.1",
     "@upstash/redis": "^1.38.0",

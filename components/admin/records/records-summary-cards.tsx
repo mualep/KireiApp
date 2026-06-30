@@ -78,9 +78,17 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
       icon: BriefcaseBusinessIcon,
       label: "Total Lembur",
       toneClass: "border-status-break/35 bg-status-break/10 text-status-break",
-      value: `${numberFormatter.format(totals.lembur)} h`,
+      value: formatLemburMinutes(totals.lembur),
     },
   ];
+
+  function formatLemburMinutes(minutes: number): string {
+    if (minutes <= 0) return "0m";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours === 0) return `${mins}m`;
+    return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
+  }
 
   return (
     <section

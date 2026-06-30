@@ -177,7 +177,7 @@ export function RecordsTable({
                     <MetricValue metric={row.pendingDays} tone="pending" />
                   </td>
                   <td className="px-3 py-2 text-center">
-                    <MetricValue metric={row.lemburUnits} tone="lembur" />
+                    <MetricValue metric={row.lemburUnits} tone="lembur" type="lembur" />
                   </td>
                   <td className="px-3 py-2 text-center">
                     <MetricValue metric={row.cutiStockSnapshot} tone="cuti" />
@@ -218,6 +218,14 @@ export function RecordsTable({
   );
 }
 
+function formatLemburMinutes(minutes: number): string {
+  if (minutes <= 0) return "0m";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
+}
+
 function MetricValue({
   metric,
   tone,
@@ -225,10 +233,12 @@ function MetricValue({
 }: {
   metric: EffectiveRecordMetric<number | null>;
   tone: RecordsMetricTone;
-  type?: "duration" | "number";
+  type?: "duration" | "number" | "lembur";
 }) {
   const value =
-    type === "duration" && metric.value !== null
+    type === "lembur" && metric.value !== null
+      ? formatLemburMinutes(metric.value)
+      : type === "duration" && metric.value !== null
       ? formatRecordsDuration(metric.value)
       : formatRecordsNumber(metric.value);
 

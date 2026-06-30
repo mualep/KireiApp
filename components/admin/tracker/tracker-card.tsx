@@ -154,6 +154,18 @@ export function TrackerCard({
 }
 
 function getTrackerRecordBadges(card: TrackerCardDTO) {
+  let liveBreakLate = card.breakLateSeconds;
+  if (card.breakTimerRunning && card.breakStartedAt) {
+    const startedAtMs = new Date(card.breakStartedAt).getTime();
+    if (Number.isFinite(startedAtMs)) {
+      const liveSeconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));
+      const elapsed = card.breakAccumulatedSecs + liveSeconds;
+      if (elapsed > 3600) {
+        liveBreakLate += (elapsed - 3600);
+      }
+    }
+  }
+
   return [
     {
       color: "var(--status-break)",
@@ -163,9 +175,9 @@ function getTrackerRecordBadges(card: TrackerCardDTO) {
     },
     {
       color: "var(--status-sakit)",
-      displayValue: formatRecordsDuration(card.breakLateSeconds),
+      displayValue: formatRecordsDuration(liveBreakLate),
       label: "Break Late",
-      value: card.breakLateSeconds,
+      value: liveBreakLate,
     },
     {
       color: "var(--status-alpha)",
@@ -187,11 +199,19 @@ function getTrackerRecordBadges(card: TrackerCardDTO) {
     },
     {
       color: "var(--status-break)",
-      displayValue: `${card.lemburUnits}h`,
+      displayValue: formatLemburMinutes(card.lemburUnits),
       label: "Lembur",
       value: card.lemburUnits,
     },
   ].filter((badge) => badge.value > 0);
+}
+
+function formatLemburMinutes(minutes: number): string {
+  if (minutes <= 0) return "0m";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
 }
 
 function RecordBadge({
