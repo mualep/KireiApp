@@ -1,11 +1,8 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { CheckIcon, CircleAlertIcon } from "lucide-react";
-
+import { useMemo, useState, useTransition } from "react";
 import { applyAbsensiCorrection } from "@/app/admin/(shell)/absensi/actions";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +22,7 @@ import {
 } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 
 type CorrectionAfterStatus = "hadir" | "cuti" | "sakit" | "pending" | "alpha";
 type CorrectionBeforeStatus = "none" | CorrectionAfterStatus;
@@ -75,7 +73,7 @@ export function AbsensiCorrectionDialog({
 }: AbsensiCorrectionDialogProps) {
   return (
     <Dialog open={Boolean(correction)} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="tracker-glass-panel sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Correct Absensi</DialogTitle>
           <DialogDescription>
@@ -106,12 +104,11 @@ function AbsensiCorrectionForm({
   correction: AbsensiCorrectionDraft;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { toast } = useToast();
   const [afterStatus, setAfterStatus] = useState<CorrectionAfterStatus>(() =>
     getDefaultAfterStatus(correction.beforeStatus),
   );
   const [reason, setReason] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const availableStatuses = useMemo(
     () =>
@@ -126,23 +123,8 @@ function AbsensiCorrectionForm({
   const isSameStatus = selected.afterStatus === selected.beforeStatus;
   const isSubmitDisabled =
     isPending ||
-    Boolean(successMessage) ||
     isSameStatus ||
     reasonLength > 20;
-
-  useEffect(() => {
-    if (!successMessage) {
-      return;
-    }
-
-    const closeTimer = window.setTimeout(() => {
-      onOpenChange(false);
-    }, 1500);
-
-    return () => {
-      window.clearTimeout(closeTimer);
-    };
-  }, [onOpenChange, successMessage]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -150,17 +132,22 @@ function AbsensiCorrectionForm({
     const trimmedReason = reason.trim();
 
     if (trimmedReason.length > 20) {
-      setFormError("Reason must be 20 characters or fewer.");
+      toast({
+        title: "Gagal",
+        description: "Alasan harus berisi 20 karakter atau kurang.",
+        variant: "error",
+      });
       return;
     }
 
     if (selected.afterStatus === selected.beforeStatus) {
-      setFormError("Choose a different status.");
+      toast({
+        title: "Gagal",
+        description: "Pilih status yang berbeda.",
+        variant: "error",
+      });
       return;
     }
-
-    setFormError(null);
-    setSuccessMessage(null);
 
     startTransition(async () => {
       const result = await applyAbsensiCorrection({
@@ -174,12 +161,21 @@ function AbsensiCorrectionForm({
       });
 
       if (!result.ok) {
-        setFormError(actionErrorMessages[result.error] ?? actionErrorMessages.generic_error);
+        toast({
+          title: "Gagal",
+          description: actionErrorMessages[result.error] ?? actionErrorMessages.generic_error,
+          variant: "error",
+        });
         return;
       }
 
-      setSuccessMessage("Correction Applied");
+      toast({
+        title: "Berhasil",
+        description: "Koreksi absensi berhasil diterapkan.",
+        variant: "success",
+      });
       setReason("");
+      onOpenChange(false);
     });
   }
 
@@ -209,24 +205,6 @@ function AbsensiCorrectionForm({
           </span>
         </div>
       </div>
-
-      {formError ? (
-        <Alert variant="destructive">
-          <CircleAlertIcon aria-hidden="true" />
-          <AlertTitle>Correction Unavailable</AlertTitle>
-          <AlertDescription>{formError}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {successMessage ? (
-        <Alert className="border-status-on/30 bg-status-on/10 text-status-on shadow-sm shadow-status-on/10">
-          <CheckIcon aria-hidden="true" />
-          <AlertTitle>{successMessage}</AlertTitle>
-          <AlertDescription className="text-status-on/85">
-            The Absensi page will use the refreshed server data.
-          </AlertDescription>
-        </Alert>
-      ) : null}
 
       <FieldGroup>
         <Field data-invalid={isSameStatus ? true : undefined}>

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { TriangleAlertIcon } from "lucide-react";
 import { issueSp, revokeSp, fetchWorkerSpLogsAction } from "@/app/admin/(shell)/users/actions";
 import type { SpLogDTO, UsersManagerRowDTO } from "@/lib/users/data";
+import { useToast } from "@/components/ui/use-toast";
 
 type ManageSpDialogProps = {
   onOpenChange: (open: boolean) => void;
@@ -21,10 +22,9 @@ type ManageSpDialogProps = {
 };
 
 export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps) {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<SpLogDTO[]>([]);
-  const [issueError, setIssueError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,8 +37,6 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
   function handleOpenChange(newOpen: boolean) {
     if (!newOpen) {
       setConfirmRevokeId(null);
-      setIssueError(null);
-      setActionError(null);
     }
     onOpenChange(newOpen);
   }
@@ -46,7 +44,6 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
   async function onIssueSp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setIssueError(null);
 
     const fd = new FormData(e.currentTarget);
     const reason = fd.get("reason") as string;
@@ -57,24 +54,41 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
     const res = await issueSp(row.id, reason, expiresDate.toISOString());
     if (res.ok) {
       (e.target as HTMLFormElement).reset();
+      toast({
+        title: "Berhasil",
+        description: "SP berhasil diberikan.",
+        variant: "success",
+      });
       const fetchRes = await fetchWorkerSpLogsAction(row.id);
       if (fetchRes.ok && fetchRes.data) setLogs(fetchRes.data);
     } else {
-      setIssueError(res.error ?? "Gagal memberikan SP");
+      toast({
+        title: "Gagal",
+        description: res.error ?? "Gagal memberikan SP",
+        variant: "error",
+      });
     }
     setLoading(false);
   }
 
   async function onConfirmRevoke(spId: string) {
     setLoading(true);
-    setActionError(null);
     const res = await revokeSp(spId);
     if (res.ok) {
       setConfirmRevokeId(null);
+      toast({
+        title: "Berhasil",
+        description: "SP berhasil dihapus.",
+        variant: "success",
+      });
       const fetchRes = await fetchWorkerSpLogsAction(row.id);
       if (fetchRes.ok && fetchRes.data) setLogs(fetchRes.data);
     } else {
-      setActionError(res.error ?? "Gagal menghapus SP");
+      toast({
+        title: "Gagal",
+        description: res.error ?? "Gagal menghapus SP",
+        variant: "error",
+      });
     }
     setLoading(false);
   }
@@ -108,18 +122,6 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
             Beri SP
           </Button>
         </form>
-
-        {issueError && (
-          <p className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {issueError}
-          </p>
-        )}
-
-        {actionError && (
-          <p className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {actionError}
-          </p>
-        )}
 
         {/* SP History */}
         <div className="mt-4 flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-1">

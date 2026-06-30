@@ -7,6 +7,7 @@ import type {
   TrackerCardDTO,
 } from "@/lib/workers/types";
 import { getShiftDefinition } from "@/lib/workers/helpers";
+import { getOperationalDate } from "@/lib/utils";
 
 const WIB_OFFSET_MINUTES = 7 * 60;
 const WIB_OFFSET_MILLISECONDS = WIB_OFFSET_MINUTES * 60 * 1000;
@@ -112,27 +113,7 @@ export function deriveTrackerAttendanceDate({
   now: Date;
   shift: WorkerShiftDefinition;
 }): string {
-  const wib = getWibParts(now);
-  const currentDate = formatDateParts(wib.year, wib.month, wib.day);
-
-  if (
-    shift.isFlexible ||
-    shift.startHour === null ||
-    shift.startMinute === null ||
-    shift.endHour === null ||
-    shift.endMinute === null
-  ) {
-    return currentDate;
-  }
-
-  const startMinutes = toMinutes(shift.startHour, shift.startMinute);
-  const endMinutes = toMinutes(shift.endHour, shift.endMinute);
-
-  if (startMinutes > endMinutes && wib.minutesOfDay < endMinutes) {
-    return addDaysToIsoDate(currentDate, -1);
-  }
-
-  return currentDate;
+  return getOperationalDate(now);
 }
 
 export function computeTrackerWorkLateSeconds({

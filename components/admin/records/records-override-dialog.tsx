@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { CheckIcon, CircleAlertIcon } from "lucide-react";
 
 import { applyRecordsOverride } from "@/app/admin/(shell)/records/actions";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,6 +27,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { RecordsRowDTO } from "@/lib/records/data";
 import { formatRecordsDuration, formatRecordsNumber } from "@/lib/records/helpers";
+import { useToast } from "@/components/ui/use-toast";
 
 const overrideFieldOptions = [
   { value: "work_late_override_seconds", label: "Work Late", isDuration: true },
@@ -84,15 +84,14 @@ export function RecordsOverrideDialog({
   periodMonth,
 }: RecordsOverrideDialogProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [globalError, setGlobalError] = useState<string | null>(null);
 
   const [fieldName, setFieldName] = useState<OverrideFieldName>("work_late_override_seconds");
   // Duration fields: separate hour/minute inputs (0 minutes = 0 seconds)
   const [afterHours, setAfterHours] = useState("");
   const [afterMinutes, setAfterMinutes] = useState("");
-  // Number fields: single input
+    // Number fields: single input
   const [afterValueStr, setAfterValueStr] = useState("");
   const [reason, setReason] = useState("");
 
@@ -122,15 +121,6 @@ export function RecordsOverrideDialog({
   const isAfterSameAsBefore = !isAfterEmpty && afterValue === beforeValue;
   const isSaveDisabled = isPending || isAfterEmpty || isAfterSameAsBefore || reasonLength > 20;
 
-  useEffect(() => {
-    if (!successMessage) return;
-    const closeTimer = window.setTimeout(() => {
-      onOpenChange(false);
-      router.refresh();
-    }, 1500);
-    return () => window.clearTimeout(closeTimer);
-  }, [onOpenChange, successMessage, router]);
-
   function resetNewValue() {
     setAfterHours("");
     setAfterMinutes("");
@@ -140,14 +130,11 @@ export function RecordsOverrideDialog({
   function handleFieldChange(newField: OverrideFieldName) {
     setFieldName(newField);
     resetNewValue();
-    setGlobalError(null);
   }
 
   function handleOpenChange(open: boolean) {
     if (isPending) return;
     if (!open) {
-      setSuccessMessage(null);
-      setGlobalError(null);
       setFieldName("work_late_override_seconds");
       resetNewValue();
       setReason("");
@@ -160,11 +147,13 @@ export function RecordsOverrideDialog({
     event?: FormEvent<HTMLFormElement>,
   ) {
     event?.preventDefault();
-    setGlobalError(null);
-    setSuccessMessage(null);
 
     if (reasonLength > 20) {
-      setGlobalError("Reason must be 20 characters or fewer.");
+      toast({
+        title: "Gagal",
+        description: "Alasan harus berisi 20 karakter atau kurang.",
+        variant: "error",
+      });
       return;
     }
 
@@ -180,48 +169,40 @@ export function RecordsOverrideDialog({
         });
 
         if (!result.ok) {
-          setGlobalError(result.error ?? "An error occurred");
+          toast({
+            title: "Gagal",
+            description: result.error ?? "An error occurred",
+            variant: "error",
+          });
           return;
         }
 
-        setSuccessMessage(
-          overrideAfterValue === null ? "Override dihapus." : "Record berhasil diperbarui.",
-        );
+        toast({
+          title: "Berhasil",
+          description: overrideAfterValue === null ? "Override dihapus." : "Record berhasil diperbarui.",
+          variant: "success",
+        });
+        onOpenChange(false);
+        router.refresh();
       } catch {
-        setGlobalError("An unexpected error occurred.");
+        toast({
+          title: "Gagal",
+          description: "An unexpected error occurred.",
+          variant: "error",
+        });
       }
     });
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="tracker-glass-panel sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Record</DialogTitle>
           <DialogDescription>
             Updating record for <span className="font-semibold">{row.name}</span>.
           </DialogDescription>
         </DialogHeader>
-
-        {globalError ? (
-          <Alert variant="destructive">
-            <CircleAlertIcon aria-hidden="true" />
-            <AlertTitle>Update Failed</AlertTitle>
-            <AlertDescription>{globalError}</AlertDescription>
-          </Alert>
-        ) : null}
-
-        {successMessage ? (
-          <Alert className="border-status-on/30 bg-status-on/10 text-status-on shadow-sm shadow-status-on/10">
-            <CheckIcon aria-hidden="true" />
-            <AlertTitle>{successMessage}</AlertTitle>
-            <AlertDescription className="text-status-on/85">
-              The Records page will use the refreshed server data.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-
-        {!successMessage ? (
           <form
             className="flex flex-col gap-4"
             onSubmit={(e) => submitOverride(afterValue, e)}
@@ -360,7 +341,6 @@ export function RecordsOverrideDialog({
               </Button>
             </DialogFooter>
           </form>
-        ) : null}
       </DialogContent>
     </Dialog>
   );

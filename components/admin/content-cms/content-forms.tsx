@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState, useId, type InputHTMLAttributes } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 import {
   CheckCircle2Icon,
   PlusIcon,
@@ -1102,28 +1103,7 @@ function CheckboxField({
 }
 
 function ActionFeedback({ state }: { state: ContentActionState }) {
-  if (!state.message) {
-    return null;
-  }
-
-  if (state.status === "success") {
-    return (
-      <p
-        aria-live="polite"
-        className="inline-flex items-center gap-2 rounded-2xl border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary"
-        role="status"
-      >
-        <CheckCircle2Icon aria-hidden="true" />
-        {state.message}
-      </p>
-    );
-  }
-
-  return (
-    <FieldError aria-live="polite" className="rounded-2xl bg-destructive/10 p-3">
-      {state.message}
-    </FieldError>
-  );
+  return null;
 }
 
 function getFieldError(
@@ -1134,13 +1114,22 @@ function getFieldError(
 }
 
 function useRefreshOnSuccess(state: ContentActionState) {
+  const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
+    if (!state.status || !state.message) return;
+
+    toast({
+      title: state.status === "success" ? "Berhasil" : "Gagal",
+      description: state.message,
+      variant: state.status === "success" ? "success" : "error",
+    });
+
     if (state.status === "success") {
       router.refresh();
     }
-  }, [router, state.status]);
+  }, [state.status, state.message, router, toast]);
 }
 
 function formatJsonForEdit(value: JsonValue): string {
