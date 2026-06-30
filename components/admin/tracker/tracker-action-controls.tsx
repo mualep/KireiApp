@@ -178,7 +178,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         toast({
           title: nextResult.ok ? "Berhasil" : "Gagal",
           description: nextResult.message,
-          variant: nextResult.ok ? "default" : "destructive",
+          variant: nextResult.ok ? "success" : "error",
         });
 
         if (
@@ -191,7 +191,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         toast({
           title: "Gagal",
           description: genericFailure.message,
-          variant: "destructive",
+          variant: "error",
         });
       } finally {
         setPendingAction(null);
@@ -238,7 +238,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         toast({
           title: nextResult.ok ? "Berhasil" : "Gagal",
           description: nextResult.message,
-          variant: nextResult.ok ? "default" : "destructive",
+          variant: nextResult.ok ? "success" : "error",
         });
 
         if (
@@ -251,7 +251,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         toast({
           title: "Gagal",
           description: genericFailure.message,
-          variant: "destructive",
+          variant: "error",
         });
       } finally {
         setPendingCorrectionAction(null);
@@ -280,7 +280,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         toast({
           title: nextResult.ok ? "Berhasil" : "Gagal",
           description: nextResult.message,
-          variant: nextResult.ok ? "default" : "destructive",
+          variant: nextResult.ok ? "success" : "error",
         });
 
         if (
@@ -293,7 +293,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         toast({
           title: "Gagal",
           description: genericFailure.message,
-          variant: "destructive",
+          variant: "error",
         });
       } finally {
         setPendingExpiredAbsenceCloseAction(null);
@@ -321,7 +321,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         toast({
           title: nextResult.ok ? "Berhasil" : "Gagal",
           description: nextResult.message,
-          variant: nextResult.ok ? "default" : "destructive",
+          variant: nextResult.ok ? "success" : "error",
         });
 
         if (
@@ -334,7 +334,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         toast({
           title: "Gagal",
           description: genericFailure.message,
-          variant: "destructive",
+          variant: "error",
         });
       } finally {
         setPendingAbsenceMaterializationAction(null);

@@ -181,6 +181,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   );
   const activeTrackerAttendancesByUserId = new Map<string, ActiveTrackerAttendanceRow>();
   const trackerAttendanceDatesByUserId = new Map<string, Set<string>>();
+  const hasWorkedDatesByUserId = new Map<string, Set<string>>();
   const recordsByUserId = new Map((records ?? []).map((record) => [record.user_id, record]));
 
   const spsCountMap = new Map<string, number>();
@@ -193,6 +194,12 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
       trackerAttendanceDatesByUserId.get(attendance.user_id) ?? new Set<string>();
     attendanceDates.add(attendance.attendance_date);
     trackerAttendanceDatesByUserId.set(attendance.user_id, attendanceDates);
+
+    if (!attendance.is_canceled && attendance.status !== "alpha") {
+      const workedDates = hasWorkedDatesByUserId.get(attendance.user_id) ?? new Set<string>();
+      workedDates.add(attendance.attendance_date);
+      hasWorkedDatesByUserId.set(attendance.user_id, workedDates);
+    }
 
     if (
       attendance.source === "tracker" &&
@@ -297,6 +304,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
           isFlexible: profile.is_flexible,
           now,
           shift,
+          hasStartedToday: hasWorkedDatesByUserId.get(profile.user_id)?.has(currentAttendanceDate) ?? false,
         }),
         employeeRole: profile.employee_role,
         gid: profile.user_id,

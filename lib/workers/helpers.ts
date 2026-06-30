@@ -137,6 +137,7 @@ export function computeWorkerDisplayStatus({
   lateGraceMinutes = DEFAULT_LATE_GRACE_MINUTES,
   now,
   shift,
+  hasStartedToday,
 }: {
   alphaDone: boolean;
   currentStatus: WorkerStoredStatus;
@@ -144,6 +145,7 @@ export function computeWorkerDisplayStatus({
   lateGraceMinutes?: number;
   now: Date;
   shift: WorkerShiftDefinition;
+  hasStartedToday?: boolean;
 }): WorkerDisplayStatus {
   if (alphaDone) {
     return "ALPHA";
@@ -153,6 +155,7 @@ export function computeWorkerDisplayStatus({
     currentStatus === "off" &&
     !isFlexible &&
     !shift.isFlexible &&
+    !hasStartedToday &&
     isInShiftAfterGrace(now, shift, lateGraceMinutes)
   ) {
     return "LATE";

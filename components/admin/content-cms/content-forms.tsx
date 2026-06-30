@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, type InputHTMLAttributes } from "react";
+import { useActionState, useEffect, useState, useId, type InputHTMLAttributes } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2Icon,
@@ -110,8 +110,319 @@ export function LandingContentForm({
   const isDisabled = isPending || !canEdit;
   const contentValueError = getFieldError(state, "content_value");
 
+  // State to hold and manage user edits as live JS values
+  const [currentValue, setCurrentValue] = useState<JsonValue>(row.content_value);
+
+  // Sync state if initial value changes (e.g. from outer refresh)
+  useEffect(() => {
+    setCurrentValue(row.content_value);
+  }, [row.content_value]);
+
   useRefreshOnSuccess(state);
 
+  // Helper function to handle stats updates
+  const updateStats = (field: string, val: string | number) => {
+    const statsObj = (currentValue && typeof currentValue === "object" && !Array.isArray(currentValue))
+      ? (currentValue as Record<string, any>)
+      : { label: "", value: 0, suffix: "" };
+    setCurrentValue({
+      ...statsObj,
+      [field]: val,
+    });
+  };
+
+  // Helper function to handle card updates
+  const updateCard = (index: number, field: "title" | "description", val: string) => {
+    const list = Array.isArray(currentValue) ? [...currentValue] : [];
+    const item = (list[index] && typeof list[index] === "object") ? { ...list[index] } : { title: "", description: "" };
+    list[index] = {
+      ...item,
+      [field]: val,
+    };
+    setCurrentValue(list);
+  };
+
+  // Helper function to handle link updates
+  const updateLink = (index: number, field: "label" | "href", val: string) => {
+    const list = Array.isArray(currentValue) ? [...currentValue] : [];
+    const item = (list[index] && typeof list[index] === "object") ? { ...list[index] } : { label: "", href: "" };
+    list[index] = {
+      ...item,
+      [field]: val,
+    };
+    setCurrentValue(list);
+  };
+
+  // 1. Strings (normal text/textarea editing without quotes)
+  if (typeof currentValue === "string") {
+    const isLongText = row.content_key.includes("headline") || row.content_key.includes("summary") || row.content_key.includes("subheadline");
+    return (
+      <form action={formAction} className="flex flex-col gap-4">
+        <input name="id" type="hidden" value={row.id} />
+        <input name="section" type="hidden" value={row.section} />
+        <input name="content_key" type="hidden" value={row.content_key} />
+        <input name="content_value" type="hidden" value={JSON.stringify(currentValue)} />
+        
+        <FieldGroup>
+          <Field data-disabled={isDisabled} data-invalid={Boolean(contentValueError)}>
+            <FieldLabel htmlFor={`${id}-string-value`}>Value</FieldLabel>
+            <InputGroup className="rounded-2xl bg-background/70">
+              {isLongText ? (
+                <InputGroupTextarea
+                  id={`${id}-string-value`}
+                  rows={4}
+                  value={currentValue}
+                  onChange={(e) => setCurrentValue(e.target.value)}
+                  disabled={isDisabled}
+                  aria-invalid={Boolean(contentValueError)}
+                  placeholder="Enter text..."
+                />
+              ) : (
+                <InputGroupInput
+                  id={`${id}-string-value`}
+                  type="text"
+                  value={currentValue}
+                  onChange={(e) => setCurrentValue(e.target.value)}
+                  disabled={isDisabled}
+                  aria-invalid={Boolean(contentValueError)}
+                  placeholder="Enter text..."
+                />
+              )}
+            </InputGroup>
+            {contentValueError ? <FieldError>{contentValueError}</FieldError> : null}
+          </Field>
+        </FieldGroup>
+        
+        <ActionFeedback state={state} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Badge
+            variant={canEdit ? "secondary" : "outline"}
+            className={canEdit ? "border-primary/20 bg-primary/10 text-primary" : ""}
+          >
+            {canEdit ? "Editable" : "Read Only"}
+          </Badge>
+          <Button
+            className="rounded-full transition-colors transition-transform hover:-translate-y-0.5"
+            disabled={isDisabled}
+            type="submit"
+          >
+            <SaveIcon data-icon="inline-start" aria-hidden="true" />
+            {isPending ? "Saving…" : "Save Row"}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  // 2. Stats Object
+  const isStats =
+    currentValue &&
+    typeof currentValue === "object" &&
+    !Array.isArray(currentValue) &&
+    "label" in currentValue &&
+    "value" in currentValue;
+
+  if (isStats) {
+    const statsObj = currentValue as { label: string; value: number; suffix?: string };
+    return (
+      <form action={formAction} className="flex flex-col gap-4">
+        <input name="id" type="hidden" value={row.id} />
+        <input name="section" type="hidden" value={row.section} />
+        <input name="content_key" type="hidden" value={row.content_key} />
+        <input name="content_value" type="hidden" value={JSON.stringify(currentValue)} />
+
+        <FieldGroup className="grid gap-4 sm:grid-cols-3">
+          <Field data-disabled={isDisabled}>
+            <FieldLabel htmlFor={`${id}-stats-label`}>Label</FieldLabel>
+            <InputGroup className="h-11 rounded-2xl bg-background/70">
+              <InputGroupInput
+                id={`${id}-stats-label`}
+                type="text"
+                value={statsObj.label}
+                onChange={(e) => updateStats("label", e.target.value)}
+                disabled={isDisabled}
+              />
+            </InputGroup>
+          </Field>
+          <Field data-disabled={isDisabled}>
+            <FieldLabel htmlFor={`${id}-stats-value`}>Value</FieldLabel>
+            <InputGroup className="h-11 rounded-2xl bg-background/70">
+              <InputGroupInput
+                id={`${id}-stats-value`}
+                type="number"
+                value={statsObj.value}
+                onChange={(e) => updateStats("value", Number(e.target.value))}
+                disabled={isDisabled}
+              />
+            </InputGroup>
+          </Field>
+          <Field data-disabled={isDisabled}>
+            <FieldLabel htmlFor={`${id}-stats-suffix`}>Suffix</FieldLabel>
+            <InputGroup className="h-11 rounded-2xl bg-background/70">
+              <InputGroupInput
+                id={`${id}-stats-suffix`}
+                type="text"
+                value={statsObj.suffix ?? ""}
+                onChange={(e) => updateStats("suffix", e.target.value)}
+                disabled={isDisabled}
+              />
+            </InputGroup>
+          </Field>
+        </FieldGroup>
+        
+        {contentValueError ? <FieldError>{contentValueError}</FieldError> : null}
+        <ActionFeedback state={state} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Badge variant="secondary" className="border-primary/20 bg-primary/10 text-primary">
+            Stats Row
+          </Badge>
+          <Button
+            className="rounded-full transition-colors transition-transform hover:-translate-y-0.5"
+            disabled={isDisabled}
+            type="submit"
+          >
+            <SaveIcon data-icon="inline-start" aria-hidden="true" />
+            {isPending ? "Saving…" : "Save Row"}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  // 3. Card/Step Array
+  const isCardArray =
+    Array.isArray(currentValue) &&
+    currentValue.every(
+      (item) => item && typeof item === "object" && "title" in item && "description" in item
+    );
+
+  if (isCardArray) {
+    const cardList = currentValue as { title: string; description: string }[];
+    return (
+      <form action={formAction} className="flex flex-col gap-4">
+        <input name="id" type="hidden" value={row.id} />
+        <input name="section" type="hidden" value={row.section} />
+        <input name="content_key" type="hidden" value={row.content_key} />
+        <input name="content_value" type="hidden" value={JSON.stringify(currentValue)} />
+
+        <div className="flex flex-col gap-6">
+          {cardList.map((card, idx) => (
+            <div key={idx} className="rounded-2xl border border-border/80 bg-background/30 p-4 flex flex-col gap-3">
+              <p className="text-xs font-bold text-primary uppercase">Item #{idx + 1}</p>
+              <Field data-disabled={isDisabled}>
+                <FieldLabel htmlFor={`${id}-card-title-${idx}`}>Title</FieldLabel>
+                <InputGroup className="h-11 rounded-2xl bg-background/70">
+                  <InputGroupInput
+                    id={`${id}-card-title-${idx}`}
+                    type="text"
+                    value={card.title}
+                    onChange={(e) => updateCard(idx, "title", e.target.value)}
+                    disabled={isDisabled}
+                  />
+                </InputGroup>
+              </Field>
+              <Field data-disabled={isDisabled}>
+                <FieldLabel htmlFor={`${id}-card-desc-${idx}`}>Description</FieldLabel>
+                <InputGroup className="min-h-20 rounded-2xl bg-background/70">
+                  <InputGroupTextarea
+                    id={`${id}-card-desc-${idx}`}
+                    rows={3}
+                    value={card.description}
+                    onChange={(e) => updateCard(idx, "description", e.target.value)}
+                    disabled={isDisabled}
+                  />
+                </InputGroup>
+              </Field>
+            </div>
+          ))}
+        </div>
+
+        {contentValueError ? <FieldError>{contentValueError}</FieldError> : null}
+        <ActionFeedback state={state} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Badge variant="secondary" className="border-primary/20 bg-primary/10 text-primary">
+            List Items
+          </Badge>
+          <Button
+            className="rounded-full transition-colors transition-transform hover:-translate-y-0.5"
+            disabled={isDisabled}
+            type="submit"
+          >
+            <SaveIcon data-icon="inline-start" aria-hidden="true" />
+            {isPending ? "Saving…" : "Save Row"}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  // 4. Social Links Array
+  const isSocialArray =
+    Array.isArray(currentValue) &&
+    currentValue.every(
+      (item) => item && typeof item === "object" && "label" in item && "href" in item
+    );
+
+  if (isSocialArray) {
+    const linkList = currentValue as { label: string; href: string }[];
+    return (
+      <form action={formAction} className="flex flex-col gap-4">
+        <input name="id" type="hidden" value={row.id} />
+        <input name="section" type="hidden" value={row.section} />
+        <input name="content_key" type="hidden" value={row.content_key} />
+        <input name="content_value" type="hidden" value={JSON.stringify(currentValue)} />
+
+        <div className="flex flex-col gap-4">
+          {linkList.map((link, idx) => (
+            <div key={idx} className="grid gap-4 sm:grid-cols-2 rounded-2xl border border-border/80 bg-background/30 p-4">
+              <Field data-disabled={isDisabled}>
+                <FieldLabel htmlFor={`${id}-link-label-${idx}`}>Platform</FieldLabel>
+                <InputGroup className="h-11 rounded-2xl bg-background/70">
+                  <InputGroupInput
+                    id={`${id}-link-label-${idx}`}
+                    type="text"
+                    value={link.label}
+                    onChange={(e) => updateLink(idx, "label", e.target.value)}
+                    disabled={isDisabled}
+                  />
+                </InputGroup>
+              </Field>
+              <Field data-disabled={isDisabled}>
+                <FieldLabel htmlFor={`${id}-link-href-${idx}`}>URL (href)</FieldLabel>
+                <InputGroup className="h-11 rounded-2xl bg-background/70">
+                  <InputGroupInput
+                    id={`${id}-link-href-${idx}`}
+                    type="url"
+                    value={link.href}
+                    onChange={(e) => updateLink(idx, "href", e.target.value)}
+                    disabled={isDisabled}
+                  />
+                </InputGroup>
+              </Field>
+            </div>
+          ))}
+        </div>
+
+        {contentValueError ? <FieldError>{contentValueError}</FieldError> : null}
+        <ActionFeedback state={state} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Badge variant="secondary" className="border-primary/20 bg-primary/10 text-primary">
+            Social Links
+          </Badge>
+          <Button
+            className="rounded-full transition-colors transition-transform hover:-translate-y-0.5"
+            disabled={isDisabled}
+            type="submit"
+          >
+            <SaveIcon data-icon="inline-start" aria-hidden="true" />
+            {isPending ? "Saving…" : "Save Row"}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  // Fallback (old JSON editor)
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input name="id" type="hidden" value={row.id} />

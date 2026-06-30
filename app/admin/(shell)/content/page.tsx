@@ -210,88 +210,25 @@ export default async function AdminContentPage() {
         />
       </section>
 
+      {/* 1. HERO SECTION (Hero & Stats) */}
       <section
-        aria-labelledby="landing-content-title"
+        aria-labelledby="hero-title"
         className="rounded-[2rem] border border-border bg-card/75 p-5 shadow-xl backdrop-blur-xl sm:p-6"
       >
         <SectionHeading
-          eyebrow="Landing Data"
-          title="Landing Content"
-          description="Grouped by CMS section and key. Footer rows are owner-only."
+          eyebrow="Landing Content"
+          title="Hero & Stats"
+          description="Edit hero copy, headline, CTAs, and live counter statistics."
           icon={ClipboardListIcon}
         />
         <Separator className="my-5" />
-        {groupedLandingRows.length > 0 ? (
-          <div className="grid gap-4 xl:grid-cols-2">
-            {groupedLandingRows.map((group) => (
-              <Card
-                key={group.section}
-                className="border-border/80 bg-background/45"
-              >
-                <CardHeader>
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <CardTitle className="truncate capitalize">
-                      {group.section.replaceAll("_", " ")}
-                    </CardTitle>
-                    <Badge variant="outline">
-                      {numberFormatter.format(group.rows.length)} rows
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    Last updated {formatDate(group.lastUpdated)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                  {group.rows.map((row) => {
-                    const isFooterRow = row.section === "footer";
-                    const canEditRow = !isFooterRow || canEditFooterRows;
-
-                    return (
-                      <div
-                        key={row.id}
-                        className="flex flex-col gap-4 rounded-2xl border border-border bg-card/70 p-4"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <p
-                              className="text-sm font-semibold text-foreground"
-                              translate="no"
-                            >
-                              {row.content_key}
-                            </p>
-                            {isFooterRow ? (
-                              <Badge
-                                variant="outline"
-                                className={
-                                  canEditFooterRows
-                                    ? "border-primary/20 bg-primary/10 text-primary"
-                                    : "text-muted-foreground"
-                                }
-                              >
-                                {canEditFooterRows
-                                  ? "Owner Editable"
-                                  : "Owner Only"}
-                              </Badge>
-                            ) : null}
-                          </div>
-                          <p className="text-xs tabular-nums text-muted-foreground">
-                            {formatDate(row.updated_at)}
-                          </p>
-                        </div>
-                        <JsonPreview value={row.content_value} />
-                        <LandingContentForm canEdit={canEditRow} row={row} />
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <EmptyState message="No landing content rows are available yet." />
-        )}
+        <div className="grid gap-6 xl:grid-cols-2">
+          {renderSectionCard(groupedLandingRows.find(g => g.section === "hero"), canEditFooterRows)}
+          {renderSectionCard(groupedLandingRows.find(g => g.section === "stats"), canEditFooterRows)}
+        </div>
       </section>
 
+      {/* 2. SERVICES SECTION */}
       <section
         aria-labelledby="services-title"
         className="rounded-[2rem] border border-border bg-card/75 p-5 shadow-xl backdrop-blur-xl sm:p-6"
@@ -345,6 +282,99 @@ export default async function AdminContentPage() {
         )}
       </section>
 
+      {/* 3. WHY KIREIKU SECTION */}
+      <section
+        aria-labelledby="why-title"
+        className="rounded-[2rem] border border-border bg-card/75 p-5 shadow-xl backdrop-blur-xl sm:p-6"
+      >
+        <SectionHeading
+          eyebrow="Value Proposition"
+          title="Why Kireiku"
+          description="Copy and cards showing our process clarity, curated boosters, and safety focus."
+          icon={ClipboardListIcon}
+        />
+        <Separator className="my-5" />
+        <div className="flex flex-col gap-6">
+          {renderSectionCard(groupedLandingRows.find(g => g.section === "why"), canEditFooterRows)}
+        </div>
+      </section>
+
+      {/* 4. TESTIMONIALS SECTION */}
+      <section
+        aria-labelledby="testimonials-title"
+        className="rounded-[2rem] border border-border bg-card/75 p-5 shadow-xl backdrop-blur-xl sm:p-6"
+      >
+        <SectionHeading
+          eyebrow="Social Proof"
+          title="Testimonials"
+          description="Visible and hidden testimonials are shown for staff review."
+          icon={MessageSquareQuoteIcon}
+        />
+        <Separator className="my-5" />
+        <CreateTestimonialForm />
+        <Separator className="my-5" />
+        {data.testimonials.length > 0 ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {data.testimonials.map((testimonial) => (
+              <Card
+                key={testimonial.id}
+                className="border-border/80 bg-background/45"
+              >
+                <CardHeader>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge
+                      active={testimonial.is_visible}
+                      activeLabel="Visible"
+                      inactiveLabel="Hidden"
+                    />
+                    <Badge variant="outline">{testimonial.game}</Badge>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                      <StarIcon
+                        data-icon="inline-start"
+                        aria-hidden="true"
+                        className="fill-current"
+                      />
+                      {numberFormatter.format(testimonial.rating)}/5
+                    </span>
+                  </div>
+                  <CardTitle>{testimonial.buyer_name}</CardTitle>
+                  <CardDescription>
+                    Sort {numberFormatter.format(testimonial.sort_order)} ·
+                    Updated {formatDate(testimonial.updated_at)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <blockquote className="break-words text-muted-foreground">
+                    “{testimonial.comment}”
+                  </blockquote>
+                  <TestimonialForm testimonial={testimonial} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <EmptyState message="No testimonial rows are available yet." />
+        )}
+      </section>
+
+      {/* 5. HOW IT WORKS SECTION */}
+      <section
+        aria-labelledby="how-title"
+        className="rounded-[2rem] border border-border bg-card/75 p-5 shadow-xl backdrop-blur-xl sm:p-6"
+      >
+        <SectionHeading
+          eyebrow="Workflow"
+          title="How It Works"
+          description="Step-by-step description of the order process."
+          icon={ClipboardListIcon}
+        />
+        <Separator className="my-5" />
+        <div className="flex flex-col gap-6">
+          {renderSectionCard(groupedLandingRows.find(g => g.section === "how_it_works"), canEditFooterRows)}
+        </div>
+      </section>
+
+      {/* 6. FAQ SECTION */}
       <section
         aria-labelledby="faq-items-title"
         className="rounded-[2rem] border border-border bg-card/75 p-5 shadow-xl backdrop-blur-xl sm:p-6"
@@ -401,61 +431,21 @@ export default async function AdminContentPage() {
         )}
       </section>
 
+      {/* 7. FOOTER SECTION */}
       <section
-        aria-labelledby="testimonials-title"
+        aria-labelledby="footer-title"
         className="rounded-[2rem] border border-border bg-card/75 p-5 shadow-xl backdrop-blur-xl sm:p-6"
       >
         <SectionHeading
-          eyebrow="Social Proof"
-          title="Testimonials"
-          description="Visible and hidden testimonials are shown for staff review."
-          icon={MessageSquareQuoteIcon}
+          eyebrow="Navigation"
+          title="Footer Content"
+          description="Copyright notice, G2G URLs, brand summary, and social links."
+          icon={ClipboardListIcon}
         />
         <Separator className="my-5" />
-        <CreateTestimonialForm />
-        <Separator className="my-5" />
-        {data.testimonials.length > 0 ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {data.testimonials.map((testimonial) => (
-              <Card
-                key={testimonial.id}
-                className="border-border/80 bg-background/45"
-              >
-                <CardHeader>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge
-                      active={testimonial.is_visible}
-                      activeLabel="Visible"
-                      inactiveLabel="Hidden"
-                    />
-                    <Badge variant="outline">{testimonial.game}</Badge>
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                      <StarIcon
-                        data-icon="inline-start"
-                        aria-hidden="true"
-                        className="fill-current"
-                      />
-                      {numberFormatter.format(testimonial.rating)}/5
-                    </span>
-                  </div>
-                  <CardTitle>{testimonial.buyer_name}</CardTitle>
-                  <CardDescription>
-                    Sort {numberFormatter.format(testimonial.sort_order)} ·
-                    Updated {formatDate(testimonial.updated_at)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <blockquote className="break-words text-muted-foreground">
-                    “{testimonial.comment}”
-                  </blockquote>
-                  <TestimonialForm testimonial={testimonial} />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <EmptyState message="No testimonial rows are available yet." />
-        )}
+        <div className="flex flex-col gap-6">
+          {renderSectionCard(groupedLandingRows.find(g => g.section === "footer"), canEditFooterRows)}
+        </div>
       </section>
     </div>
   );
@@ -520,6 +510,75 @@ async function getContentCmsData(): Promise<ContentCmsData> {
       issues,
     ),
   };
+}
+
+function renderSectionCard(
+  group: { lastUpdated: string | null; rows: LandingContentRow[]; section: string } | undefined,
+  canEditFooterRows: boolean,
+) {
+  if (!group) return null;
+  const isFooter = group.section === "footer";
+  const title = group.section === "why" ? "Why Kireiku" : group.section.replaceAll("_", " ");
+  
+  return (
+    <Card key={group.section} className="border-border/80 bg-background/45 w-full">
+      <CardHeader>
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <CardTitle className="truncate capitalize text-2xl font-bold">
+            {title}
+          </CardTitle>
+          <Badge variant="outline">
+            {numberFormatter.format(group.rows.length)} rows
+          </Badge>
+        </div>
+        <CardDescription>
+          Last updated {formatDate(group.lastUpdated)}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-6">
+        {group.rows.map((row) => {
+          const isFooterRow = row.section === "footer";
+          const canEditRow = !isFooterRow || canEditFooterRows;
+
+          return (
+            <div
+              key={row.id}
+              className="flex flex-col gap-4 rounded-2xl border border-border bg-card/70 p-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <p
+                    className="text-sm font-semibold text-foreground capitalize"
+                    translate="no"
+                  >
+                    {row.content_key.replaceAll("_", " ")}
+                  </p>
+                  {isFooterRow ? (
+                    <Badge
+                      variant="outline"
+                      className={
+                        canEditFooterRows
+                          ? "border-primary/20 bg-primary/10 text-primary"
+                          : "text-muted-foreground"
+                      }
+                    >
+                      {canEditFooterRows
+                        ? "Owner Editable"
+                        : "Owner Only"}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="text-xs tabular-nums text-muted-foreground">
+                  {formatDate(row.updated_at)}
+                </p>
+              </div>
+              <LandingContentForm canEdit={canEditRow} row={row} />
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
 }
 
 function getRows<T>(
