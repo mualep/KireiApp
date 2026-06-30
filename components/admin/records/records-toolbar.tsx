@@ -16,6 +16,7 @@ import type {
   RecordsSortOption,
 } from "@/lib/records/filters";
 import type { RecordsMonthRange } from "@/lib/records/helpers";
+import { ResetRecordsDialog } from "./reset-records-dialog";
 
 type RecordsToolbarProps = {
   filters: RecordsFilters;
@@ -24,6 +25,7 @@ type RecordsToolbarProps = {
   roleTabs: RecordsRoleTab[];
   scopeLabel: string | null;
   visibleCount: string;
+  isOwner?: boolean;
 };
 
 export function RecordsToolbar({
@@ -33,11 +35,13 @@ export function RecordsToolbar({
   roleTabs,
   scopeLabel,
   visibleCount,
+  isOwner,
 }: RecordsToolbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [queryDraft, setQueryDraft] = useState(filters.q);
   const [sortDraft, setSortDraft] = useState<RecordsSortOption>(filters.sort);
+  const [isResetOpen, setIsResetOpen] = useState(false);
 
   useEffect(() => {
     if (normalizeQuery(queryDraft) === filters.q) {
@@ -175,6 +179,15 @@ export function RecordsToolbar({
           </div>
 
           <div className="flex items-center gap-2 lg:ml-auto">
+            {isOwner ? (
+              <Button
+                variant="destructive"
+                className="h-9 px-3 gap-1.5 font-semibold text-xs border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.1)]"
+                onClick={() => setIsResetOpen(true)}
+              >
+                Reset Records
+              </Button>
+            ) : null}
             {scopeLabel ? (
               <Badge
                 variant="outline"
@@ -191,6 +204,15 @@ export function RecordsToolbar({
             </div>
           </div>
         </div>
+
+        {isOwner ? (
+          <ResetRecordsDialog
+            isOpen={isResetOpen}
+            onOpenChange={setIsResetOpen}
+            monthParam={month.monthParam}
+            monthLabel={month.monthLabel}
+          />
+        ) : null}
 
         <nav aria-label="Records role groups" className="records-toolbar-tabs w-full">
           <div className="grid w-full grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-8">

@@ -23,6 +23,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { cn } from "@/lib/utils";
 
 type LoginFormProps = {
   initialState?: LoginFormState;
@@ -46,7 +47,7 @@ export function LoginForm({ initialState = {} }: LoginFormProps) {
           >
             Email Address
           </FieldLabel>
-          <InputGroup className="h-12 rounded-full bg-background/70">
+          <InputGroup className={cn("h-12 rounded-full bg-background/70 transition-all", hasError && "border-red-500 ring-2 ring-red-500/30")}>
             <InputGroupAddon>
               <MailIcon aria-hidden="true" />
             </InputGroupAddon>
@@ -73,7 +74,7 @@ export function LoginForm({ initialState = {} }: LoginFormProps) {
           >
             Password
           </FieldLabel>
-          <InputGroup className="h-12 rounded-full bg-background/70">
+          <InputGroup className={cn("h-12 rounded-full bg-background/70 transition-all", hasError && "border-red-500 ring-2 ring-red-500/30")}>
             <InputGroupAddon>
               <LockKeyholeIcon aria-hidden="true" />
             </InputGroupAddon>

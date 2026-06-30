@@ -70,6 +70,7 @@ export default async function AdminRecordsPage({
         roleTabs={roleTabs}
         scopeLabel={scopeLabel}
         visibleCount={numberFormatter.format(filteredRows.length)}
+        isOwner={staff.profile.tier === "owner"}
       />
 
       <RecordsSummaryCards rows={filteredRows} />
