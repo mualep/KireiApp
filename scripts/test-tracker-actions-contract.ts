@@ -41,12 +41,15 @@ const expectedTrackerActions = [
   "CUTI",
   "IZIN",
   "SAKIT",
+  "LEMBUR",
+  "BATAL_LEMBUR",
 ] as const;
 
 assert.deepEqual(trackerActions, expectedTrackerActions);
 assert.equal(isTrackerAction("START"), true);
 assert.equal(isTrackerAction("ALPHA"), false);
-assert.equal(isTrackerAction("LEMBUR"), false);
+assert.equal(isTrackerAction("LEMBUR"), true);
+assert.equal(isTrackerAction("BATAL_LEMBUR"), true);
 assert.equal(isTrackerAction("PAUSE"), false);
 assert.equal(isTrackerAction("RESUME"), false);
 assert.equal(isTrackerAction("STOP"), false);
@@ -60,6 +63,8 @@ assert.deepEqual(trackerActionTargetStatuses, {
   SAKIT: "sakit",
   SELESAI: "off",
   START: "on",
+  LEMBUR: "lembur",
+  BATAL_LEMBUR: "off",
 });
 
 assert.deepEqual(trackerActionAttendanceStatuses, {
@@ -70,6 +75,8 @@ assert.deepEqual(trackerActionAttendanceStatuses, {
   SAKIT: "sakit",
   SELESAI: null,
   START: "hadir",
+  LEMBUR: null,
+  BATAL_LEMBUR: null,
 });
 
 assert.equal(workerStoredStatuses.includes("late" as never), false);

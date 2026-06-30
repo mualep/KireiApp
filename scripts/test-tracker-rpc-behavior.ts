@@ -344,35 +344,34 @@ from fixture_users;
 
 insert into public.worker_profiles (
   user_id,
-  gid,
   employee_role,
   shift,
   is_flexible,
   cuti_stock
 )
 values
-  ('${ids.adminStart}'::uuid, 'KRU-101', 'Professional Player', 'flexible', true, 2),
-  ('${ids.start}'::uuid, 'KRU-102', 'Professional Player', 'flexible', true, 2),
-  ('${ids.stale}'::uuid, 'KRU-103', 'Professional Player', 'flexible', true, 2),
-  ('${ids.cycle}'::uuid, 'KRU-105', 'Professional Player', 'flexible', true, 2),
-  ('${ids.cuti}'::uuid, 'KRU-106', 'Professional Player', 'flexible', true, 2),
-  ('${ids.cutiZero}'::uuid, 'KRU-107', 'Professional Player', 'flexible', true, 0),
-  ('${ids.izin}'::uuid, 'KRU-108', 'Professional Player', 'flexible', true, 2),
-  ('${ids.sakit}'::uuid, 'KRU-109', 'Professional Player', 'flexible', true, 2),
-  ('${ids.conflict}'::uuid, 'KRU-110', 'Professional Player', 'flexible', true, 2),
-  ('${ids.invalidTransition}'::uuid, 'KRU-111', 'Professional Player', 'flexible', true, 2),
-  ('${ids.alpha}'::uuid, 'KRU-112', 'Professional Player', 'flexible', true, 2),
-  ('${ids.auditFail}'::uuid, 'KRU-113', 'Professional Player', 'flexible', true, 2),
-  ('${ids.startExistingHadir}'::uuid, 'KRU-114', 'Professional Player', 'flexible', true, 2),
-  ('${ids.startExistingCuti}'::uuid, 'KRU-116', 'Professional Player', 'flexible', true, 2),
-  ('${ids.startExistingPending}'::uuid, 'KRU-117', 'Professional Player', 'flexible', true, 2),
-  ('${ids.startExistingSakit}'::uuid, 'KRU-118', 'Professional Player', 'flexible', true, 2),
-  ('${ids.breakUnder}'::uuid, 'KRU-119', 'Professional Player', 'flexible', true, 2),
-  ('${ids.breakBoundary}'::uuid, 'KRU-120', 'Professional Player', 'flexible', true, 2),
-  ('${ids.breakOver}'::uuid, 'KRU-121', 'Professional Player', 'flexible', true, 2),
-  ('${ids.breakCumulative}'::uuid, 'KRU-122', 'Professional Player', 'flexible', true, 2),
-  ('${ids.breakAuditFail}'::uuid, 'KRU-123', 'Professional Player', 'flexible', true, 2),
-  ('${ids.absenceReuse}'::uuid, 'KRU-124', 'Professional Player', 'flexible', true, 2);
+  ('${ids.adminStart}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.start}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.stale}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.cycle}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.cuti}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.cutiZero}'::uuid, 'Professional Player', 'flexible', true, 0),
+  ('${ids.izin}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.sakit}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.conflict}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.invalidTransition}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.alpha}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.auditFail}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.startExistingHadir}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.startExistingCuti}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.startExistingPending}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.startExistingSakit}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakUnder}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakBoundary}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakOver}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakCumulative}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.breakAuditFail}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.absenceReuse}'::uuid, 'Professional Player', 'flexible', true, 2);
 
 with wib as (
   select (
@@ -387,7 +386,6 @@ late_shift as (
 )
 insert into public.worker_profiles (
   user_id,
-  gid,
   employee_role,
   shift,
   shift_start_hour,
@@ -399,7 +397,6 @@ insert into public.worker_profiles (
 )
 select
   '${ids.late}'::uuid,
-  'KRU-104',
   'Professional Player',
   'A',
   starts_at_minute / 60,
@@ -423,7 +420,6 @@ late_shift as (
 )
 insert into public.worker_profiles (
   user_id,
-  gid,
   employee_role,
   shift,
   shift_start_hour,
@@ -435,7 +431,6 @@ insert into public.worker_profiles (
 )
 select
   '${ids.lateExistingHadir}'::uuid,
-  'KRU-115',
   'Professional Player',
   'A',
   starts_at_minute / 60,
@@ -729,18 +724,17 @@ from close_users;
 
 insert into public.worker_profiles (
   user_id,
-  gid,
   employee_role,
   shift,
   is_flexible,
   cuti_stock
 )
 values
-  ('${ids.expiredCutiClose}'::uuid, 'KRU-125', 'Professional Player', 'flexible', true, 3),
-  ('${ids.expiredSakitClose}'::uuid, 'KRU-126', 'Professional Player', 'flexible', true, 3),
-  ('${ids.expiredIzinClose}'::uuid, 'KRU-127', 'Professional Player', 'flexible', true, 3),
-  ('${ids.notExpiredClose}'::uuid, 'KRU-128', 'Professional Player', 'flexible', true, 3),
-  ('${ids.expiredMarkerClose}'::uuid, 'KRU-129', 'Professional Player', 'flexible', true, 3);
+  ('${ids.expiredCutiClose}'::uuid, 'Professional Player', 'flexible', true, 3),
+  ('${ids.expiredSakitClose}'::uuid, 'Professional Player', 'flexible', true, 3),
+  ('${ids.expiredIzinClose}'::uuid, 'Professional Player', 'flexible', true, 3),
+  ('${ids.notExpiredClose}'::uuid, 'Professional Player', 'flexible', true, 3),
+  ('${ids.expiredMarkerClose}'::uuid, 'Professional Player', 'flexible', true, 3);
 
 insert into public.worker_status (user_id, version, current_status, cuti_set_date, sakit_started_at, pending_started_at)
 values
@@ -2051,19 +2045,18 @@ from materialize_users;
 
 insert into public.worker_profiles (
   user_id,
-  gid,
   employee_role,
   shift,
   is_flexible,
   cuti_stock
 )
 values
-  ('${ids.materializeSakit}'::uuid, 'KRU-130', 'Professional Player', 'flexible', true, 2),
-  ('${ids.materializePending}'::uuid, 'KRU-131', 'Professional Player', 'flexible', true, 2),
-  ('${ids.materializeCuti}'::uuid, 'KRU-132', 'Professional Player', 'flexible', true, 4),
-  ('${ids.materializeCutiLow}'::uuid, 'KRU-133', 'Professional Player', 'flexible', true, 2),
-  ('${ids.materializeConflict}'::uuid, 'KRU-134', 'Professional Player', 'flexible', true, 2),
-  ('${ids.materializeMonthBoundary}'::uuid, 'KRU-135', 'Professional Player', 'flexible', true, 2);
+  ('${ids.materializeSakit}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.materializePending}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.materializeCuti}'::uuid, 'Professional Player', 'flexible', true, 4),
+  ('${ids.materializeCutiLow}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.materializeConflict}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.materializeMonthBoundary}'::uuid, 'Professional Player', 'flexible', true, 2);
 
 insert into public.worker_status (user_id, version, current_status, cuti_set_date, sakit_started_at, pending_started_at)
 values

@@ -119,6 +119,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
     { data: statuses, error: statusesError },
     { data: activeTrackerAttendances, error: attendancesError },
     { data: records, error: recordsError },
+    { data: sps, error: spsError },
   ] =
     await Promise.all([
       supabase
@@ -147,6 +148,11 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         .in("user_id", userIds)
         .eq("period_month", recordsMonth.monthStart)
         .returns<WorkerRecordRow[]>(),
+      supabase
+        .from("worker_sp_logs")
+        .select("user_id,sp_level")
+        .gt("expires_at", new Date().toISOString())
+        .is("revoked_at", null),
     ]);
 
   if (usersError) {
@@ -165,6 +171,10 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
     throw new Error("Tracker worker record badges could not load.");
   }
 
+  if (spsError) {
+    throw new Error("Tracker worker SP logs could not load.");
+  }
+
   const usersById = new Map((users ?? []).map((user) => [user.id, user]));
   const statusesByUserId = new Map(
     (statuses ?? []).map((status) => [status.user_id, status]),
@@ -172,6 +182,11 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   const activeTrackerAttendancesByUserId = new Map<string, ActiveTrackerAttendanceRow>();
   const trackerAttendanceDatesByUserId = new Map<string, Set<string>>();
   const recordsByUserId = new Map((records ?? []).map((record) => [record.user_id, record]));
+
+  const spsCountMap = new Map<string, number>();
+  for (const sp of sps ?? []) {
+    spsCountMap.set(sp.user_id, (spsCountMap.get(sp.user_id) ?? 0) + 1);
+  }
 
   for (const attendance of activeTrackerAttendances ?? []) {
     const attendanceDates =
@@ -269,6 +284,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
 
     return [
       {
+        activeSpCount: spsCountMap.get(profile.user_id) ?? 0,
         activeTrackerAttendanceId: activeTrackerAttendance?.id ?? null,
         breakAccumulatedSecs: status.break_accumulated_secs,
         breakLateSeconds: record?.break_late_seconds ?? 0,

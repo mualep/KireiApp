@@ -864,6 +864,7 @@ function buildCard({
   userId: string;
 }): TrackerCardDTO {
   return {
+    activeSpCount: 0,
     activeTrackerAttendanceId: null,
     breakAccumulatedSecs: 0,
     breakLateSeconds: 0,

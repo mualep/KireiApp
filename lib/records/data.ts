@@ -22,6 +22,7 @@ export type RecordsDataIssue = {
 };
 
 export type RecordsRowDTO = {
+  activeSpCount: number;
   alphaCount: EffectiveRecordMetric;
   breakLateSeconds: EffectiveRecordMetric;
   compactRoleShiftLabel: string;
@@ -138,6 +139,7 @@ export async function getRecordsData({
   const [
     { data: users, error: usersError },
     { data: records, error: recordsError },
+    { data: sps, error: spsError },
   ] = await Promise.all([
     supabase
       .from("users")
@@ -173,6 +175,11 @@ export async function getRecordsData({
       .eq("period_month", month.monthStart)
       .order("user_id", { ascending: true })
       .returns<WorkerRecordRow[]>(),
+    supabase
+      .from("worker_sp_logs")
+      .select("user_id,sp_level")
+      .gt("expires_at", new Date().toISOString())
+      .is("revoked_at", null),
   ]);
 
   if (usersError) {
@@ -180,13 +187,23 @@ export async function getRecordsData({
   }
 
   if (recordsError) {
-    throw new Error("Records rows could not load.");
+    throw new Error("Records worker record badges could not load.");
+  }
+
+  if (spsError) {
+    throw new Error("Records SP logs could not load.");
   }
 
   const usersById = new Map((users ?? []).map((user) => [user.id, user]));
   const recordsByUserId = new Map(
     (records ?? []).map((record) => [record.user_id, record]),
   );
+
+  const spsCountMap = new Map<string, number>();
+  for (const sp of sps ?? []) {
+    spsCountMap.set(sp.user_id, (spsCountMap.get(sp.user_id) ?? 0) + 1);
+  }
+
   const issues: RecordsDataIssue[] = [];
 
   const rows = profileRows.flatMap((profile) => {
@@ -232,6 +249,7 @@ export async function getRecordsData({
 
     return [
       {
+        activeSpCount: spsCountMap.get(profile.user_id) ?? 0,
         alphaCount: getEffectiveRecordMetric(
           workerRecord.alpha_count,
           workerRecord.alpha_override_count,

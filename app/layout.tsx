@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import "./globals.css";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { OfflineBanner } from "@/components/brand/offline-banner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,7 +36,10 @@ export default function RootLayout({
         } as CSSProperties
       }
     >
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <OfflineBanner />
+        {children}
+      </body>
     </html>
   );
 }

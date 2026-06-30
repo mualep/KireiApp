@@ -11,11 +11,18 @@ function requireEnv(name: string, value: string | undefined): string {
 }
 
 export function createAdminClient() {
+  let supabaseUrl = requireEnv(
+    "NEXT_PUBLIC_SUPABASE_URL",
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+  );
+  if (supabaseUrl.endsWith("/rest/v1/")) {
+    supabaseUrl = supabaseUrl.slice(0, -"/rest/v1/".length);
+  } else if (supabaseUrl.endsWith("/rest/v1")) {
+    supabaseUrl = supabaseUrl.slice(0, -"/rest/v1".length);
+  }
+
   return createSupabaseClient(
-    requireEnv(
-      "NEXT_PUBLIC_SUPABASE_URL",
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-    ),
+    supabaseUrl,
     requireEnv("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY),
     {
       auth: {

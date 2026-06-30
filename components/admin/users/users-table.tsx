@@ -14,9 +14,11 @@ import {
   XIcon,
   UserPlusIcon,
   UsersIcon,
+  OctagonX,
 } from "lucide-react";
 import { workerRoles, workerShifts } from "@/lib/workers/constants";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // Rhombus SP icons — squares rotated 45deg as per spec
 function SpRhombus({ color }: { color: string }) {
@@ -33,21 +35,21 @@ function SpStatusCell({ count }: { count: number }) {
   if (count === 1)
     return (
       <span className="inline-flex items-center gap-0.5" title="SP 1">
-        <SpRhombus color="bg-status-break" />
+        <OctagonX className="size-3.5 text-status-break" aria-hidden="true" />
       </span>
     );
   if (count === 2)
     return (
       <span className="inline-flex items-center gap-0.5" title="SP 2">
-        <SpRhombus color="bg-status-sakit" />
-        <SpRhombus color="bg-status-sakit" />
+        <OctagonX className="size-3.5 text-status-sakit" aria-hidden="true" />
+        <OctagonX className="size-3.5 text-status-sakit" aria-hidden="true" />
       </span>
     );
   return (
     <span className="inline-flex items-center gap-0.5" title="SP 3+">
-      <SpRhombus color="bg-status-alpha" />
-      <SpRhombus color="bg-status-alpha" />
-      <SpRhombus color="bg-status-alpha" />
+      <OctagonX className="size-3.5 text-status-alpha" aria-hidden="true" />
+      <OctagonX className="size-3.5 text-status-alpha" aria-hidden="true" />
+      <OctagonX className="size-3.5 text-status-alpha" aria-hidden="true" />
     </span>
   );
 }
@@ -307,7 +309,20 @@ export function UsersTable({ initialData, currentTier }: UsersTableProps) {
                 >
                   {/* Worker: Name + Email, left-aligned */}
                   <td className="px-4 py-3">
-                    <div className="font-semibold">{row.name}</div>
+                    <div
+                      className={cn(
+                        "font-semibold flex items-center gap-1.5",
+                        row.activeSpCount === 1 && "text-status-break",
+                        row.activeSpCount === 2 && "text-status-sakit",
+                        row.activeSpCount >= 3 && "text-status-alpha",
+                        row.activeSpCount === 0 && "text-foreground",
+                      )}
+                    >
+                      <span>{row.name}</span>
+                      {row.activeSpCount > 0 && (
+                        <OctagonX className="size-3.5 shrink-0" aria-hidden="true" />
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">{row.email}</div>
                   </td>
 

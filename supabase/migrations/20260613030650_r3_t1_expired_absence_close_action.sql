@@ -22,7 +22,7 @@ declare
   v_expected_source_action text;
   v_from_status text;
   v_from_version bigint;
-  v_gid text;
+  v_gid text := null;
   v_is_flexible boolean;
   v_pending_started_at timestamptz;
   v_sakit_started_at timestamptz;
@@ -131,14 +131,12 @@ begin
   end if;
 
   select
-    wp.gid,
     wp.shift_start_hour,
     wp.shift_start_min,
     wp.shift_end_hour,
     wp.shift_end_min,
     wp.is_flexible
     into
-      v_gid,
       v_shift_start_hour,
       v_shift_start_min,
       v_shift_end_hour,

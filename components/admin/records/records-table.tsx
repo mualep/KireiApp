@@ -12,6 +12,7 @@ import {
   type EffectiveRecordMetric,
 } from "@/lib/records/helpers";
 import { cn } from "@/lib/utils";
+import { OctagonX } from "lucide-react";
 
 type RecordsTableProps = {
   canCorrectRecords?: boolean;
@@ -114,10 +115,19 @@ export function RecordsTable({
                   <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 backdrop-blur">
                     <div className="min-w-0">
                       <div
-                        className="tracker-worker-name min-w-0 truncate font-bold leading-tight text-foreground"
+                        className={cn(
+                          "tracker-worker-name min-w-0 truncate font-bold leading-tight flex items-center gap-1.5",
+                          row.activeSpCount === 1 && "text-status-break",
+                          row.activeSpCount === 2 && "text-status-sakit",
+                          row.activeSpCount >= 3 && "text-status-alpha",
+                          row.activeSpCount === 0 && "text-foreground",
+                        )}
                         translate="no"
                       >
-                        {row.name}
+                        <span>{row.name}</span>
+                        {row.activeSpCount > 0 && (
+                          <OctagonX className="size-3.5 shrink-0" aria-hidden="true" />
+                        )}
                       </div>
                       <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
                         <Badge

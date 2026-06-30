@@ -618,6 +618,10 @@
         --btn-action-color: var(--status-pending);
     }
 
+    .tracker-action-btn[data-tone="lembur"] {
+        --btn-action-color: var(--status-lembur);
+    }
+
     .tracker-action-btn[data-tone="muted"] {
         --btn-action-color: var(--muted-foreground);
         opacity: 0.55;

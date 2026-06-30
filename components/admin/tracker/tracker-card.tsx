@@ -1,3 +1,4 @@
+import { OctagonX } from "lucide-react";
 import { TrackerActionControls } from "@/components/admin/tracker/tracker-action-controls";
 import { TrackerStatusBadge } from "@/components/admin/tracker/tracker-status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -69,10 +70,19 @@ export function TrackerCard({
         >
           <div className="min-w-0">
             <CardTitle
-              className="tracker-worker-name min-w-0 truncate font-bold leading-tight text-foreground"
+              className={cn(
+                "tracker-worker-name min-w-0 truncate font-bold leading-tight flex items-center gap-1.5",
+                card.activeSpCount === 1 && "text-status-break",
+                card.activeSpCount === 2 && "text-status-sakit",
+                card.activeSpCount >= 3 && "text-status-alpha",
+                card.activeSpCount === 0 && "text-foreground",
+              )}
               translate="no"
             >
-              {card.name}
+              <span>{card.name}</span>
+              {card.activeSpCount > 0 && (
+                <OctagonX className="size-3.5 shrink-0" aria-hidden="true" />
+              )}
             </CardTitle>
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge
@@ -136,11 +146,7 @@ export function TrackerCard({
               canApplyTrackerActions={canApplyTrackerActions}
             />
           </div>
-          <div className="flex justify-end">
-            <span className="select-none text-[0.55rem] font-bold tracking-widest text-muted-foreground/30">
-              R2C
-            </span>
-          </div>
+
         </CardFooter>
       ) : null}
     </Card>

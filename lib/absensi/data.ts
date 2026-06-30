@@ -27,6 +27,7 @@ export type AbsensiCellDTO = {
 };
 
 export type AbsensiWorkerRowDTO = {
+  activeSpCount: number;
   cellsByDate: Record<string, AbsensiCellDTO>;
   compactRoleShiftLabel: string;
   employeeRole: WorkerRole;
@@ -124,6 +125,7 @@ export async function getAbsensiData({
   const [
     { data: users, error: usersError },
     { data: attendanceRows, error: attendanceError },
+    { data: sps, error: spsError },
   ] = await Promise.all([
     supabase
       .from("users")
@@ -139,6 +141,11 @@ export async function getAbsensiData({
       .eq("is_canceled", false)
       .order("attendance_date", { ascending: true })
       .returns<AttendanceRow[]>(),
+    supabase
+      .from("worker_sp_logs")
+      .select("user_id,sp_level")
+      .gt("expires_at", new Date().toISOString())
+      .is("revoked_at", null),
   ]);
 
   if (usersError) {
@@ -149,9 +156,18 @@ export async function getAbsensiData({
     throw new Error("Absensi attendance rows could not load.");
   }
 
+  if (spsError) {
+    throw new Error("Absensi SP logs could not load.");
+  }
+
   const usersById = new Map((users ?? []).map((user) => [user.id, user]));
   const cellsByUserId = new Map<string, Record<string, AbsensiCellDTO>>();
   const issues: AbsensiDataIssue[] = [];
+
+  const spsCountMap = new Map<string, number>();
+  for (const sp of sps ?? []) {
+    spsCountMap.set(sp.user_id, (spsCountMap.get(sp.user_id) ?? 0) + 1);
+  }
 
   for (const attendance of attendanceRows ?? []) {
     if (!isAbsensiAttendanceStatus(attendance.status)) {
@@ -222,6 +238,7 @@ export async function getAbsensiData({
 
     return [
       {
+        activeSpCount: spsCountMap.get(profile.user_id) ?? 0,
         cellsByDate: cellsByUserId.get(profile.user_id) ?? {},
         compactRoleShiftLabel,
         employeeRole: profile.employee_role,

@@ -30,7 +30,7 @@ import {
   getBreakRemainingSeconds,
 } from "@/lib/tracker/break-timer";
 import { cn } from "@/lib/utils";
-import type { TrackerAction } from "@/lib/workers/tracker-actions";
+import { type TrackerAction, isLemburAvailable } from "@/lib/workers/tracker-actions";
 import type { TrackerAbsenceMaterializationAction } from "@/lib/workers/tracker-absence-materialization";
 import type { TrackerExpiredAbsenceCloseAction } from "@/lib/workers/tracker-absence-close";
 import type { TrackerCorrectionAction } from "@/lib/workers/tracker-corrections";
@@ -61,7 +61,8 @@ type ControlTone =
   | "muted"
   | "on"
   | "pending"
-  | "sakit";
+  | "sakit"
+  | "lembur";
 
 type ActionControlConfig = {
   action: TrackerAction;
@@ -532,6 +533,36 @@ function getActiveControlGroups(
           icon: <HourglassIcon data-icon="inline-start" aria-hidden="true" />,
           label: "PENDING",
           tone: "pending",
+        },
+        ...(isLemburAvailable(card)
+          ? [
+              {
+                action: "LEMBUR" as const,
+                icon: <TimerIcon data-icon="inline-start" aria-hidden="true" />,
+                label: "LEMBUR",
+                tone: "lembur" as const,
+              },
+            ]
+          : []),
+      ],
+    ];
+  }
+
+  if (card.storedStatus === "lembur" && card.displayStatus === "LEMBUR") {
+    return [
+      [
+        {
+          action: "SELESAI",
+          className: "tracker-action-btn-emphasis",
+          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+          label: "FINISH",
+          tone: "danger",
+        },
+        {
+          action: "BATAL_LEMBUR",
+          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+          label: "BATAL LEMBUR",
+          tone: "muted",
         },
       ],
     ];

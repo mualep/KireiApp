@@ -147,8 +147,8 @@ values
   ('${ids.member}'::uuid, 'Member', 'member@example.test', 'member', false),
   ('${ids.target}'::uuid, 'Target', 'target@example.test', 'member', false);
 
-insert into public.worker_profiles (user_id, gid, employee_role, shift, is_flexible, show_card, cuti_stock)
-values ('${ids.target}'::uuid, 'KRU-999', 'Professional Player', 'flexible', true, true, 2);
+insert into public.worker_profiles (user_id, employee_role, shift, is_flexible, show_card, cuti_stock)
+values ('${ids.target}'::uuid, 'Professional Player', 'flexible', true, true, 2);
 
 insert into public.worker_records (user_id, period_month, alpha_count, sakit_days, pending_days, lembur_units)
 values ('${ids.target}'::uuid, '2026-06-01'::date, 0, 0, 0, 0);
@@ -207,6 +207,17 @@ select pg_temp.assert_true(
 select pg_temp.assert_true(
   (select count(*) from public.audit_logs where target_user_id = '${ids.target}'::uuid and action = 'records.override') = 3,
   'should write to audit_logs'
+);
+
+-- test override on a completely missing worker_records row
+insert into public.worker_profiles (user_id, employee_role, shift, is_flexible, show_card, cuti_stock)
+values ('${ids.member}'::uuid, 'Professional Player', 'flexible', true, true, 2);
+
+select public.apply_records_override('${ids.member}'::uuid, '2026-06-01'::date, 'work_late_override_seconds', null, 3600, 'init override miss');
+
+select pg_temp.assert_true(
+  exists (select 1 from public.worker_records where user_id = '${ids.member}'::uuid and period_month = '2026-06-01'::date and work_late_override_seconds = 3600),
+  'override should initialize missing worker_records row and update override value'
 );
 
 rollback;

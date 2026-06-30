@@ -4,7 +4,9 @@ import type {
   WorkerDisplayStatus,
   WorkerShiftDefinition,
   WorkerStoredStatus,
+  TrackerCardDTO,
 } from "@/lib/workers/types";
+import { getShiftDefinition } from "@/lib/workers/helpers";
 
 const WIB_OFFSET_MINUTES = 7 * 60;
 const WIB_OFFSET_MILLISECONDS = WIB_OFFSET_MINUTES * 60 * 1000;
@@ -19,6 +21,8 @@ export const trackerActions = [
   "CUTI",
   "IZIN",
   "SAKIT",
+  "LEMBUR",
+  "BATAL_LEMBUR",
 ] as const;
 
 export type TrackerAction = (typeof trackerActions)[number];
@@ -31,6 +35,8 @@ export const trackerActionTargetStatuses = {
   SAKIT: "sakit",
   SELESAI: "off",
   START: "on",
+  LEMBUR: "lembur",
+  BATAL_LEMBUR: "off",
 } as const satisfies Record<TrackerAction, WorkerStoredStatus>;
 
 export const trackerActionAttendanceStatuses = {
@@ -41,6 +47,8 @@ export const trackerActionAttendanceStatuses = {
   SAKIT: "sakit",
   SELESAI: null,
   START: "hadir",
+  LEMBUR: null,
+  BATAL_LEMBUR: null,
 } as const satisfies Record<TrackerAction, WorkerAttendanceStatus | null>;
 
 export type TrackerActionTransitionRejectReason =
@@ -163,9 +171,14 @@ function isAllowedTransitionSource(
     case "SAKIT":
     case "START":
       return storedStatus === "off" && (displayStatus === "OFF" || displayStatus === "LATE");
+    case "LEMBUR":
+      return storedStatus === "off" && displayStatus === "OFF";
+    case "BATAL_LEMBUR":
+      return storedStatus === "lembur";
     case "ISTIRAHAT":
-    case "SELESAI":
       return storedStatus === "on";
+    case "SELESAI":
+      return storedStatus === "on" || storedStatus === "lembur";
     case "LANJUT":
       return storedStatus === "break";
   }
@@ -259,4 +272,19 @@ function formatDateParts(year: number, month: number, day: number): string {
 
 function toMinutes(hour: number, minute: number): number {
   return (hour * 60 + minute) % MINUTES_PER_DAY;
+}
+
+export function isLemburAvailable(card: TrackerCardDTO, now: Date = new Date()): boolean {
+  if (card.storedStatus !== "off" || card.displayStatus !== "OFF") {
+    return false;
+  }
+  if (card.isFlexible) {
+    return true;
+  }
+  const definition = getShiftDefinition(card.shift);
+  const timing = getFixedShiftTiming(now, definition);
+  if (!timing) {
+    return false;
+  }
+  return now.getTime() >= timing.endsAt;
 }

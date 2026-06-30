@@ -76,6 +76,7 @@ assertIncludes(packageJsonSource, '"test:absensi-correction-ui"');
 
 const filterRows: AbsensiWorkerRowDTO[] = [
   {
+    activeSpCount: 0,
     cellsByDate: {},
     compactRoleShiftLabel: "PP-A",
     employeeRole: "Professional Player",
@@ -86,6 +87,7 @@ const filterRows: AbsensiWorkerRowDTO[] = [
     userId: "10000000-0000-4000-8000-000000000001",
   },
   {
+    activeSpCount: 0,
     cellsByDate: {},
     compactRoleShiftLabel: "CL-B",
     employeeRole: "Cleaning Service",
