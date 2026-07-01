@@ -63,6 +63,7 @@ export function LoginForm({ initialState = {} }: LoginFormProps) {
               disabled={isPending}
               aria-invalid={hasError}
               placeholder="admin@kireiku.com"
+              className="text-foreground"
             />
           </InputGroup>
         </Field>
@@ -86,6 +87,7 @@ export function LoginForm({ initialState = {} }: LoginFormProps) {
               disabled={isPending}
               aria-invalid={hasError}
               placeholder="••••••••"
+              className="text-foreground"
             />
             <InputGroupAddon align="inline-end">
               <InputGroupButton
