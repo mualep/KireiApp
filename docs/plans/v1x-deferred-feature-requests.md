@@ -201,4 +201,48 @@ Cron runs are logged to server logs only. No observability UI exists (tracked as
 
 ---
 
-*Last updated: 2026-06-28*
+## Phase: V1.x (Polishing & UX Excellence)
+
+### Immersive Landing Page
+- **Request Summary**: Upgrade the hero section (above the fold) of the public landing page to be highly interactive and immersive.
+- **Goal**: Implement visual effects like WebGL shaders (similar to Vercel's design language) to build a premium, wow-factor landing surface.
+
+### Language Consistency Standard
+- **Request Summary**: Standardize the copywriting and language boundaries.
+- **Standard**:
+  - Public Landing Page: Strict English copy for premium branding.
+  - Admin Panel: Strict Indonesian copy (buttons, labels, dialog actions) for operational ease, preserving only domain-specific configuration terms (`Tier`, `Shift`, `Role`) in English.
+
+### Accurate Network Sensor
+- **Request Summary**: Replace the inaccurate Mbps speed test with a high-fidelity connection validator.
+- **Goal**: Implement a real-time Ping/Latency indicator (measured in `ms`) with colored status indicators (e.g., Green if `< 100ms`, Yellow if `100ms - 250ms`, Red if `> 250ms`).
+
+---
+
+## Phase: V2.0 (Major Operational Features)
+
+### Daily Task Management
+- **Request Summary**: A centralized daily checklist system for all active workers.
+- **Views**:
+  - **Member View**: A list of assigned daily checklists where workers can check completed items and input custom proof text or link URLs.
+  - **Admin/Owner View (Daily Task Manager)**: A Matrix Data-Grid visualization. Rows display Workers, Columns display Tasks, and Cells show real-time completion status. Includes date-picker filtering to view historical sheets (e.g., 1-3 months back). Allows Admins/Owners to add/edit/delete master task templates.
+
+### Activity Log (Audit Trail)
+- **Request Summary**: An owner-only audit trail dashboard.
+- **Goal**: Display a chronological log of all database and system actions ("Who" did "What" and "When"), filtering by actor, target user, or log category.
+
+### Office Rules (Peraturan Kantor)
+- **Request Summary**: Centralized internal documentation/knowledge base portal.
+- **Goal**: Owners can edit content fully via an admin CMS. Admins and Members have read-only access.
+
+### Rate Player (Leaderboard)
+- **Request Summary**: A gamified leaderboard ranking workers by performance points.
+- **Goal**: Calculate average points derived from external Buyer reviews/ratings using predefined spreadsheet mapping rules.
+
+### Automated Payroll (Perhitungan Gaji)
+- **Request Summary**: Automated salary calculation and slip generation.
+- **Goal**: A payroll grid mapping workers (rows) to columns pulling directly from `worker_records` metrics (Work Late, Alpha, Lembur units, Sakit/Pending days, etc.) and applying configurable formulas to output take-home pay.
+
+---
+
+*Last updated: 2026-07-01*
