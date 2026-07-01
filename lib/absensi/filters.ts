@@ -1,4 +1,4 @@
-import { isWorkerRole, type WorkerRole } from "@/lib/workers";
+import { isWorkerRole, type WorkerRole, isWorkerShift, type WorkerShift } from "@/lib/workers";
 import type { AbsensiWorkerRowDTO } from "@/lib/absensi/data";
 
 export type AbsensiSearchParams = Record<string, string | string[] | undefined>;
@@ -6,6 +6,7 @@ export type AbsensiSearchParams = Record<string, string | string[] | undefined>;
 export type AbsensiFilters = {
   q: string;
   role: WorkerRole | null;
+  shift: WorkerShift | null;
   sort: AbsensiSortOption;
 };
 
@@ -39,17 +40,19 @@ export function parseAbsensiFilters(
 ): AbsensiFilters {
   const q = normalizeQueryParam(searchParams.q);
   const role = normalizeSingleParam(searchParams.role);
+  const shift = normalizeSingleParam(searchParams.shift);
   const sort = normalizeSingleParam(searchParams.sort);
 
   return {
     q: q.slice(0, 80),
     role: isWorkerRole(role) ? role : null,
+    shift: isWorkerShift(shift) ? shift : null,
     sort: isAbsensiSortOption(sort) ? sort : "name-asc",
   };
 }
 
 export function hasAbsensiFilters(filters: AbsensiFilters): boolean {
-  return Boolean(filters.q || filters.role || filters.sort !== "name-asc");
+  return Boolean(filters.q || filters.role || filters.shift || filters.sort !== "name-asc");
 }
 
 export function filterAbsensiRows(
@@ -60,6 +63,10 @@ export function filterAbsensiRows(
 
   const filteredRows = rows.filter((row) => {
     if (filters.role && row.employeeRole !== filters.role) {
+      return false;
+    }
+
+    if (filters.shift && row.shift !== filters.shift) {
       return false;
     }
 

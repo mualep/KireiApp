@@ -63,7 +63,7 @@ export default async function AdminRecordsPage({
       {data.issues.length > 0 ? <RecordsIssuePanel issues={data.issues} /> : null}
 
       <RecordsToolbar
-        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}:${filters.sort}`}
+        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}:${filters.shift ?? ""}:${filters.sort}`}
         filters={filters}
         month={data.month}
         readableCount={numberFormatter.format(data.rows.length)}

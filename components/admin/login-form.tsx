@@ -105,7 +105,9 @@ export function LoginForm({ initialState = {} }: LoginFormProps) {
         </Field>
 
         {state.message ? (
-          <FieldError aria-live="polite">{state.message}</FieldError>
+          <FieldError aria-live="polite" className="text-red-400 font-medium mt-1">
+            {state.message}
+          </FieldError>
         ) : null}
       </FieldGroup>
 

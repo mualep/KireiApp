@@ -63,7 +63,7 @@ export default async function AdminAbsensiPage({
       {data.issues.length > 0 ? <AbsensiIssuePanel issues={data.issues} /> : null}
 
       <AbsensiToolbar
-        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}:${filters.sort}`}
+        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}:${filters.shift ?? ""}:${filters.sort}`}
         filters={filters}
         month={data.month}
         readableCount={numberFormatter.format(data.rows.length)}

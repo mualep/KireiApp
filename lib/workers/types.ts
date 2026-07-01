@@ -74,6 +74,7 @@ export type TrackerCardDTO = {
   activeTrackerAttendanceId: string | null;
   breakAccumulatedSecs: number;
   breakLateSeconds: number;
+  breakLateRecorded: boolean;
   breakStartedAt: string | null;
   breakTimerRunning: boolean;
   cutiStock: number;

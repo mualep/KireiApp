@@ -102,15 +102,16 @@ const filterRows: AbsensiWorkerRowDTO[] = [
 assert.deepEqual(parseAbsensiFilters({ q: "  budi   santoso  " }), {
   q: "budi santoso",
   role: null,
+  shift: null,
   sort: "name-asc",
 });
 assert.equal(parseAbsensiFilters({ q: "x".repeat(90) }).q.length, 80);
 assert.deepEqual(parseAbsensiFilters({ role: "Cleaning Service" }).role, "Cleaning Service");
 assert.deepEqual(parseAbsensiFilters({ role: "Owner" }).role, null);
-assert.equal(hasAbsensiFilters({ q: "", role: null, sort: "name-asc" }), false);
-assert.equal(hasAbsensiFilters({ q: "sari", role: null, sort: "name-asc" }), true);
+assert.equal(hasAbsensiFilters({ q: "", role: null, shift: null, sort: "name-asc" }), false);
+assert.equal(hasAbsensiFilters({ q: "sari", role: null, shift: null, sort: "name-asc" }), true);
 assert.deepEqual(
-  filterAbsensiRows(filterRows, { q: "budi", role: null, sort: "name-asc" }).map(
+  filterAbsensiRows(filterRows, { q: "budi", role: null, shift: null, sort: "name-asc" }).map(
     (row) => row.name,
   ),
   ["Budi Santoso"],
@@ -119,6 +120,7 @@ assert.deepEqual(
   filterAbsensiRows(filterRows, {
     q: "",
     role: "Cleaning Service",
+    shift: null,
     sort: "name-asc",
   }).map(
     (row) => row.name,

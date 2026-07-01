@@ -161,7 +161,9 @@ function getTrackerRecordBadges(card: TrackerCardDTO) {
       const liveSeconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));
       const elapsed = card.breakAccumulatedSecs + liveSeconds;
       if (elapsed > 3600) {
-        liveBreakLate += (elapsed - 3600);
+        if (!card.breakLateRecorded) {
+          liveBreakLate += (elapsed - 3600);
+        }
       }
     }
   }

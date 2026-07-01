@@ -16,6 +16,7 @@ import type {
   RecordsSortOption,
 } from "@/lib/records/filters";
 import type { RecordsMonthRange } from "@/lib/records/helpers";
+import type { WorkerShift } from "@/lib/workers";
 import { ResetRecordsDialog } from "./reset-records-dialog";
 
 type RecordsToolbarProps = {
@@ -40,6 +41,7 @@ export function RecordsToolbar({
   const pathname = usePathname();
   const router = useRouter();
   const [queryDraft, setQueryDraft] = useState(filters.q);
+  const [shiftDraft, setShiftDraft] = useState<WorkerShift | "">(filters.shift ?? "");
   const [sortDraft, setSortDraft] = useState<RecordsSortOption>(filters.sort);
   const [isResetOpen, setIsResetOpen] = useState(false);
 
@@ -51,7 +53,7 @@ export function RecordsToolbar({
     const timeoutId = window.setTimeout(() => {
       router.replace(
         getMonthHref({
-          filters: { q: queryDraft, role: filters.role, sort: sortDraft },
+          filters: { q: queryDraft, role: filters.role, shift: shiftDraft || null, sort: sortDraft },
           monthParam: month.monthParam,
           pathname,
         }),
@@ -67,6 +69,7 @@ export function RecordsToolbar({
     pathname,
     queryDraft,
     router,
+    shiftDraft,
     sortDraft,
   ]);
 
@@ -81,7 +84,7 @@ export function RecordsToolbar({
     pathname,
   });
   const clearFiltersHref = getMonthHref({
-    filters: { q: "", role: null, sort: "name-asc" },
+    filters: { q: "", role: null, shift: null, sort: "name-asc" },
     monthParam: month.monthParam,
     pathname,
   });
@@ -92,7 +95,21 @@ export function RecordsToolbar({
     setSortDraft(sort);
     router.replace(
       getMonthHref({
-        filters: { q: queryDraft, role: filters.role, sort },
+        filters: { q: queryDraft, role: filters.role, shift: shiftDraft || null, sort },
+        monthParam: month.monthParam,
+        pathname,
+      }),
+      { scroll: false },
+    );
+  }
+
+  function handleShiftChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const shift = (event.currentTarget.value || null) as WorkerShift | null;
+
+    setShiftDraft(shift ?? "");
+    router.replace(
+      getMonthHref({
+        filters: { q: queryDraft, role: filters.role, shift, sort: sortDraft },
         monthParam: month.monthParam,
         pathname,
       }),
@@ -104,7 +121,7 @@ export function RecordsToolbar({
     <Card size="sm" className="tracker-glass-panel gap-0 rounded-xl border py-0">
       <CardContent className="flex flex-col gap-2 p-0">
         <div className="records-toolbar-row flex flex-col gap-2 lg:flex-row lg:items-center">
-          <div className="grid flex-1 gap-2 md:grid-cols-[minmax(13rem,1fr)_minmax(9rem,auto)_auto]">
+          <div className="grid flex-1 gap-2 md:grid-cols-[minmax(13rem,1fr)_minmax(8rem,auto)_minmax(8rem,auto)_auto]">
             {/* Search */}
             <div role="group">
               <label htmlFor="records-search" className="sr-only">
@@ -136,6 +153,36 @@ export function RecordsToolbar({
               >
                 <option value="name-asc">Name &#x2192; A-Z</option>
                 <option value="name-desc">Name &#x2192; Z-A</option>
+              </select>
+              <ChevronDownIcon
+                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground size-4"
+                aria-hidden="true"
+              />
+            </div>
+
+            {/* Shift */}
+            <div role="group" className="relative">
+              <label htmlFor="records-shift" className="sr-only">
+                Shift
+              </label>
+              <select
+                id="records-shift"
+                aria-label="Shift Filter"
+                value={shiftDraft}
+                onChange={handleShiftChange}
+                className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="">Semua Shift</option>
+                <option value="A">Shift A</option>
+                <option value="B">Shift B</option>
+                <option value="C">Shift C</option>
+                <option value="D">Shift D</option>
+                <option value="E">Shift E</option>
+                <option value="F">Shift F</option>
+                <option value="1">Shift 1</option>
+                <option value="2">Shift 2</option>
+                <option value="3">Shift 3</option>
+                <option value="flexible">Flexible</option>
               </select>
               <ChevronDownIcon
                 className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground size-4"
@@ -222,6 +269,7 @@ export function RecordsToolbar({
                 filters: {
                   q: queryDraft,
                   role: tab.value,
+                  shift: shiftDraft || null,
                   sort: sortDraft,
                 },
                 monthParam: month.monthParam,
@@ -279,6 +327,10 @@ function getMonthHref({
 
   if (filters.role) {
     params.set("role", filters.role);
+  }
+
+  if (filters.shift) {
+    params.set("shift", filters.shift);
   }
 
   if (filters.sort !== "name-asc") {

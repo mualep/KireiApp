@@ -1,4 +1,4 @@
-import { isWorkerRole, type WorkerRole } from "@/lib/workers";
+import { isWorkerRole, type WorkerRole, isWorkerShift, type WorkerShift } from "@/lib/workers";
 import type { RecordsRowDTO } from "@/lib/records/data";
 
 export type RecordsSearchParams = Record<string, string | string[] | undefined>;
@@ -6,6 +6,7 @@ export type RecordsSearchParams = Record<string, string | string[] | undefined>;
 export type RecordsFilters = {
   q: string;
   role: WorkerRole | null;
+  shift: WorkerShift | null;
   sort: RecordsSortOption;
 };
 
@@ -39,17 +40,19 @@ export function parseRecordsFilters(
 ): RecordsFilters {
   const q = normalizeQueryParam(searchParams.q);
   const role = normalizeSingleParam(searchParams.role);
+  const shift = normalizeSingleParam(searchParams.shift);
   const sort = normalizeSingleParam(searchParams.sort);
 
   return {
     q: q.slice(0, 80),
     role: isWorkerRole(role) ? role : null,
+    shift: isWorkerShift(shift) ? shift : null,
     sort: isRecordsSortOption(sort) ? sort : "name-asc",
   };
 }
 
 export function hasRecordsFilters(filters: RecordsFilters): boolean {
-  return Boolean(filters.q || filters.role || filters.sort !== "name-asc");
+  return Boolean(filters.q || filters.role || filters.shift || filters.sort !== "name-asc");
 }
 
 export function filterRecordsRows(
@@ -60,6 +63,10 @@ export function filterRecordsRows(
 
   const filteredRows = rows.filter((row) => {
     if (filters.role && row.employeeRole !== filters.role) {
+      return false;
+    }
+
+    if (filters.shift && row.shift !== filters.shift) {
       return false;
     }
 

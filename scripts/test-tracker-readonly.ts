@@ -868,6 +868,7 @@ function buildCard({
     activeTrackerAttendanceId: null,
     breakAccumulatedSecs: 0,
     breakLateSeconds: 0,
+    breakLateRecorded: false,
     breakStartedAt: null,
     breakTimerRunning: false,
     cutiStock: 2,
