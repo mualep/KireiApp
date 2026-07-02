@@ -115,9 +115,16 @@ export function getTrackerCorrectionWindowState({
     return "unavailable";
   }
 
-  const shiftStartMinutes = shiftStartHour * 60 + shiftStartMinute;
-  const shiftEndMinutes = shiftEndHour * 60 + shiftEndMinute;
-  const endDayOffset = shiftEndMinutes <= shiftStartMinutes ? 1 : 0;
+  let endDayOffset = 0;
+
+  if (shiftStartHour === 0) {
+    endDayOffset = 1;
+  } else if (shiftEndHour < shiftStartHour || (shiftEndHour === 0 && shiftStartHour > 0)) {
+    endDayOffset = 1;
+  } else {
+    endDayOffset = 0;
+  }
+
   const shiftEndsAt = toUtcTimestampFromWibDateTime(
     attendanceDate,
     shiftEndHour,

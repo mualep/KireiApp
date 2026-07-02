@@ -11,10 +11,11 @@ import {
 } from "@/components/ui/card";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { getMemberProfileData } from "@/lib/member-profile/data";
+import { UpdateCredentialsForm } from "@/components/admin/profile/update-credentials-form";
 
 export const metadata: Metadata = {
   title: "Profile | KireiApp",
-  description: "Read-only staff self profile.",
+  description: "Read-only staff self profile with credentials update.",
 };
 
 export default async function AdminProfilePage() {
@@ -56,7 +57,7 @@ export default async function AdminProfilePage() {
                 variant="outline"
                 className="h-6 border-border bg-background/35 text-muted-foreground"
               >
-                Read-only
+                Editable Credentials
               </Badge>
             </div>
             <h1
@@ -66,8 +67,8 @@ export default async function AdminProfilePage() {
               {data.staff.name}
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              This page shows only your current staff identity and linked worker
-              profile data. Profile editing is not enabled in this slice.
+              This page shows your current staff identity and linked worker
+              profile data. You can also update your email credentials prefix and password below.
             </p>
           </div>
           <Badge
@@ -83,7 +84,7 @@ export default async function AdminProfilePage() {
         <CardHeader>
           <CardTitle>Staff Profile</CardTitle>
           <CardDescription>
-            Read-only self profile for current staff account.
+            Profile details for current staff account.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -114,6 +115,8 @@ export default async function AdminProfilePage() {
           <p className="sr-only">Self profile id: {staffSelfId}</p>
         </CardContent>
       </Card>
+
+      <UpdateCredentialsForm currentEmail={data.staff.email} />
     </div>
   );
 }

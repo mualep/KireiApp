@@ -180,9 +180,19 @@ function getFixedShiftTiming(
   }
 
   const attendanceDate = deriveTrackerAttendanceDate({ now, shift });
-  const startMinutes = toMinutes(shift.startHour, shift.startMinute);
-  const endMinutes = toMinutes(shift.endHour, shift.endMinute);
-  const endDayOffset = endMinutes <= startMinutes ? 1 : 0;
+  let startDayOffset = 0;
+  let endDayOffset = 0;
+
+  if (shift.startHour === 0) {
+    startDayOffset = 1;
+    endDayOffset = 1;
+  } else if (shift.endHour < shift.startHour || (shift.endHour === 0 && shift.startHour > 0)) {
+    startDayOffset = 0;
+    endDayOffset = 1;
+  } else {
+    startDayOffset = 0;
+    endDayOffset = 0;
+  }
 
   return {
     endsAt: toUtcTimestampFromWibDateTime(
@@ -195,6 +205,7 @@ function getFixedShiftTiming(
       attendanceDate,
       shift.startHour,
       shift.startMinute,
+      startDayOffset,
     ),
   };
 }

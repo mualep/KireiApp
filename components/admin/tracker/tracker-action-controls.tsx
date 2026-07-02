@@ -719,13 +719,20 @@ function withAbsenceMaterializationGroup(
     return groups;
   }
 
+  const tone =
+    card.storedStatus === "cuti"
+      ? "cuti"
+      : card.storedStatus === "sakit"
+        ? "sakit"
+        : "pending";
+
   return [
     [
       {
         absenceMaterializationAction: "MATERIALIZE_ABSENCE_DAYS",
         icon: <RefreshCwIcon data-icon="inline-start" aria-hidden="true" />,
         label: "SINKRONKAN ABSENSI",
-        tone: "pending",
+        tone: tone,
       },
     ],
     ...groups,

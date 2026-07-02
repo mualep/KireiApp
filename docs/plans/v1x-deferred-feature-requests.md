@@ -243,6 +243,14 @@ Cron runs are logged to server logs only. No observability UI exists (tracked as
 - **Request Summary**: Automated salary calculation and slip generation.
 - **Goal**: A payroll grid mapping workers (rows) to columns pulling directly from `worker_records` metrics (Work Late, Alpha, Lembur units, Sakit/Pending days, etc.) and applying configurable formulas to output take-home pay.
 
+### Auto-carryover Multi-day Absences (Cuti/Sakit/Pending) via Cron
+- **Request Summary**: Automate multi-day absences by having the daily cron state machine automatically carry over active absence states (`cuti`, `sakit`, or `pending`) across calendar days, auto-deducting stock (like `cuti_stock` or recording days) until the worker manually checks in or stock runs empty, at which point the worker defaults back to `OFF/ALPHA`.
+- **Goal**: Relieve managers from manually clicking `SINKRONKAN` (materialization) or recording daily updates for ongoing multi-day absences.
+
+### Two-way Absensi-Tracker Sync (Two-Way Binding)
+- **Request Summary**: Build a reactive two-way synchronization layer between the Absensi dashboard (historical correction/ledger) and the live Tracker screen. Correcting a worker's status inside the Absensi panel instantly resets/updates the worker's live operational status and version, and vice versa.
+- **Goal**: Maintain 100% data consistency across both views without requiring manual escape actions or page reloads.
+
 ---
 
-*Last updated: 2026-07-01*
+*Last updated: 2026-07-02*
