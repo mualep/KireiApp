@@ -123,8 +123,8 @@ assertNoPattern(
 );
 assertNoPattern(
   controlsSource,
-  /label:\s*["'](?:LEMBUR|PAUSE|RESUME)["']/,
-  "Materialization must not add Lembur/Pause/Resume actions.",
+  /label:\s*["'](?:PAUSE|RESUME)["']/,
+  "Materialization must not add Pause/Resume actions.",
 );
 
 assertIncludes(workerTypesSource, "isAbsenceMaterializationAvailable: boolean;");

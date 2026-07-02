@@ -111,6 +111,122 @@ function buildProbeSql() {
   return String.raw`
 begin;
 
+create function pg_temp.get_test_date()
+returns date
+language plpgsql
+as $$
+declare
+  v_ts timestamp := pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta';
+begin
+  if pg_catalog.date_part('hour', v_ts)::integer < 6 then
+    return (v_ts::date - 1);
+  else
+    return v_ts::date;
+  end if;
+end;
+$$;
+
+create function pg_temp.get_test_now()
+returns timestamptz
+language plpgsql
+as $$
+declare
+  v_ts timestamptz := pg_catalog.clock_timestamp();
+begin
+  if pg_catalog.date_part('hour', v_ts at time zone 'Asia/Jakarta')::integer < 6 then
+    return v_ts - interval '6 hours';
+  else
+    return v_ts;
+  end if;
+end;
+$$;
+
+create or replace function public.apply_tracker_action(
+  p_target_user_id uuid,
+  p_action text,
+  p_expected_version bigint
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  return app_private.apply_tracker_action_impl(
+    auth.uid(),
+    p_target_user_id,
+    p_action,
+    p_expected_version,
+    pg_temp.get_test_now()
+  );
+end;
+$$;
+
+create or replace function public.apply_tracker_correction(
+  p_target_user_id uuid,
+  p_correction_action text,
+  p_expected_version bigint,
+  p_attendance_id uuid,
+  p_reason text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  return app_private.apply_tracker_correction_impl(
+    auth.uid(),
+    p_target_user_id,
+    p_correction_action,
+    p_expected_version,
+    p_attendance_id,
+    p_reason,
+    pg_temp.get_test_now()
+  );
+end;
+$$;
+
+create or replace function public.apply_tracker_absence_close(
+  p_target_user_id uuid,
+  p_expected_version bigint,
+  p_attendance_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  return app_private.apply_tracker_absence_close_impl(
+    auth.uid(),
+    p_target_user_id,
+    p_expected_version,
+    p_attendance_id,
+    pg_temp.get_test_now()
+  );
+end;
+$$;
+
+create or replace function public.materialize_tracker_absence_days(
+  p_target_user_id uuid,
+  p_expected_version bigint
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  return app_private.materialize_tracker_absence_days_impl(
+    auth.uid(),
+    p_target_user_id,
+    p_expected_version,
+    pg_temp.get_test_now()
+  );
+end;
+$$;
+
 create function pg_temp.assert_true(p_condition boolean, p_message text)
 returns void
 language plpgsql
@@ -301,11 +417,11 @@ select
   'authenticated',
   'authenticated',
   email,
-  pg_catalog.clock_timestamp(),
+  pg_temp.get_test_now(),
   '{}'::jsonb,
   '{}'::jsonb,
-  pg_catalog.clock_timestamp(),
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now(),
+  pg_temp.get_test_now()
 from fixture_users;
 
 with fixture_users(id, email, tier, name) as (
@@ -375,8 +491,8 @@ values
 
 with wib as (
   select (
-    pg_catalog.date_part('hour', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer * 60
-  ) + pg_catalog.date_part('minute', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer as minute_of_day
+    pg_catalog.date_part('hour', pg_temp.get_test_now() at time zone 'Asia/Jakarta')::integer * 60
+  ) + pg_catalog.date_part('minute', pg_temp.get_test_now() at time zone 'Asia/Jakarta')::integer as minute_of_day
 ),
 late_shift as (
   select
@@ -409,8 +525,8 @@ from late_shift;
 
 with wib as (
   select (
-    pg_catalog.date_part('hour', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer * 60
-  ) + pg_catalog.date_part('minute', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer as minute_of_day
+    pg_catalog.date_part('hour', pg_temp.get_test_now() at time zone 'Asia/Jakarta')::integer * 60
+  ) + pg_catalog.date_part('minute', pg_temp.get_test_now() at time zone 'Asia/Jakarta')::integer as minute_of_day
 ),
 late_shift as (
   select
@@ -474,8 +590,8 @@ values (
   '${ids.cycle}'::uuid,
   0,
   'on',
-  (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
-  pg_catalog.clock_timestamp(),
+  pg_temp.get_test_date(),
+  pg_temp.get_test_now(),
   'flexible'
 );
 
@@ -581,7 +697,7 @@ insert into public.worker_attendance (
 )
 values (
   '${ids.conflict}'::uuid,
-  (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+  pg_temp.get_test_date(),
   'hadir',
   'absensi',
   'absensi.manual'
@@ -597,28 +713,28 @@ insert into public.worker_attendance (
 values
   (
     '${ids.startExistingHadir}'::uuid,
-    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    pg_temp.get_test_date(),
     'hadir',
     'absensi',
     'absensi.manual'
   ),
   (
     '${ids.startExistingCuti}'::uuid,
-    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    pg_temp.get_test_date(),
     'cuti',
     'absensi',
     'absensi.manual'
   ),
   (
     '${ids.startExistingPending}'::uuid,
-    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    pg_temp.get_test_date(),
     'pending',
     'absensi',
     'absensi.manual'
   ),
   (
     '${ids.startExistingSakit}'::uuid,
-    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    pg_temp.get_test_date(),
     'sakit',
     'absensi',
     'absensi.manual'
@@ -626,10 +742,10 @@ values
 
 with wib as (
   select
-    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date as today,
+    pg_temp.get_test_date() as today,
     (
-      pg_catalog.date_part('hour', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer * 60
-    ) + pg_catalog.date_part('minute', pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::integer as minute_of_day
+      pg_catalog.date_part('hour', pg_temp.get_test_now() at time zone 'Asia/Jakarta')::integer * 60
+    ) + pg_catalog.date_part('minute', pg_temp.get_test_now() at time zone 'Asia/Jakarta')::integer as minute_of_day
 ),
 late_shift as (
   select
@@ -703,11 +819,11 @@ select
   'authenticated',
   'authenticated',
   email,
-  pg_catalog.clock_timestamp(),
+  pg_temp.get_test_now(),
   '{}'::jsonb,
   '{}'::jsonb,
-  pg_catalog.clock_timestamp(),
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now(),
+  pg_temp.get_test_now()
 from close_users;
 
 with close_users(id, email, name) as (
@@ -738,11 +854,11 @@ values
 
 insert into public.worker_status (user_id, version, current_status, cuti_set_date, sakit_started_at, pending_started_at)
 values
-  ('${ids.expiredCutiClose}'::uuid, 0, 'cuti', (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1, null, null),
-  ('${ids.expiredSakitClose}'::uuid, 0, 'sakit', null, pg_catalog.clock_timestamp() - interval '1 day', null),
-  ('${ids.expiredIzinClose}'::uuid, 0, 'pending', null, null, pg_catalog.clock_timestamp() - interval '1 day'),
-  ('${ids.notExpiredClose}'::uuid, 0, 'cuti', (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date, null, null),
-  ('${ids.expiredMarkerClose}'::uuid, 0, 'sakit', null, pg_catalog.clock_timestamp() - interval '2 days', null);
+  ('${ids.expiredCutiClose}'::uuid, 0, 'cuti', pg_temp.get_test_date() - 1, null, null),
+  ('${ids.expiredSakitClose}'::uuid, 0, 'sakit', null, pg_temp.get_test_now() - interval '1 day', null),
+  ('${ids.expiredIzinClose}'::uuid, 0, 'pending', null, null, pg_temp.get_test_now() - interval '1 day'),
+  ('${ids.notExpiredClose}'::uuid, 0, 'cuti', pg_temp.get_test_date(), null, null),
+  ('${ids.expiredMarkerClose}'::uuid, 0, 'sakit', null, pg_temp.get_test_now() - interval '2 days', null);
 
 insert into public.worker_attendance (
   user_id,
@@ -754,28 +870,28 @@ insert into public.worker_attendance (
 values
   (
     '${ids.expiredCutiClose}'::uuid,
-    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1,
+    pg_temp.get_test_date() - 1,
     'cuti',
     'tracker',
     'tracker.cuti'
   ),
   (
     '${ids.expiredSakitClose}'::uuid,
-    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1,
+    pg_temp.get_test_date() - 1,
     'sakit',
     'tracker',
     'tracker.sakit'
   ),
   (
     '${ids.expiredIzinClose}'::uuid,
-    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1,
+    pg_temp.get_test_date() - 1,
     'pending',
     'tracker',
     'tracker.izin'
   ),
   (
     '${ids.notExpiredClose}'::uuid,
-    (pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date,
+    pg_temp.get_test_date(),
     'cuti',
     'tracker',
     'tracker.cuti'
@@ -792,7 +908,7 @@ insert into public.worker_records (
 )
 select
   '${ids.expiredCutiClose}'::uuid,
-  pg_catalog.date_trunc('month', ((pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1)::timestamp)::date,
+  pg_catalog.date_trunc('month', (pg_temp.get_test_date() - 1)::timestamp)::date,
   2,
   0,
   0,
@@ -801,7 +917,7 @@ select
 union all
 select
   '${ids.expiredSakitClose}'::uuid,
-  pg_catalog.date_trunc('month', ((pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1)::timestamp)::date,
+  pg_catalog.date_trunc('month', (pg_temp.get_test_date() - 1)::timestamp)::date,
   3,
   1,
   0,
@@ -810,7 +926,7 @@ select
 union all
 select
   '${ids.expiredIzinClose}'::uuid,
-  pg_catalog.date_trunc('month', ((pg_catalog.clock_timestamp() at time zone 'Asia/Jakarta')::date - 1)::timestamp)::date,
+  pg_catalog.date_trunc('month', (pg_temp.get_test_date() - 1)::timestamp)::date,
   3,
   0,
   1,
@@ -1329,7 +1445,7 @@ reset role;
 select pg_temp.set_auth(null);
 select pg_temp.expect_error(
   'private audit fail closed rollback',
-  'select app_private.apply_tracker_action_impl(''${ids.owner}''::uuid, ''${ids.auditFail}''::uuid, ''START'', 0::bigint, pg_catalog.clock_timestamp())',
+  'select app_private.apply_tracker_action_impl(''${ids.owner}''::uuid, ''${ids.auditFail}''::uuid, ''START'', 0::bigint, pg_temp.get_test_now())',
   'unauthenticated'
 );
 select pg_temp.assert_true(
@@ -1526,7 +1642,7 @@ select pg_temp.expect_error(
 select pg_temp.set_auth(null);
 select pg_temp.expect_error(
   'tracker correction audit fail closed rollback',
-  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.sakit}''::uuid, ''CANCEL_SAKIT'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.sakit}''::uuid), ''audit rollback'', pg_catalog.clock_timestamp())',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.sakit}''::uuid, ''CANCEL_SAKIT'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.sakit}''::uuid), ''audit rollback'', pg_temp.get_test_now())',
   'unauthenticated'
 );
 select pg_temp.assert_true(
@@ -1541,7 +1657,7 @@ select pg_temp.set_auth('${ids.owner}'::uuid);
 reset role;
 select pg_temp.expect_error(
   'tracker correction after flexible business date',
-  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_CUTI'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''too late'', pg_catalog.clock_timestamp() + interval ''1 day'')',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_CUTI'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''too late'', pg_temp.get_test_now() + interval ''1 day'')',
   'tracker.correction_expired'
 );
 update public.worker_profiles
@@ -1569,7 +1685,7 @@ set
 where user_id = '${ids.cuti}'::uuid;
 select pg_temp.expect_error(
   'tracker correction wrong stored status',
-  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_SAKIT'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''wrong state'', pg_catalog.clock_timestamp())',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_SAKIT'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''wrong state'', pg_temp.get_test_now())',
   'tracker.invalid_transition'
 );
 update public.worker_status
@@ -1577,7 +1693,7 @@ set current_status = 'cuti'
 where user_id = '${ids.startExistingCuti}'::uuid;
 select pg_temp.expect_error(
   'tracker correction absensi source rejection',
-  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.startExistingCuti}''::uuid, ''CANCEL_CUTI'', 0::bigint, (select id from public.worker_attendance where user_id = ''${ids.startExistingCuti}''::uuid), ''wrong source'', pg_catalog.clock_timestamp())',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.startExistingCuti}''::uuid, ''CANCEL_CUTI'', 0::bigint, (select id from public.worker_attendance where user_id = ''${ids.startExistingCuti}''::uuid), ''wrong source'', pg_temp.get_test_now())',
   'tracker.attendance_missing'
 );
 select app_private.apply_tracker_correction_impl(
@@ -1587,7 +1703,7 @@ select app_private.apply_tracker_correction_impl(
   1,
   (select id from public.worker_attendance where user_id = '${ids.cuti}'::uuid),
   'wrong CUTI entry',
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select app_private.apply_tracker_correction_impl(
   '${ids.owner}'::uuid,
@@ -1596,7 +1712,7 @@ select app_private.apply_tracker_correction_impl(
   1,
   (select id from public.worker_attendance where user_id = '${ids.izin}'::uuid),
   'wrong PENDING entry',
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select app_private.apply_tracker_correction_impl(
   '${ids.owner}'::uuid,
@@ -1605,7 +1721,7 @@ select app_private.apply_tracker_correction_impl(
   1,
   (select id from public.worker_attendance where user_id = '${ids.sakit}'::uuid),
   'wrong SAKIT entry',
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select pg_temp.assert_true(
   exists (select 1 from public.worker_status where user_id = '${ids.cuti}'::uuid and current_status = 'off' and version = 2)
@@ -1629,7 +1745,7 @@ select pg_temp.assert_true(
 );
 select pg_temp.expect_error(
   'old CUTI correction retry',
-  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_CUTI'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''retry'', pg_catalog.clock_timestamp())',
+  'select app_private.apply_tracker_correction_impl(''${ids.owner}''::uuid, ''${ids.cuti}''::uuid, ''CANCEL_CUTI'', 1::bigint, (select id from public.worker_attendance where user_id = ''${ids.cuti}''::uuid), ''retry'', pg_temp.get_test_now())',
   'tracker.version_conflict'
 );
 select pg_temp.assert_true(
@@ -1642,7 +1758,7 @@ select app_private.apply_tracker_action_impl(
   '${ids.cuti}'::uuid,
   'START',
   2,
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select pg_temp.assert_true(
   exists (
@@ -1663,7 +1779,7 @@ select app_private.apply_tracker_action_impl(
   '${ids.absenceReuse}'::uuid,
   'CUTI',
   0,
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select app_private.apply_tracker_correction_impl(
   '${ids.owner}'::uuid,
@@ -1672,14 +1788,14 @@ select app_private.apply_tracker_correction_impl(
   1,
   (select id from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid),
   'reuse after CUTI',
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select app_private.apply_tracker_action_impl(
   '${ids.owner}'::uuid,
   '${ids.absenceReuse}'::uuid,
   'SAKIT',
   2,
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select pg_temp.assert_true(
   exists (
@@ -1716,14 +1832,14 @@ select app_private.apply_tracker_correction_impl(
   3,
   (select id from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid),
   'reuse after SAKIT',
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select app_private.apply_tracker_action_impl(
   '${ids.owner}'::uuid,
   '${ids.absenceReuse}'::uuid,
   'IZIN',
   4,
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select pg_temp.assert_true(
   exists (
@@ -1760,14 +1876,14 @@ select app_private.apply_tracker_correction_impl(
   5,
   (select id from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid),
   'reuse after IZIN',
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select app_private.apply_tracker_action_impl(
   '${ids.owner}'::uuid,
   '${ids.absenceReuse}'::uuid,
   'CUTI',
   6,
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select pg_temp.assert_true(
   exists (
@@ -1810,7 +1926,7 @@ select app_private.apply_tracker_correction_impl(
   7,
   (select id from public.worker_attendance where user_id = '${ids.absenceReuse}'::uuid),
   'final CUTI reversal',
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now()
 );
 select pg_temp.assert_true(
   exists (
@@ -2023,11 +2139,11 @@ select
   'authenticated',
   'authenticated',
   email,
-  pg_catalog.clock_timestamp(),
+  pg_temp.get_test_now(),
   '{}'::jsonb,
   '{}'::jsonb,
-  pg_catalog.clock_timestamp(),
-  pg_catalog.clock_timestamp()
+  pg_temp.get_test_now(),
+  pg_temp.get_test_now()
 from materialize_users;
 
 with materialize_users(id, email, name) as (
