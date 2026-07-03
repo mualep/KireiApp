@@ -27,9 +27,9 @@ const tierTextColorClasses: Record<StaffTier, string> = {
 };
 
 const tierBorderBgColorClasses: Record<StaffTier, string> = {
-  owner: "border-primary/35 bg-primary/10 text-primary shadow-primary/10",
-  admin: "border-status-break/35 bg-status-break/10 text-status-break shadow-status-break/10",
-  member: "border-status-cuti/35 bg-status-cuti/10 text-status-cuti shadow-status-cuti/10",
+  owner: "border-primary/35 bg-primary/10 text-primary",
+  admin: "border-status-break/35 bg-status-break/10 text-status-break",
+  member: "border-status-cuti/35 bg-status-cuti/10 text-status-cuti",
 };
 
 export default async function AdminProfilePage() {
@@ -66,12 +66,9 @@ export default async function AdminProfilePage() {
   ];
 
   return (
-    <div className="relative flex flex-col gap-6">
-      {/* Top action header */}
-      <div className="flex justify-between items-center px-1">
-        <h1 className="font-heading text-2xl font-black tracking-tight uppercase">
-          Profil Pengguna
-        </h1>
+    <div className="flex flex-col gap-6 max-w-md mx-auto w-full">
+      {/* Top action header without H1 */}
+      <div className="flex justify-end items-center px-1">
         <UpdateCredentialsDialog currentEmail={data.staff.email} />
       </div>
 
@@ -80,7 +77,7 @@ export default async function AdminProfilePage() {
         {/* Large circular initials avatar */}
         <div className="my-4">
           <div className={cn(
-            "flex size-28 items-center justify-center rounded-full border text-4xl font-black shadow-2xl transition-transform hover:scale-105",
+            "flex size-28 items-center justify-center rounded-full border text-4xl font-medium transition-transform hover:scale-105",
             tierBorderBgColorClasses[data.staff.tier]
           )}>
             {initials}
@@ -88,7 +85,7 @@ export default async function AdminProfilePage() {
         </div>
 
         {/* User identification */}
-        <h2 className="text-2xl font-black tracking-tight mt-2" translate="no">
+        <h2 className="text-xl font-semibold tracking-tight mt-2" translate="no">
           {data.staff.name}
         </h2>
         <p className="text-sm text-muted-foreground mt-1" translate="no">
@@ -114,7 +111,7 @@ export default async function AdminProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <dl className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <dl className="grid gap-3 sm:grid-cols-2">
             {detailRows.map(([label, value]) => (
               <div
                 key={label}
