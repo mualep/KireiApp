@@ -11,11 +11,25 @@ import {
 } from "@/components/ui/card";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { getMemberProfileData } from "@/lib/member-profile/data";
-import { UpdateCredentialsForm } from "@/components/admin/profile/update-credentials-form";
+import { UpdateCredentialsDialog } from "@/components/admin/profile/update-credentials-form";
+import { cn } from "@/lib/utils";
+import type { StaffTier } from "@/lib/auth/tiers";
 
 export const metadata: Metadata = {
   title: "Profile | KireiApp",
-  description: "Read-only staff self profile with credentials update.",
+  description: "User profile details with credentials update.",
+};
+
+const tierTextColorClasses: Record<StaffTier, string> = {
+  owner: "text-status-alpha",
+  admin: "text-status-break",
+  member: "text-status-cuti",
+};
+
+const tierBorderBgColorClasses: Record<StaffTier, string> = {
+  owner: "border-primary/35 bg-primary/10 text-primary shadow-primary/10",
+  admin: "border-status-break/35 bg-status-break/10 text-status-break shadow-status-break/10",
+  member: "border-status-cuti/35 bg-status-cuti/10 text-status-cuti shadow-status-cuti/10",
 };
 
 export default async function AdminProfilePage() {
@@ -28,63 +42,75 @@ export default async function AdminProfilePage() {
   const staffSelfId = staff.profile.id;
   const data = await getMemberProfileData(staff);
   const workerProfile = data.workerProfile;
+
+  // Extract initials for the circular avatar
+  const nameParts = data.staff.name.split(" ").filter(Boolean);
+  const initials = (
+    nameParts.slice(0, 2).map((part) => part[0]).join("") || 
+    data.staff.email.slice(0, 2)
+  ).toUpperCase();
+
+  // Hide worker details if user is an Owner or Admin and has no linked worker profile
+  const showWorkerDetails = workerProfile !== null && workerProfile !== undefined;
+
   const detailRows = [
-    ["Display Name", data.staff.name],
+    ["Nama Tampilan", data.staff.name],
     ["Email", data.staff.email],
     ["Staff Tier", data.staff.tier.toUpperCase()],
-    ["Worker Role", workerProfile?.employeeRole ?? "Not linked"],
-    ["Shift", workerProfile?.roleShiftLabel ?? "Not linked"],
-    ["Shift Time", workerProfile?.shiftTimeLabel ?? "Flexible or not linked"],
-    [
-      "Cuti Stock",
-      workerProfile ? `${workerProfile.cutiStock}x available` : "Not linked",
-    ],
-  ] as const;
+    ...(showWorkerDetails ? [
+      ["Worker Role", workerProfile.employeeRole],
+      ["Shift", workerProfile.roleShiftLabel],
+      ["Shift Time", workerProfile.shiftTimeLabel ?? "Flexible"],
+      ["Cuti Stock", `${workerProfile.cutiStock}x tersedia`],
+    ] : []),
+  ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className="tracker-glass-panel rounded-xl border p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className="h-6 border-status-cuti/35 bg-status-cuti/10 text-status-cuti"
-              >
-                Self-only
-              </Badge>
-              <Badge
-                variant="outline"
-                className="h-6 border-border bg-background/35 text-muted-foreground"
-              >
-                Editable Credentials
-              </Badge>
-            </div>
-            <h1
-              className="mt-3 truncate font-heading text-3xl font-black tracking-tight"
-              translate="no"
-            >
-              {data.staff.name}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              This page shows your current staff identity and linked worker
-              profile data. You can also update your email credentials prefix and password below.
-            </p>
-          </div>
-          <Badge
-            variant="outline"
-            className="h-7 border-border bg-background/35 px-2.5 text-xs uppercase text-muted-foreground"
-          >
-            {data.staff.tier}
-          </Badge>
-        </div>
-      </section>
+    <div className="relative flex flex-col gap-6">
+      {/* Top action header */}
+      <div className="flex justify-between items-center px-1">
+        <h1 className="font-heading text-2xl font-black tracking-tight uppercase">
+          Profil Pengguna
+        </h1>
+        <UpdateCredentialsDialog currentEmail={data.staff.email} />
+      </div>
 
+      {/* Centered Codex-Style Profile Card */}
+      <Card className="tracker-glass-panel rounded-xl border p-8 flex flex-col items-center text-center shadow-xl shadow-primary/5">
+        {/* Large circular initials avatar */}
+        <div className="my-4">
+          <div className={cn(
+            "flex size-28 items-center justify-center rounded-full border text-4xl font-black shadow-2xl transition-transform hover:scale-105",
+            tierBorderBgColorClasses[data.staff.tier]
+          )}>
+            {initials}
+          </div>
+        </div>
+
+        {/* User identification */}
+        <h2 className="text-2xl font-black tracking-tight mt-2" translate="no">
+          {data.staff.name}
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1" translate="no">
+          {data.staff.email}
+        </p>
+        <Badge
+          variant="outline"
+          className={cn(
+            "mt-4 h-6 border-border px-4 text-xs font-bold uppercase tracking-wider",
+            tierTextColorClasses[data.staff.tier]
+          )}
+        >
+          {data.staff.tier}
+        </Badge>
+      </Card>
+
+      {/* Details Grid */}
       <Card className="tracker-glass-panel rounded-xl border">
         <CardHeader>
-          <CardTitle>Staff Profile</CardTitle>
+          <CardTitle>Detail Profil</CardTitle>
           <CardDescription>
-            Profile details for current staff account.
+            Informasi lengkap mengenai profil dan hak akses Anda di KireiApp.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,7 +118,7 @@ export default async function AdminProfilePage() {
             {detailRows.map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-lg border border-border/75 bg-background/35 p-3"
+                className="rounded-lg border border-border/75 bg-background/35 p-4 text-left"
               >
                 <dt className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
                   {label}
@@ -108,15 +134,13 @@ export default async function AdminProfilePage() {
           </dl>
 
           {data.issues.length > 0 ? (
-            <div className="mt-4 rounded-lg border border-border bg-background/35 p-3 text-sm text-muted-foreground">
+            <div className="mt-4 rounded-lg border border-border bg-background/35 p-3 text-sm text-muted-foreground text-left">
               {data.issues[0]}
             </div>
           ) : null}
           <p className="sr-only">Self profile id: {staffSelfId}</p>
         </CardContent>
       </Card>
-
-      <UpdateCredentialsForm currentEmail={data.staff.email} />
     </div>
   );
 }

@@ -251,6 +251,14 @@ Cron runs are logged to server logs only. No observability UI exists (tracked as
 - **Request Summary**: Build a reactive two-way synchronization layer between the Absensi dashboard (historical correction/ledger) and the live Tracker screen. Correcting a worker's status inside the Absensi panel instantly resets/updates the worker's live operational status and version, and vice versa.
 - **Goal**: Maintain 100% data consistency across both views without requiring manual escape actions or page reloads.
 
+### Temporary Shift Changes with Timers
+- **Request Summary**: Allow managers to temporarily alter a worker's shift assignments (e.g. swap from Shift F to Shift A) with an active expiration timer. When the timer expires (e.g. at the end of the shift or operational day), the worker automatically reverts to their default base shift.
+- **Goal**: Enable frictionless temporary scheduler adjustments without requiring manual reversion overhead.
+
+### Cancel Start (Check-in Cancellation)
+- **Request Summary**: Provide a safety-net mechanism to cancel an active/in-progress shift session (the green START status) within a short grace period (e.g., 5-15 minutes). This allows workers or admins to abort an accidental check-in without corrupting attendance aggregates.
+- **Goal**: Reduce data errors from accidental tracker clicks.
+
 ---
 
-*Last updated: 2026-07-02*
+*Last updated: 2026-07-03*

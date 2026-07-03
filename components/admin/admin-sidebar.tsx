@@ -201,7 +201,7 @@ export function AdminSidebar({
             >
               <span
                 className={cn(
-                  "flex size-11 shrink-0 items-center justify-center rounded-lg border text-sm font-bold shadow-lg",
+                  "flex size-11 shrink-0 items-center justify-center rounded-full border text-sm font-bold shadow-lg",
                   tierAvatarClassName,
                 )}
                 translate="no"

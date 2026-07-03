@@ -3,16 +3,18 @@
 import React, { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { updateOwnCredentials } from "@/app/admin/(shell)/profile/actions";
+import { PencilIcon } from "lucide-react";
 
-type UpdateCredentialsFormProps = {
+type UpdateCredentialsDialogProps = {
   currentEmail: string;
 };
 
@@ -27,8 +29,9 @@ function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.Re
   );
 }
 
-export function UpdateCredentialsForm({ currentEmail }: UpdateCredentialsFormProps) {
+export function UpdateCredentialsDialog({ currentEmail }: UpdateCredentialsDialogProps) {
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -72,10 +75,7 @@ export function UpdateCredentialsForm({ currentEmail }: UpdateCredentialsFormPro
             description: "Kredensial profil berhasil diperbarui.",
             variant: "success",
           });
-          // Clear password input manually
-          const form = e.target as HTMLFormElement;
-          const pwInput = form.querySelector("#newPassword") as HTMLInputElement;
-          if (pwInput) pwInput.value = "";
+          setOpen(false);
         } else {
           setError(res.error || "Gagal memperbarui kredensial.");
           toast({
@@ -97,22 +97,28 @@ export function UpdateCredentialsForm({ currentEmail }: UpdateCredentialsFormPro
   }
 
   return (
-    <Card className="tracker-glass-panel rounded-xl border">
-      <CardHeader>
-        <CardTitle>Perbarui Kredensial</CardTitle>
-        <CardDescription>
-          Perbarui alamat email login (prefix saja) dan password Anda. Domain email bersifat permanen (@kireiku.app).
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2 font-bold tracker-glass-panel">
+          <PencilIcon className="size-4" />
+          Edit Profil
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="tracker-glass-panel sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Perbarui Kredensial</DialogTitle>
+          <DialogDescription>
+            Perbarui alamat email login (prefix saja) dan password Anda. Domain email bersifat permanen (@kireiku.app).
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="flex flex-col gap-4 mt-2">
           {error && (
             <p className="rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive font-semibold">
               {error}
             </p>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-4">
             <div>
               <FieldLabel htmlFor="emailPrefix">Prefix Email</FieldLabel>
               <div className="flex rounded-md border border-border bg-background/35 focus-within:ring-3 focus-within:ring-ring/50 focus-within:border-ring transition-colors overflow-hidden">
@@ -144,13 +150,21 @@ export function UpdateCredentialsForm({ currentEmail }: UpdateCredentialsFormPro
             </div>
           </div>
 
-          <div className="flex justify-end mt-2">
+          <div className="flex justify-end gap-2 mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isPending}
+              onClick={() => setOpen(false)}
+            >
+              Batal
+            </Button>
             <Button type="submit" disabled={isPending} className="font-bold">
               {isPending ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
