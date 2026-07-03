@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { workerRoles, workerShifts, workerShiftDefinitions } from "@/lib/workers/constants";
 import { getWorkerSpLogs } from "@/lib/users/data";
+import { redis } from "@/lib/redis/client";
 
 // Constraint: worker_profiles_flexible_shift_shape_check
 // flexible shift => is_flexible=true, all hour fields NULL
@@ -122,6 +123,7 @@ export async function createWorker(payload: unknown) {
       return { ok: false, error: insertStatusError.message };
     }
 
+    await redis.del("cache:worker_profiles:active");
     revalidatePath("/admin/users");
     return { ok: true };
   } catch (err) {
@@ -197,6 +199,7 @@ export async function editWorker(userId: string, payload: unknown) {
         .eq("user_id", userId);
     }
 
+    await redis.del("cache:worker_profiles:active");
     revalidatePath("/admin/users");
     return { ok: true };
   } catch (err) {
@@ -211,6 +214,7 @@ export async function deactivateWorker(userId: string) {
     const { error } = await supabase.rpc("deactivate_worker", { p_target_user_id: userId });
     if (error) return { ok: false, error: error.message };
 
+    await redis.del("cache:worker_profiles:active");
     revalidatePath("/admin/users");
     return { ok: true };
   } catch (err) {
@@ -225,6 +229,7 @@ export async function reactivateWorker(userId: string) {
     const { error } = await supabase.rpc("reactivate_worker", { p_target_user_id: userId });
     if (error) return { ok: false, error: error.message };
 
+    await redis.del("cache:worker_profiles:active");
     revalidatePath("/admin/users");
     return { ok: true };
   } catch (err) {
