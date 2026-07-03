@@ -251,14 +251,33 @@ Cron runs are logged to server logs only. No observability UI exists (tracked as
 - **Request Summary**: Build a reactive two-way synchronization layer between the Absensi dashboard (historical correction/ledger) and the live Tracker screen. Correcting a worker's status inside the Absensi panel instantly resets/updates the worker's live operational status and version, and vice versa.
 - **Goal**: Maintain 100% data consistency across both views without requiring manual escape actions or page reloads.
 
-### Temporary Shift Changes with Timers
-- **Request Summary**: Allow managers to temporarily alter a worker's shift assignments (e.g. swap from Shift F to Shift A) with an active expiration timer. When the timer expires (e.g. at the end of the shift or operational day), the worker automatically reverts to their default base shift.
+### Temporary Shift Changes with Timers & Swapping
+- **Request Summary**: Accommodate permanent role/shift changes as well as temporary daily shift swaps without causing double ALPHA/LATE bugs when a worker is swapped back.
 - **Goal**: Enable frictionless temporary scheduler adjustments without requiring manual reversion overhead.
+- **Mechanic Permanent**: Same as V1, updates the base `shift` and `employee_role` directly inside `worker_profiles`.
+- **Mechanic Temporary**:
+  - Add two columns `temp_shift` (text/nullable) and `temp_shift_until` (timestamptz/nullable) to `worker_profiles`.
+  - When the Admin sets a temporary shift swap, they configure the swap duration. The system stores the target shift in `temp_shift` and the expiration timestamp in `temp_shift_until`.
+  - The Cron Engine (evaluated every minute) checks if `now() > temp_shift_until` for any active worker. If true, it automatically nullifies both columns, reverting the worker to their default base shift silently.
+- **Single Attendance / Double ALPHA Protection Rule**:
+  - To prevent a worker from being penalized twice (e.g., swapped to Shift A, completes work, swapped back to Shift F, and then marked ALPHA/LATE by the cron for Shift F), the Cron engine applies a strict guard:
+  - Regardless of how many times a worker's shift is swapped in a day, if a worker already has a `worker_attendance` row for the target date, the Cron engine MUST completely bypass all `AUTO_LATE` and `AUTO_ALPHA` evaluation checks for that worker on that date.
 
-### Cancel Start (Check-in Cancellation)
-- **Request Summary**: Provide a safety-net mechanism to cancel an active/in-progress shift session (the green START status) within a short grace period (e.g., 5-15 minutes). This allows workers or admins to abort an accidental check-in without corrupting attendance aggregates.
+### Cancel Start (Check-in Grace Period Cancellation)
+- **Request Summary**: Provide a safety-net mechanism to cancel an active/in-progress shift session (the green START status) within a short grace period to prevent double LATE/ALPHA or skewed records when a worker accidentally clicks START.
 - **Goal**: Reduce data errors from accidental tracker clicks.
+- **Mechanics**:
+  - A "Batal Start" / "Cancel Start" button is rendered on the Tracker UI, visible only during a **15-minute grace period** after a worker transitioned their status to `ON` (status active).
+  - The grace period is calculated as `now() - shift_active_started_at <= 15 minutes`.
+- **Action Workflow**:
+  - Clicking "Cancel Start" prompts the worker with a confirmation modal in Indonesian.
+  - Upon confirmation, the system:
+    1. Deletes the `worker_attendance` row associated with that day's shift cycle.
+    2. Reverts the worker's status inside `worker_status` back to `OFF`.
+    3. Resets all temporary shift session columns (`shift_active_started_at`, `shift_active_label`, etc.) to `null`.
+    4. Logs a detailed entry to `audit_logs` (e.g., target table `worker_status`, domain `tracker`, action `tracker.cancel_start`) recording the timestamp and reason to prevent cheating or clock-in manipulation.
 
 ---
 
 *Last updated: 2026-07-03*
+
