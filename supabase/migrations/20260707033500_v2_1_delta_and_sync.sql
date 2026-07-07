@@ -173,7 +173,7 @@ BEGIN
   v_reason := pg_catalog.btrim(p_reason);
   IF pg_catalog.char_length(v_reason) = 0 THEN
     v_reason := null;
-  ELIF pg_catalog.char_length(v_reason) > 50 THEN
+  ELSIF pg_catalog.char_length(v_reason) > 50 THEN
     RAISE EXCEPTION 'records.invalid_value' USING errcode = '22023';
   END IF;
 
@@ -220,17 +220,17 @@ BEGIN
   -- Lock row and get current auto-aggregate value and existing delta
   IF v_norm_field = 'work_late_seconds' THEN
     SELECT work_late_seconds, work_late_delta INTO v_existing_auto, v_existing_delta FROM public.worker_records WHERE user_id = p_target_user_id AND period_month = p_period_month FOR UPDATE;
-  ELIF v_norm_field = 'break_late_seconds' THEN
+  ELSIF v_norm_field = 'break_late_seconds' THEN
     SELECT break_late_seconds, break_late_delta INTO v_existing_auto, v_existing_delta FROM public.worker_records WHERE user_id = p_target_user_id AND period_month = p_period_month FOR UPDATE;
-  ELIF v_norm_field = 'alpha_count' THEN
+  ELSIF v_norm_field = 'alpha_count' THEN
     SELECT alpha_count, alpha_delta INTO v_existing_auto, v_existing_delta FROM public.worker_records WHERE user_id = p_target_user_id AND period_month = p_period_month FOR UPDATE;
-  ELIF v_norm_field = 'sakit_days' THEN
+  ELSIF v_norm_field = 'sakit_days' THEN
     SELECT sakit_days, sakit_delta INTO v_existing_auto, v_existing_delta FROM public.worker_records WHERE user_id = p_target_user_id AND period_month = p_period_month FOR UPDATE;
-  ELIF v_norm_field = 'pending_days' THEN
+  ELSIF v_norm_field = 'pending_days' THEN
     SELECT pending_days, pending_delta INTO v_existing_auto, v_existing_delta FROM public.worker_records WHERE user_id = p_target_user_id AND period_month = p_period_month FOR UPDATE;
-  ELIF v_norm_field = 'lembur_units' THEN
+  ELSIF v_norm_field = 'lembur_units' THEN
     SELECT lembur_units, lembur_delta INTO v_existing_auto, v_existing_delta FROM public.worker_records WHERE user_id = p_target_user_id AND period_month = p_period_month FOR UPDATE;
-  ELIF v_norm_field = 'cuti_stock_snapshot' THEN
+  ELSIF v_norm_field = 'cuti_stock_snapshot' THEN
     SELECT cuti_stock_snapshot, cuti_stock_delta INTO v_existing_auto, v_existing_delta FROM public.worker_records WHERE user_id = p_target_user_id AND period_month = p_period_month FOR UPDATE;
   ELSE
     RAISE EXCEPTION 'records.invalid_field' USING errcode = '22023';
@@ -246,17 +246,17 @@ BEGIN
   -- Update the delta column in worker_records
   IF v_norm_field = 'work_late_seconds' THEN
     UPDATE public.worker_records SET work_late_delta = v_new_delta, updated_at = p_now WHERE user_id = p_target_user_id AND period_month = p_period_month;
-  ELIF v_norm_field = 'break_late_seconds' THEN
+  ELSIF v_norm_field = 'break_late_seconds' THEN
     UPDATE public.worker_records SET break_late_delta = v_new_delta, updated_at = p_now WHERE user_id = p_target_user_id AND period_month = p_period_month;
-  ELIF v_norm_field = 'alpha_count' THEN
+  ELSIF v_norm_field = 'alpha_count' THEN
     UPDATE public.worker_records SET alpha_delta = v_new_delta, updated_at = p_now WHERE user_id = p_target_user_id AND period_month = p_period_month;
-  ELIF v_norm_field = 'sakit_days' THEN
+  ELSIF v_norm_field = 'sakit_days' THEN
     UPDATE public.worker_records SET sakit_delta = v_new_delta, updated_at = p_now WHERE user_id = p_target_user_id AND period_month = p_period_month;
-  ELIF v_norm_field = 'pending_days' THEN
+  ELSIF v_norm_field = 'pending_days' THEN
     UPDATE public.worker_records SET pending_delta = v_new_delta, updated_at = p_now WHERE user_id = p_target_user_id AND period_month = p_period_month;
-  ELIF v_norm_field = 'lembur_units' THEN
+  ELSIF v_norm_field = 'lembur_units' THEN
     UPDATE public.worker_records SET lembur_delta = v_new_delta, updated_at = p_now WHERE user_id = p_target_user_id AND period_month = p_period_month;
-  ELIF v_norm_field = 'cuti_stock_snapshot' THEN
+  ELSIF v_norm_field = 'cuti_stock_snapshot' THEN
     UPDATE public.worker_records SET cuti_stock_delta = v_new_delta, updated_at = p_now WHERE user_id = p_target_user_id AND period_month = p_period_month;
   END IF;
 
