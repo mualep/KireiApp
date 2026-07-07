@@ -72,10 +72,10 @@ DECLARE
 BEGIN
   -- Count statuses from worker_attendance for the given month
   SELECT
-    coalesce(count(*)::integer FILTER (WHERE status = 'alpha' AND is_canceled = false), 0),
-    coalesce(count(*)::numeric(6,2) FILTER (WHERE status = 'sakit' AND is_canceled = false), 0),
-    coalesce(count(*)::numeric(6,2) FILTER (WHERE status = 'pending' AND is_canceled = false), 0),
-    coalesce(count(*)::integer FILTER (WHERE status = 'cuti' AND is_canceled = false), 0)
+    coalesce(count(*) FILTER (WHERE status = 'alpha' AND is_canceled = false), 0)::integer,
+    coalesce(count(*) FILTER (WHERE status = 'sakit' AND is_canceled = false), 0)::numeric(6,2),
+    coalesce(count(*) FILTER (WHERE status = 'pending' AND is_canceled = false), 0)::numeric(6,2),
+    coalesce(count(*) FILTER (WHERE status = 'cuti' AND is_canceled = false), 0)::integer
   INTO v_alpha_count, v_sakit_days, v_pending_days, v_cuti_days
   FROM public.worker_attendance
   WHERE user_id = p_user_id
@@ -237,7 +237,11 @@ BEGIN
   END IF;
 
   -- Calculate the new delta
-  v_new_delta := p_desired_value - v_existing_auto;
+  IF p_desired_value IS NULL THEN
+    v_new_delta := 0;
+  ELSE
+    v_new_delta := p_desired_value - v_existing_auto;
+  END IF;
 
   -- Update the delta column in worker_records
   IF v_norm_field = 'work_late_seconds' THEN
