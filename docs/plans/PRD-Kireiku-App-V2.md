@@ -94,8 +94,8 @@ SAYA INGIN mengganti shift worker secara permanen ATAU sementara (dengan timer a
 AGAR jadwal operasional bisa fleksibel tanpa risiko double ALPHA.
 
 SEBAGAI Owner,
-SAYA INGIN menghapus worker (Soft Delete) sehingga login access dicabut dan data operasional tersembunyi, tetapi nama tetap ada di audit logs historis,
-AGAR riwayat akuntabilitas tetap terjaga meskipun pekerja sudah keluar.
+SAYA INGIN menghapus worker secara permanen (True Hard Delete) sehingga akun, data operasional, dan seluruh jejak historisnya terhapus dari database,
+AGAR tidak ada data sensitif pekerja yang tersisa setelah mereka dipecat.
 
 SEBAGAI Owner,
 SAYA INGIN semua teks UI di Admin Panel konsisten dalam Bahasa Indonesia (kecuali istilah teknis Tier/Shift/Role/Delta),
@@ -437,16 +437,17 @@ AGAR saya merasa yakin dengan kualitas layanan Kireiku.
 
 ---
 
-### 3.11 Soft Delete Worker ("Hapus Pekerja")
-**FR-DEL-01: Soft Delete with Login Revocation**
-- **Requirement:** Tombol "Hapus Pekerja" di User Manager melakukan soft delete.
+### 3.11 True Hard Delete Worker ("Hapus Pekerja")
+**FR-DEL-01: True Hard Delete with Cascading Wipe**
+- **Requirement:** Tombol "Hapus Pekerja" di User Manager melakukan penghapusan destruktif dan permanen dari database.
 - **Acceptance Criteria:**
-  - Set `users.is_deleted = true`, `worker_profiles.show_card = false`.
-  - Revoke login access: disable auth credentials di `auth.users` (via service role).
-  - Worker **tidak muncul** di Tracker, Absensi, Records, atau Users Manager (filtered by `is_deleted = false`).
-  - Nama worker **tetap tersimpan** di `audit_logs` historis dan referensi masa lalu.
-  - Konfirmasi modal: "Anda akan menghapus akses [Nama]. Pekerja tidak bisa login lagi. Data historis tetap tersimpan. Lanjutkan?"
+  - Menggunakan **Supabase Admin Auth API (Service Role)** untuk memanggil `admin.deleteUser(uid)`.
+  - Karena `users.id` mereferensikan `auth.users(id) ON DELETE CASCADE`, penghapusan auth user akan secara otomatis men-cascade dan menghapus secara fisik row pekerja di: `users`, `worker_profiles`, `worker_status`, `worker_attendance`, `worker_records`, `worker_sp`, `daily_tasks`, `payroll_runs`, dan `scheduled_attendance`.
+  - `audit_logs` di mana user ini adalah `actor_user_id` atau `target_user_id` juga ikut terhapus via cascade (`ON DELETE CASCADE`) atau di-set NULL (`ON DELETE SET NULL`) tergantung kebijakan referensi. **Tidak ada jejak operasional yang tersisa.**
+  - Konfirmasi modal bertingkat (severe warning): **"PERINGATAN FATAL: Aksi ini akan menghapus pekerja dan SELURUH data historisnya secara permanen. Data tidak dapat dikembalikan. Lanjutkan?"**
+  - Input konfirmasi: Owner harus mengetik nama lengkap pekerja persis untuk mengaktifkan tombol "Hapus Permanen".
   - Aksi hanya tersedia untuk **Owner**.
+  - `audit_logs` entry terakhir yang mencatat aksi penghapusan ini ditulis **sebelum** cascade terjadi, sehingga log aksi Owner tetap tercatat (actor = Owner, bukan worker yang dihapus).
 
 ---
 
@@ -570,7 +571,7 @@ AGAR saya merasa yakin dengan kualitas layanan Kireiku.
 | --- | --- |
 | Daily Task edit window enforcement | Server-side validation: reject edits > 24h from shift_start |
 | Future scheduling stock guard | cuti_stock deducted atomically in transaction with schedule creation |
-| Soft delete login revocation | Service role disables auth.users row; session tokens invalidated |
+| True Hard Delete cascading wipe | Service role `admin.deleteUser(uid)` triggers `ON DELETE CASCADE` across all child tables; no data remnants |
 | Delta override floor | Server enforces effective_value >= 0; negative results clamped to 0 |
 
 ### 4.3 Data Consistency — V2 Additions
@@ -1360,7 +1361,7 @@ Week 7:
 - Temp shift UI: Permanent/Temporary toggle in User Manager
 - temp_shift + temp_shift_until columns
 - Cron: TEMP_SHIFT_CLEANUP + DOUBLE_ALPHA_GUARD
-- Soft Delete worker flow (login revocation + hide)
+- True Hard Delete worker flow (cascading wipe via admin.deleteUser + severe confirmation UI)
 ```
 
 ### Phase V2-4 — Payroll Engine (1-2 weeks)
@@ -1448,7 +1449,7 @@ CI/CD:              GitHub Actions + Vercel Preview Deployments
 | Tracker (TERIMA ALPHA) | ✓ | ✓ | ✓ self-only |
 | Tracker (CANCEL START) | ✓ | ✓ | ✓ self-only |
 | Payroll | ✓ | ✓ read-only | ✗ |
-| Soft Delete Worker | ✓ | ✗ | ✗ |
+| True Hard Delete Worker | ✓ | ✗ | ✗ |
 | Future Scheduling | ✓ | ✓ | ✗ |
 
 ### C. Motivational Quotes Pool (Sample)
