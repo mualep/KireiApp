@@ -187,8 +187,8 @@ export function RecordsOverrideDialog({
           description: overrideAfterValue === null ? "Override dihapus." : "Record berhasil diperbarui.",
           variant: "success",
         });
-        onOpenChange(false);
         router.refresh();
+        onOpenChange(false);
       } catch {
         toast({
           title: "Gagal",
