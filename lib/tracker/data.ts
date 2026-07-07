@@ -203,7 +203,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
     }
 
     if (
-      attendance.source === "tracker" &&
+      (attendance.source === "tracker" || attendance.source === "absensi") &&
       !attendance.is_canceled &&
       !activeTrackerAttendancesByUserId.has(attendance.user_id)
     ) {
@@ -390,13 +390,17 @@ function getMatchingTrackerAttendance(
     return null;
   }
 
-  const expectedSourceAction = {
-    cuti: "tracker.cuti",
-    pending: "tracker.izin",
-    sakit: "tracker.sakit",
+  const expectedSourceActions = {
+    cuti: ["tracker.cuti", "absensi.correct_cuti"],
+    pending: ["tracker.izin", "absensi.correct_pending"],
+    sakit: ["tracker.sakit", "absensi.correct_sakit"],
   }[storedStatus];
 
-  return attendance.status === storedStatus && attendance.source_action === expectedSourceAction
+  if (!expectedSourceActions) {
+    return null;
+  }
+
+  return attendance.status === storedStatus && expectedSourceActions.includes(attendance.source_action)
     ? attendance
     : null;
 }
