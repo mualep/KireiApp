@@ -104,6 +104,18 @@ AGAR tim operasional tidak bingung dengan campuran bahasa.
 SEBAGAI Owner,
 SAYA INGIN melihat Activity Log di dashboard berisi aksi terakhir siapa saja (Admin/Member) yang melakukan perubahan,
 AGAR saya bisa mengaudit aktivitas tim secara cepat.
+
+SEBAGAI Owner,
+SAYA INGIN menjalankan kalkulasi penggajian bulanan otomatis berdasarkan data Records (Alpha, Telat, Lembur, dll) dan melihat slip gaji per worker,
+AGAR saya tidak perlu menghitung gaji secara manual di spreadsheet setiap bulan.
+
+SEBAGAI Owner,
+SAYA INGIN mengonfigurasi variabel penggajian (base gaji per jabatan, persentase denda, bonus) dari Admin Panel,
+AGAR perubahan kebijakan gaji tidak memerlukan perubahan kode dan berlaku untuk perhitungan bulan berikutnya.
+
+SEBAGAI Owner,
+SAYA INGIN menandai slip gaji per worker sebagai SUDAH TERBAYAR setelah transfer dilakukan,
+AGAR saya bisa melacak status pembayaran seluruh karyawan.
 ```
 
 ### 2.2 Admin
@@ -136,6 +148,10 @@ AGAR saya bisa mengevaluasi performa tim secara ringkas.
 SEBAGAI Admin,
 SAYA INGIN mengaktifkan auto-carryover untuk worker yang sakit berhari-hari sehingga sistem otomatis melanjutkan status SAKIT ke hari berikutnya,
 AGAR saya tidak perlu mengklik SINKRONKAN setiap hari.
+
+SEBAGAI Admin,
+SAYA INGIN melihat ringkasan penggajian bulanan dengan rincian pemasukan, potongan, dan gaji bersih per worker,
+AGAR saya bisa memeriksa keakuratan perhitungan sebelum Owner melakukan pembayaran.
 ```
 
 ### 2.3 Member
@@ -168,6 +184,10 @@ AGAR data kehadiran saya tidak rusak karena salah klik.
 SEBAGAI Member,
 SAYA INGIN melihat kata-kata motivasi berbahasa Inggris yang berubah setiap kali saya membuka halaman Daily Task,
 AGAR saya termotivasi sebelum bekerja.
+
+SEBAGAI Member,
+SAYA INGIN melihat slip gaji bulanan saya sendiri yang menunjukkan rincian pemasukan, potongan, dan gaji bersih,
+AGAR saya memahami bagaimana gaji saya dihitung dan bisa memverifikasi keakuratannya.
 ```
 
 ### 2.4 Public / Buyer
@@ -432,16 +452,102 @@ AGAR saya merasa yakin dengan kualitas layanan Kireiku.
 
 ### 3.12 Automated Payroll & Salary Calculation
 
-> [!IMPORTANT]
-> **[TBD: Awaiting Spreadsheet Formula Injection from Product Owner]**
-> Section ini memerlukan input rumus penggajian dari Product Owner sebelum implementasi. Struktur tabel dan API telah disiapkan sebagai placeholder.
+**FR-PAY-01: Payroll Configuration**
+- **Requirement:** Tabel konfigurasi variabel penggajian yang dapat diedit oleh Owner dari halaman `/admin/payroll`.
+- **Acceptance Criteria:**
+  - Semua variabel penggajian disimpan di tabel `payroll_config`, bukan di-hardcode dalam rumus.
+  - Owner dapat mengedit base gaji per jabatan, persentase denda, nominal bonus, dan rate lembur dari UI tanpa perlu mengubah kode.
+  - Perubahan konfigurasi hanya berlaku untuk kalkulasi bulan **berikutnya**. Slip gaji bulan sebelumnya tidak terpengaruh (immutable snapshot).
+  - Variabel konfigurasi:
 
-**FR-PAY-01: Payroll Calculator Module**
-- **Requirement:** Halaman `/admin/payroll` yang menghitung gaji otomatis dari `worker_records`.
-- **Placeholder Schema:**
-  - Tabel `payroll_config`: base_salary, overtime_rate, late_deduction_rate, alpha_deduction, sick_deduction, pending_deduction per role/tier.
-  - Tabel `payroll_runs`: user_id, month, base_salary, overtime_pay, total_deductions, take_home_pay, generated_at, approved_by.
-- **Blocked On:** Product Owner menyerahkan formula spreadsheet.
+| Variabel | Tipe | Default | Keterangan |
+| --- | --- | --- | --- |
+| `base_gaji` | Per `employee_role` | Lihat tabel di bawah | Gaji pokok per jabatan |
+| `bonus_no_alpha` | Flat amount | Rp125.000 | Bonus jika Alpha = 0 dalam sebulan |
+| `bonus_no_telat` | Flat amount | Rp125.000 | Bonus jika Telat = 0 dalam sebulan |
+| `penalty_alpha_pct` | Percentage | 5% (0.05) | Denda Alpha per kejadian (dari Total Pemasukan) |
+| `penalty_telat_pct` | Percentage | 0.95% (0.0095) | Denda Telat per kejadian (dari Total Pemasukan) |
+| `penalty_pending_pct` | Percentage | 3.3% (0.033) | Denda Pending per hari (dari Total Pemasukan) |
+| `penalty_kompensasi_flat` | Flat amount | Rp8.000 | Denda Kompensasi per kejadian |
+| `penalty_telat_izin_flat` | Flat amount | Rp3.000 | Denda Telat Izin per kejadian |
+| `lembur_rate_flat` | Flat amount | Rp10.000 | Upah lembur per unit |
+
+  - Base Gaji per Jabatan (Default Seed):
+
+| Jabatan (`employee_role`) | Base Gaji |
+| --- | --- |
+| Internship | Rp1.100.000 |
+| Player | Rp1.300.000 |
+| Player Expert (PE) | Rp1.450.000 |
+| Explorer Expedition | Rp1.500.000 |
+| Customer Service (CS) | Rp2.000.000 |
+| Human Resource Development (HRD) | Rp3.000.000 |
+
+**FR-PAY-02: Payroll Calculation Engine**
+- **Requirement:** Mesin kalkulasi yang menghitung gaji bersih per worker menggunakan formula baku.
+- **Acceptance Criteria:**
+  - Kalkulasi mengikuti **Strict Order of Operations** berikut:
+
+  **Step 1 — Total Pemasukan (Subtotal 1):**
+  ```
+  Subtotal_1 = base_gaji
+             + royalty
+             + uang_bensin
+             + uang_makan
+             + (IF alpha_count == 0 THEN bonus_no_alpha ELSE 0)
+             + (IF telat_count == 0 THEN bonus_no_telat ELSE 0)
+  ```
+
+  **Step 2 — Total Potongan:**
+  ```
+  potongan_alpha       = Subtotal_1 × penalty_alpha_pct × alpha_count
+  potongan_telat       = Subtotal_1 × penalty_telat_pct × telat_count
+  potongan_pending     = Subtotal_1 × penalty_pending_pct × pending_days
+  potongan_kompensasi  = kompensasi_count × penalty_kompensasi_flat
+  potongan_telat_izin  = telat_izin_count × penalty_telat_izin_flat
+
+  total_potongan = potongan_alpha + potongan_telat + potongan_pending
+                 + potongan_kompensasi + potongan_telat_izin
+  ```
+
+  **Step 3 — Gaji Bersih Sementara (Subtotal 2):**
+  ```
+  Subtotal_2 = Subtotal_1 - total_potongan
+  ```
+  *Guard: Jika `Subtotal_2 < 0`, clamp ke `0`. Tidak ada gaji negatif.*
+
+  **Step 4 — Potongan Kasbon:**
+  ```
+  Subtotal_3 = Subtotal_2 - bon_amount
+  ```
+  *Guard: Jika `bon_amount > Subtotal_2`, clamp `Subtotal_3` ke `0` dan log warning.*
+
+  **Step 5 — Grand Total (Take Home Pay):**
+  ```
+  take_home_pay = Subtotal_3 + (lembur_units × lembur_rate_flat)
+  ```
+
+  - Semua intermediate values (Subtotal 1, total_potongan, setiap komponen potongan individual) disimpan di `payroll_runs` sebagai **immutable snapshot** sehingga slip gaji historis tidak berubah meskipun konfigurasi diubah di kemudian hari.
+  - Kalkulasi mengambil data input dari `worker_records` bulan terkait (alpha, telat/work_late, pending_days, lembur_units) dan variabel tambahan (royalty, uang_bensin, uang_makan, bon) yang diinput manual oleh Owner saat menjalankan payroll.
+
+**FR-PAY-03: Payroll Generation & Review**
+- **Requirement:** Owner/Admin dapat menjalankan kalkulasi payroll bulanan dan mereview hasilnya.
+- **Acceptance Criteria:**
+  - Halaman `/admin/payroll` menampilkan tabel payroll bulan terpilih.
+  - Tombol "Generate Payroll" (Owner only) menjalankan kalkulasi untuk semua worker aktif bulan tersebut.
+  - Setelah generate, tabel menampilkan per worker: Nama, Jabatan, Base Gaji, Total Pemasukan, rincian setiap potongan, Total Potongan, Gaji Bersih, Bon, Lembur, **Take Home Pay**.
+  - Setiap row payroll memiliki `payment_status`: `BELUM_TERBAYAR` (default) atau `SUDAH_TERBAYAR`.
+  - Owner/Admin dapat mengklik toggle per worker untuk mengubah status menjadi `SUDAH_TERBAYAR` setelah transfer dilakukan.
+  - Grand Total payroll (sum seluruh Take Home Pay) ditampilkan di bagian atas halaman.
+  - Navigasi bulan (prev/next) untuk melihat payroll historis.
+
+**FR-PAY-04: Member Payslip View**
+- **Requirement:** Member dapat melihat slip gaji bulanan milik sendiri.
+- **Acceptance Criteria:**
+  - Ditampilkan sebagai card di halaman Profile atau Dashboard Member.
+  - Menampilkan rincian: Base Gaji, Bonus, Total Pemasukan, rincian Potongan, Total Potongan, Bon, Lembur, Take Home Pay.
+  - Data read-only. Member tidak bisa mengedit.
+  - Hanya menampilkan payroll bulan yang sudah di-generate oleh Owner.
 
 ---
 
@@ -640,7 +746,82 @@ activity_snapshots (
 )
 ```
 
-### 6.7 Relasi Diagram V2 (Extended)
+### 6.7 payroll_config (NEW)
+```sql
+payroll_config (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  config_key      TEXT NOT NULL,           -- e.g., 'base_gaji', 'bonus_no_alpha', 'penalty_alpha_pct'
+  employee_role   TEXT,                    -- NULL = global config, non-NULL = role-specific override
+  value_numeric   NUMERIC(12,4) NOT NULL,  -- Stores amount (Rp) or percentage (decimal)
+  value_type      TEXT NOT NULL
+                  CHECK (value_type IN ('currency', 'percentage')),
+  description     TEXT,
+  updated_by      UUID REFERENCES users(id),
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  updated_at      TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(config_key, employee_role)
+)
+```
+**Catatan:** `employee_role = NULL` berarti konfigurasi berlaku global. Jika ada row dengan `employee_role` spesifik, role-specific menang (override). Contoh: `base_gaji` akan selalu memiliki row per role.
+
+### 6.8 payroll_runs (NEW)
+```sql
+payroll_runs (
+  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                 UUID REFERENCES users(id) ON DELETE SET NULL,
+  month                   DATE NOT NULL,              -- First day of month: 2026-07-01
+  employee_role_snapshot   TEXT NOT NULL,              -- Role at time of generation
+
+  -- Input values (from Records + manual input)
+  alpha_count             SMALLINT NOT NULL DEFAULT 0,
+  telat_count             SMALLINT NOT NULL DEFAULT 0,
+  pending_days            NUMERIC(6,2) NOT NULL DEFAULT 0,
+  kompensasi_count        SMALLINT NOT NULL DEFAULT 0,
+  telat_izin_count        SMALLINT NOT NULL DEFAULT 0,
+  lembur_units            INTEGER NOT NULL DEFAULT 0,
+
+  -- Config snapshot (frozen at generation time)
+  config_snapshot         JSONB NOT NULL,              -- Full payroll_config used for this calculation
+
+  -- Pemasukan breakdown
+  base_gaji               NUMERIC(12,2) NOT NULL,
+  royalty                 NUMERIC(12,2) NOT NULL DEFAULT 0,
+  uang_bensin             NUMERIC(12,2) NOT NULL DEFAULT 0,
+  uang_makan              NUMERIC(12,2) NOT NULL DEFAULT 0,
+  bonus_no_alpha          NUMERIC(12,2) NOT NULL DEFAULT 0,
+  bonus_no_telat          NUMERIC(12,2) NOT NULL DEFAULT 0,
+  subtotal_1              NUMERIC(12,2) NOT NULL,      -- Total Pemasukan
+
+  -- Potongan breakdown
+  potongan_alpha          NUMERIC(12,2) NOT NULL DEFAULT 0,
+  potongan_telat          NUMERIC(12,2) NOT NULL DEFAULT 0,
+  potongan_pending        NUMERIC(12,2) NOT NULL DEFAULT 0,
+  potongan_kompensasi     NUMERIC(12,2) NOT NULL DEFAULT 0,
+  potongan_telat_izin     NUMERIC(12,2) NOT NULL DEFAULT 0,
+  total_potongan          NUMERIC(12,2) NOT NULL DEFAULT 0,
+
+  -- Final calculation
+  subtotal_2              NUMERIC(12,2) NOT NULL,      -- Gaji Bersih Sementara
+  bon_amount              NUMERIC(12,2) NOT NULL DEFAULT 0,
+  subtotal_3              NUMERIC(12,2) NOT NULL,      -- Total Setelah Bon
+  lembur_pay              NUMERIC(12,2) NOT NULL DEFAULT 0,
+  take_home_pay           NUMERIC(12,2) NOT NULL,      -- Grand Total
+
+  -- Status & audit
+  payment_status          TEXT NOT NULL DEFAULT 'BELUM_TERBAYAR'
+                          CHECK (payment_status IN ('BELUM_TERBAYAR', 'SUDAH_TERBAYAR')),
+  generated_by            UUID REFERENCES users(id),
+  generated_at            TIMESTAMPTZ DEFAULT now(),
+  paid_at                 TIMESTAMPTZ,
+  paid_by                 UUID REFERENCES users(id),
+  created_at              TIMESTAMPTZ DEFAULT now(),
+  updated_at              TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, month)
+)
+```
+**Catatan:** `config_snapshot` (JSONB) menyimpan salinan lengkap konfigurasi `payroll_config` yang digunakan saat kalkulasi. Ini memastikan slip gaji historis **tidak pernah berubah** meskipun Owner mengubah rate/gaji di masa depan. Semua kolom numerik menyimpan "angka mati" (calculated result), bukan referensi ke tabel lain.
+
+### 6.9 Relasi Diagram V2 (Extended)
 ```
 auth.users
   └── users (1:1 app profile)
@@ -651,10 +832,12 @@ auth.users
       ├── worker_sp (1:N)
       ├── daily_tasks (1:N per day) ─── NEW
       ├── scheduled_attendance (1:N) ─── NEW
+      ├── payroll_runs (1:N per month) ─── NEW
       └── audit_logs (1:N)
 
 daily_task_config ─── NEW: global checklist template
 activity_snapshots ─── NEW: hourly status counts for dashboard chart
+payroll_config ─── NEW: configurable payroll variables per role
 ```
 
 ---
@@ -785,7 +968,104 @@ GET /api/dashboard/summary
 }
 ```
 
+### 7.9 Payroll
+```
+POST /api/payroll/generate
+```
+**Request Body:**
+```json
+{
+  "month": "2026-07",
+  "manual_inputs": [
+    {
+      "user_id": "uuid",
+      "royalty": 0,
+      "uang_bensin": 50000,
+      "uang_makan": 100000,
+      "bon_amount": 0,
+      "kompensasi_count": 2,
+      "telat_izin_count": 1
+    }
+  ]
+}
+```
+**Server Logic:**
+1. Snapshot current `payroll_config` into `config_snapshot` JSONB.
+2. For each active worker: fetch `worker_records` for the month, merge with `manual_inputs`.
+3. Execute 5-step formula calculation.
+4. Upsert `payroll_runs` row per worker.
+5. Write `audit_logs` entry: domain `payroll`, action `payroll.generate`.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "month": "2026-07",
+  "generated_count": 77,
+  "grand_total": 115000000,
+  "generated_at": "2026-07-07T10:00:00Z"
+}
+```
+
+```
+GET /api/payroll?month=2026-07
+```
+**Response 200:**
+```json
+{
+  "month": "2026-07",
+  "grand_total": 115000000,
+  "data": [
+    {
+      "user_id": "uuid",
+      "name": "Budi",
+      "employee_role": "Player",
+      "base_gaji": 1300000,
+      "subtotal_1": 1575000,
+      "total_potongan": 78750,
+      "subtotal_2": 1496250,
+      "bon_amount": 0,
+      "subtotal_3": 1496250,
+      "lembur_pay": 80000,
+      "take_home_pay": 1576250,
+      "payment_status": "BELUM_TERBAYAR"
+    }
+  ]
+}
+```
+
+```
+PATCH /api/payroll/:runId/payment-status
+```
+**Request Body:**
+```json
+{
+  "payment_status": "SUDAH_TERBAYAR"
+}
+```
+**Response 200:**
+```json
+{
+  "success": true,
+  "run_id": "uuid",
+  "payment_status": "SUDAH_TERBAYAR",
+  "paid_at": "2026-07-07T12:00:00Z"
+}
+```
+
+```
+GET /api/payroll/config
+PATCH /api/payroll/config/:configId
+```
+Owner-only endpoints for reading and updating payroll configuration variables.
+
+```
+GET /api/payroll/my?month=2026-07
+```
+Member-only endpoint. Returns the authenticated worker's own payslip for the specified month. Returns 404 if payroll not yet generated.
+
 ---
+
 
 ## 8. STATE MACHINE SPECIFICATION — V2 AMENDMENTS
 
@@ -837,7 +1117,7 @@ Design reference: https://tweakcn.com/themes/cmmab9sq4000004l58w1r3vak
 | --- | --- | --- |
 | `/admin/dashboard` | Ya | Owner, Admin (analytical) / Member (personal) |
 | `/admin/daily-task` | Ya | Owner, Admin (review table) / Member (checklist) |
-| `/admin/payroll` | Ya | Owner, Admin [TBD] |
+| `/admin/payroll` | Ya | Owner (generate + pay status), Admin (read-only view) |
 
 ### 10.2 Sidebar — V2 Layout
 
@@ -847,7 +1127,8 @@ Design reference: https://tweakcn.com/themes/cmmab9sq4000004l58w1r3vak
 - Tracker          /admin/tracker
 - Absensi          /admin/absensi
 - Records          /admin/records
-- Daily Task       /admin/daily-task    (NEW — between Records and Users)
+- Daily Task       /admin/daily-task    (NEW)
+- Payroll          /admin/payroll       (NEW)
 - Users            /admin/users
 - Content          /admin/content
 ─────────────────────
@@ -1008,6 +1289,26 @@ Modal / Page:
 | SWAP-02 | Worker swapped, already has attendance today | Cron skips AUTO_LATE and AUTO_ALPHA for that worker. |
 | SWAP-03 | temp_shift_until passes while worker is ON | No immediate revert. Revert happens on SELESAI or AUTO_OFF. |
 
+### 13.8 Payroll Tests
+
+| Test ID | Scenario | Expected Result |
+| --- | --- | --- |
+| PAY-01 | Worker: Player, Alpha=0, Telat=0, no bon, no lembur | bonus_no_alpha + bonus_no_telat applied. Zero potongan. Take home = Subtotal 1. |
+| PAY-02 | Worker: Player, Alpha=2, base subtotal=1.575.000 | potongan_alpha = 1.575.000 × 5% × 2 = 157.500. |
+| PAY-03 | Worker: CS, Telat=4, base subtotal=2.250.000 | potongan_telat = 2.250.000 × 0.95% × 4 = 85.500. |
+| PAY-04 | Worker: Pending=2, base subtotal=2.000.000 | potongan_pending = 2.000.000 × 3.3% × 2 = 132.000. |
+| PAY-05 | Worker: Kompensasi=5 | potongan_kompensasi = 5 × 8.000 = 40.000. |
+| PAY-06 | Worker: Telat Izin=3 | potongan_telat_izin = 3 × 3.000 = 9.000. |
+| PAY-07 | Worker: Lembur=8 | lembur_pay = 8 × 10.000 = 80.000 added AFTER bon deduction. |
+| PAY-08 | Total potongan exceeds Subtotal 1 (extreme alpha+telat) | Subtotal 2 clamped to 0. No negative gaji. |
+| PAY-09 | Bon amount exceeds Subtotal 2 | Subtotal 3 clamped to 0. Warning logged. |
+| PAY-10 | Owner changes payroll_config after generating July payroll, views July slip | July slip shows original frozen values from config_snapshot. |
+| PAY-11 | Owner generates payroll twice for same month | Second generate upserts (overwrites) existing payroll_runs rows. |
+| PAY-12 | Owner toggles payment_status to SUDAH_TERBAYAR | Status updated, paid_at timestamp set, audit_log written. |
+| PAY-13 | Member views own payslip | Only own payroll_runs row returned. |
+| PAY-14 | Admin views payroll page | Read-only: can see all rows, cannot generate or toggle payment. |
+| PAY-15 | Alpha=1 (non-zero), worker does NOT get bonus_no_alpha | bonus_no_alpha = 0 in calculation. |
+
 ---
 
 ## 14. IMPLEMENTATION PHASES — V2 ROLLOUT
@@ -1062,13 +1363,28 @@ Week 7:
 - Soft Delete worker flow (login revocation + hide)
 ```
 
-### Phase V2-4 — Language Polish + QA + Launch (1-2 weeks)
+### Phase V2-4 — Payroll Engine (1-2 weeks)
 ```
-Week 8-9:
+Week 8:
+- payroll_config table + seed default values
+- payroll_runs table + snapshot architecture
+- Payroll calculation engine (strict 5-step formula)
+- Admin Payroll page: generate, review, toggle payment status
+- Member payslip view (read-only card)
+
+Week 9:
+- Payroll config editor UI (Owner only)
+- Grand Total aggregation + monthly navigation
+- Integration testing: formula accuracy, negative clamp guards
+- Audit logging for payroll generation and payment status changes
+```
+
+### Phase V2-5 — Language Polish + QA + Launch (1-2 weeks)
+```
+Week 10-11:
 - Language audit: all Admin Panel UI → Indonesian
 - Landing page audit: all copy → English
-- E2E testing: all V2 test cases
-- Payroll placeholder page (TBD awaiting formula)
+- E2E testing: all V2 test cases (including payroll boundary tests)
 - Performance audit: sync latency, chart render, Daily Task load
 - Bug fixes from QA
 - Staged rollout → Full launch
