@@ -28,7 +28,7 @@ assertIncludes(componentSources, "RecordsOverrideDialog");
 // Dialog must be a client component with expected exports
 assert.match(dialogSource, /^"use client";/);
 assertIncludes(dialogSource, "RecordsOverrideDialog");
-assertIncludes(dialogSource, "applyRecordsOverride");
+assertIncludes(dialogSource, "/api/records/override");
 assertIncludes(dialogSource, "useTransition");
 
 // QA Polish: dialog receives full row object (bugfix from R3-RO-Bugfix)
