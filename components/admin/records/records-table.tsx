@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,6 +53,7 @@ export function RecordsTable({
   monthLabel,
   rows,
 }: RecordsTableProps) {
+  const router = useRouter();
   const [overrideTarget, setOverrideTarget] = useState<RecordsRowDTO | null>(null);
 
   if (rows.length === 0) {
@@ -212,6 +214,10 @@ export function RecordsTable({
           onOpenChange={(open) => !open && setOverrideTarget(null)}
           periodMonth={monthParam}
           row={overrideTarget}
+          onSuccess={() => {
+            router.refresh();
+            setOverrideTarget(null);
+          }}
         />
       ) : null}
     </>

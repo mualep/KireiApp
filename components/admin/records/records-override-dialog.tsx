@@ -44,6 +44,7 @@ export type RecordsOverrideDialogProps = {
   onOpenChange: (open: boolean) => void;
   row: RecordsRowDTO;
   periodMonth: string;
+  onSuccess?: () => void;
 };
 
 function getMetricForField(row: RecordsRowDTO, field: OverrideFieldName) {
@@ -80,6 +81,7 @@ export function RecordsOverrideDialog({
   onOpenChange,
   row,
   periodMonth,
+  onSuccess,
 }: RecordsOverrideDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -187,8 +189,12 @@ export function RecordsOverrideDialog({
           description: overrideAfterValue === null ? "Override dihapus." : "Record berhasil diperbarui.",
           variant: "success",
         });
-        router.refresh();
-        onOpenChange(false);
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.refresh();
+          onOpenChange(false);
+        }
       } catch {
         toast({
           title: "Gagal",
