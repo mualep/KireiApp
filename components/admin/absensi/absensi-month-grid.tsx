@@ -217,7 +217,7 @@ function AbsensiCell({
   row: AbsensiWorkerRowDTO;
 }) {
   const beforeStatus = cell?.status ?? "none";
-  const isHistorical = day < currentWibDate;
+  const isHistorical = day <= currentWibDate;
   const canOpenCorrection = canCorrect && isHistorical;
   const label = cell?.label ?? "No recorded attendance";
   const title = getCellTitle({
