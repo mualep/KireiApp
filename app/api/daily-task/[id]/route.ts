@@ -80,7 +80,7 @@ export async function PATCH(
 
       if (new Date() > new Date(task.editable_until)) {
         return NextResponse.json(
-          { success: false, error: "Batas waktu pengisian sudah terlewat (24 jam)." },
+          { success: false, error: "Batas waktu pengisian sudah terlewat (12 jam)." },
           { status: 403 }
         );
       }

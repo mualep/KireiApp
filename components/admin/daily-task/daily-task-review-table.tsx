@@ -68,6 +68,7 @@ export function DailyTaskReviewTable({
           toast({
             title: status === "approved" ? "Tugas Disetujui" : "Tugas Ditolak",
             description: `Tugas harian berhasil diubah statusnya menjadi ${status}.`,
+            className: "border-green-500/30 bg-green-500/10 text-green-500 backdrop-blur-md",
           });
           setSelectedTask(null);
           router.refresh();
@@ -76,6 +77,7 @@ export function DailyTaskReviewTable({
             variant: "destructive",
             title: "Gagal Mengubah Status",
             description: result.error || "Terjadi kesalahan pada server.",
+            className: "border-red-500/30 bg-red-500/10 text-red-500 backdrop-blur-md",
           });
         }
       } catch {
@@ -83,6 +85,7 @@ export function DailyTaskReviewTable({
           variant: "destructive",
           title: "Gagal Mengubah Status",
           description: "Gagal menghubungi server.",
+          className: "border-red-500/30 bg-red-500/10 text-red-500 backdrop-blur-md",
         });
       }
     });
@@ -220,7 +223,7 @@ export function DailyTaskReviewTable({
       {/* Review Dialog */}
       {selectedTask && (
         <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-xl border p-6 md:p-8">
+          <DialogContent className="max-w-5xl w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl border p-6 md:p-8">
             <DialogHeader className="gap-1.5">
               <DialogTitle>Review Tugas Harian: {selectedTask.worker_name}</DialogTitle>
               <DialogDescription>
@@ -264,6 +267,14 @@ export function DailyTaskReviewTable({
                     </h4>
                     <div className="flex flex-col gap-3">
                       {phaseItems.map((item) => {
+                        if (
+                          phase === "while_work" &&
+                          item.game !== "Lainnya" &&
+                          !selectedTask.selected_games.includes(item.game)
+                        ) {
+                          return null;
+                        }
+
                         const answer = selectedTask.checklist_answers[item.id] || { checked: false, proof: "" };
                         return (
                           <div

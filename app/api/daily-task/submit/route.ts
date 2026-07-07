@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       ? new Date(statusRow.shift_active_started_at)
       : new Date();
 
-    const editableUntil = new Date(baseTime.getTime() + 24 * 60 * 60 * 1000);
+    const editableUntil = new Date(baseTime.getTime() + 12 * 60 * 60 * 1000);
 
     // 3. Insert new daily task submission
     const { data, error: insertError } = await supabase

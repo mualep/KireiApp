@@ -6,11 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { Lock, RefreshCw, Flame } from "lucide-react";
+import { RefreshCw, Flame, CheckCircle, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // 5 Motivational Quotes
@@ -21,8 +20,6 @@ const MOTIVATIONAL_QUOTES = [
   { text: "Quality is not an act, it is a habit.", author: "Aristotle" },
   { text: "Don't count the days, make the days count.", author: "Muhammad Ali" },
 ];
-
-const SHIFT_OPTIONS = ["A", "B", "C", "D", "E", "F", "1", "2", "3", "flexible"];
 
 export interface ConfigItem {
   id: string;
@@ -216,6 +213,7 @@ export function DailyTaskForm({
           toast({
             title: "Checklist Terkirim",
             description: "Progres tugas harian berhasil disimpan.",
+            className: "border-green-500/30 bg-green-500/10 text-green-500 backdrop-blur-md",
           });
           triggerReload();
           router.refresh();
@@ -224,6 +222,7 @@ export function DailyTaskForm({
             variant: "destructive",
             title: "Pengiriman Gagal",
             description: result.error || "Terjadi kesalahan saat menyimpan tugas.",
+            className: "border-red-500/30 bg-red-500/10 text-red-500 backdrop-blur-md",
           });
         }
       } catch {
@@ -231,6 +230,7 @@ export function DailyTaskForm({
           variant: "destructive",
           title: "Pengiriman Gagal",
           description: "Gagal terhubung dengan server.",
+          className: "border-red-500/30 bg-red-500/10 text-red-500 backdrop-blur-md",
         });
       }
     });
@@ -255,29 +255,17 @@ export function DailyTaskForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
       {/* Locked status banner */}
-      {isLocked && (
-        <div className="flex items-center gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-destructive text-sm font-medium shadow-md shadow-destructive/5 animate-pulse">
-          <Lock className="size-5 shrink-0" />
-          <span>Formulir terkunci (batas waktu 24 jam terlewati atau tugas telah disetujui).</span>
+      {taskStatus === "approved" ? (
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-green-500/30 bg-green-500/10 text-green-500 text-sm font-bold shadow-md shadow-green-500/5">
+          <CheckCircle className="size-5 shrink-0" />
+          <span>Tugas telah disetujui.</span>
         </div>
-      )}
-
-      {/* Quote Card */}
-      {quote.text && (
-        <Card className="border border-primary/20 bg-primary/5 shadow-md rounded-xl overflow-hidden relative">
-          <div className="absolute right-4 top-4 text-primary/10 opacity-30 select-none pointer-events-none">
-            <Flame className="size-20" />
-          </div>
-          <CardContent className="p-6 relative z-10 flex flex-col gap-1.5">
-            <p className="font-serif italic text-base md:text-lg text-foreground/90 leading-relaxed">
-              &ldquo;{quote.text}&rdquo;
-            </p>
-            <p className="text-xs md:text-sm text-primary font-bold tracking-wide uppercase">
-              &mdash; {quote.author}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      ) : isLocked ? (
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 text-sm font-bold shadow-md shadow-yellow-500/5">
+          <AlertTriangle className="size-5 shrink-0" />
+          <span>Batas waktu pengisian (12 jam) telah terlewati.</span>
+        </div>
+      ) : null}
 
       {/* Main Form Fields */}
       <Card className="tracker-glass-panel rounded-xl border p-6 md:p-8 flex flex-col gap-6 shadow-xl shadow-primary/5">
@@ -293,19 +281,14 @@ export function DailyTaskForm({
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="shift-select">Aktifkan Shift</FieldLabel>
-            <Select
-              id="shift-select"
-              value={shiftLabel}
-              onChange={(e) => setShiftLabel(e.target.value)}
-              disabled={isLocked || isPending}
-            >
-              {SHIFT_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  Shift {opt.toUpperCase()}
-                </option>
-              ))}
-            </Select>
+            <FieldLabel htmlFor="shift-input">Shift Kerja</FieldLabel>
+            <Input
+              id="shift-input"
+              value={`Shift ${shiftLabel.toUpperCase()}`}
+              readOnly
+              disabled
+              className="bg-muted/40 cursor-not-allowed select-none font-bold"
+            />
           </Field>
         </div>
 
@@ -353,12 +336,6 @@ export function DailyTaskForm({
         {/* Phase: Before Work */}
         {beforeWorkItems.length > 0 && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 px-1">
-              <Badge variant="outline" className="h-6 border-status-break/40 bg-status-break/10 text-status-break font-bold uppercase tracking-wider">
-                Phase 1
-              </Badge>
-              <h3 className="text-lg font-bold text-foreground">Before Work</h3>
-            </div>
             <div className="grid grid-cols-1 gap-4">
               {beforeWorkItems.map((item) => (
                 <ChecklistItemCard
@@ -377,12 +354,6 @@ export function DailyTaskForm({
         {/* Phase: While Work */}
         {whileWorkItems.length > 0 && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 px-1">
-              <Badge variant="outline" className="h-6 border-primary/40 bg-primary/10 text-primary font-bold uppercase tracking-wider animate-pulse">
-                Phase 2
-              </Badge>
-              <h3 className="text-lg font-bold text-foreground">While Work (Active Games)</h3>
-            </div>
             <div className="grid grid-cols-1 gap-4">
               {whileWorkItems.map((item) => (
                 <ChecklistItemCard
@@ -401,12 +372,6 @@ export function DailyTaskForm({
         {/* Phase: After Work */}
         {afterWorkItems.length > 0 && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 px-1">
-              <Badge variant="outline" className="h-6 border-status-sakit/40 bg-status-sakit/10 text-status-sakit font-bold uppercase tracking-wider">
-                Phase 3
-              </Badge>
-              <h3 className="text-lg font-bold text-foreground">After Work</h3>
-            </div>
             <div className="grid grid-cols-1 gap-4">
               {afterWorkItems.map((item) => (
                 <ChecklistItemCard
@@ -435,6 +400,23 @@ export function DailyTaskForm({
             {taskId ? "Perbarui Tugas Harian" : "Kirim Tugas Harian"}
           </Button>
         </div>
+      )}
+
+      {/* Quote Card placed at the bottom */}
+      {quote.text && (
+        <Card className="border border-primary/20 bg-primary/5 shadow-md rounded-xl overflow-hidden relative mt-8">
+          <div className="absolute right-4 top-4 text-primary/10 opacity-30 select-none pointer-events-none">
+            <Flame className="size-20" />
+          </div>
+          <CardContent className="p-6 relative z-10 flex flex-col gap-1.5">
+            <p className="font-serif italic text-base md:text-lg text-foreground/90 leading-relaxed">
+              &ldquo;{quote.text}&rdquo;
+            </p>
+            <p className="text-xs md:text-sm text-primary font-bold tracking-wide uppercase">
+              &mdash; {quote.author}
+            </p>
+          </CardContent>
+        </Card>
       )}
     </form>
   );

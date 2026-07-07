@@ -29,6 +29,11 @@ const ownerAdminNavItems: AdminShellNavItem[] = [
     icon: "records",
   },
   {
+    href: "/admin/daily-task-review",
+    label: "Daily Task",
+    icon: "records",
+  },
+  {
     href: "/admin/users",
     label: "Users Manager",
     icon: "users",
@@ -45,6 +50,11 @@ const memberNavItems: AdminShellNavItem[] = [
     href: "/admin/performance",
     label: "Performance",
     icon: "performance",
+  },
+  {
+    href: "/admin/daily-task",
+    label: "Daily Task",
+    icon: "records",
   },
 ];
 
