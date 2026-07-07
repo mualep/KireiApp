@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Check, X, RefreshCw, Eye, Calendar, UserCheck } from "lucide-react";
+import { Check, X, RefreshCw, Eye, Calendar, UserCheck, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface TaskRecord {
@@ -26,7 +26,7 @@ export interface TaskRecord {
     label: string;
   }>;
   checklist_answers: Record<string, { checked: boolean; proof: string }>;
-  status: "draft" | "pending_review" | "approved" | "rejected";
+  status: "draft" | "pending_review" | "approved" | "rejected" | "belum_mengisi";
   reviewed_by: string | null;
   reviewer_name: string | null;
   reviewed_at: string | null;
@@ -49,10 +49,42 @@ export function DailyTaskReviewTable({
   const [date, setDate] = useState(selectedDate);
   const [selectedTask, setSelectedTask] = useState<TaskRecord | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("name_asc");
+
   const handleDateChange = (newDate: string) => {
     setDate(newDate);
     router.push(`/admin/daily-task-review?date=${newDate}`);
   };
+
+  const filteredTasks = initialTasks
+    .filter((task) => {
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        if (!task.worker_name.toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+      if (statusFilter !== "all") {
+        if (task.status !== statusFilter) {
+          return false;
+        }
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "name_asc") {
+        return a.worker_name.localeCompare(b.worker_name);
+      }
+      if (sortBy === "name_desc") {
+        return b.worker_name.localeCompare(a.worker_name);
+      }
+      if (sortBy === "status") {
+        return a.status.localeCompare(b.status);
+      }
+      return 0;
+    });
 
   const handleReviewStatus = async (taskId: string, status: "approved" | "rejected") => {
     startTransition(async () => {
@@ -121,23 +153,85 @@ export function DailyTaskReviewTable({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Toolbar / Date Filter */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/40 bg-card/35 shadow-md shadow-primary/2">
-        <div className="flex items-center gap-3">
-          <Calendar className="size-5 text-muted-foreground" />
-          <span className="text-sm font-semibold text-muted-foreground">Pilih Tanggal Review:</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => handleDateChange(e.target.value)}
-            disabled={isPending}
-            className="bg-input-bg border border-input-border text-foreground px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <div className="text-xs text-muted-foreground">
-          Total tugas harian hari ini: <span className="font-bold text-foreground">{initialTasks.length}</span>
-        </div>
-      </div>
+      {/* Toolbar / Filters */}
+      <Card className="tracker-glass-panel rounded-xl border p-4 shadow-md shadow-primary/2">
+        <CardContent className="p-0">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="grid flex-1 gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+              {/* Search */}
+              <div role="group" className="flex flex-col">
+                <label htmlFor="review-search" className="sr-only">
+                  Cari Nama Worker
+                </label>
+                <input
+                  id="review-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari nama worker..."
+                  autoComplete="off"
+                  className="w-full min-w-0 rounded-lg border border-input px-3 py-1.5 text-sm h-10 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div role="group" className="relative flex flex-col">
+                <label htmlFor="review-status" className="sr-only">
+                  Filter Status
+                </label>
+                <select
+                  id="review-status"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-input px-3 py-1.5 pr-9 text-sm h-10 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="belum_mengisi">Belum Mengisi</option>
+                  <option value="pending_review">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
+              </div>
+
+              {/* Sort By */}
+              <div role="group" className="relative flex flex-col">
+                <label htmlFor="review-sort" className="sr-only">
+                  Urutan
+                </label>
+                <select
+                  id="review-sort"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-input px-3 py-1.5 pr-9 text-sm h-10 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="name_asc">Nama A-Z</option>
+                  <option value="name_desc">Nama Z-A</option>
+                  <option value="status">Status</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
+              </div>
+
+              {/* Date Picker */}
+              <div role="group" className="relative flex items-center">
+                <Calendar className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  disabled={isPending}
+                  className="w-full rounded-lg border border-input pl-9 pr-3 py-1.5 text-sm h-10 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+              </div>
+            </div>
+
+            <div className="text-xs text-muted-foreground shrink-0 text-right">
+              Menampilkan <span className="font-bold text-foreground">{filteredTasks.length}</span> dari{" "}
+              <span className="font-bold text-foreground">{initialTasks.length}</span> member
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Table Card */}
       <Card className="tracker-glass-panel rounded-xl border shadow-xl shadow-primary/5">
@@ -154,66 +248,74 @@ export function DailyTaskReviewTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-border/20 text-sm">
-              {initialTasks.length === 0 ? (
+              {filteredTasks.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-16 text-center text-muted-foreground/60 italic">
-                    Belum ada pengumpulan tugas harian pada tanggal ini.
+                    Tidak ada data pengumpulan tugas harian yang cocok dengan kriteria.
                   </td>
                 </tr>
               ) : (
-                initialTasks.map((task) => (
-                  <tr key={task.id} className="hover:bg-muted/10 transition-colors">
-                    <td className="px-5 py-4 font-bold text-foreground" translate="no">
-                      {task.worker_name}
-                    </td>
-                    <td className="px-5 py-4">
-                      <Badge variant="outline" className="font-sans font-bold text-[11px] border-border bg-muted/40">
-                        Shift {task.shift_label.toUpperCase()}
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-1.5">
-                        {task.selected_games.length === 0 ? (
-                          <span className="text-muted-foreground/45 italic text-xs">No Game</span>
-                        ) : (
-                          task.selected_games.map((g) => (
-                            <Badge key={g} variant="outline" className="font-semibold text-[10px] border-primary/20 bg-primary/5 text-primary">
-                              {g}
-                            </Badge>
-                          ))
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 tabular-nums text-muted-foreground">
-                      {formatTime(task.submitted_at)}
-                    </td>
-                    <td className="px-5 py-4 text-center">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "font-bold text-[11px] px-2.5 h-6 uppercase tracking-wider",
-                          task.status === "approved" && "border-green-500/35 bg-green-500/10 text-green-400",
-                          task.status === "rejected" && "border-red-500/35 bg-red-500/10 text-red-400",
-                          task.status === "pending_review" && "border-yellow-500/35 bg-yellow-500/10 text-yellow-400",
-                          task.status === "draft" && "border-gray-500/35 bg-gray-500/10 text-gray-400"
-                        )}
-                      >
-                        {task.status === "pending_review" ? "pending" : task.status}
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <Button
-                        onClick={() => setSelectedTask(task)}
-                        variant="outline"
-                        size="sm"
-                        className="h-8 border-border bg-background hover:bg-muted text-xs font-bold"
-                      >
-                        <Eye className="size-3.5 mr-1" />
-                        Review
-                      </Button>
-                    </td>
-                  </tr>
-                ))
+                filteredTasks.map((task) => {
+                  const isPlaceholder = task.status === "belum_mengisi";
+                  return (
+                    <tr key={task.id} className="hover:bg-muted/10 transition-colors">
+                      <td className="px-5 py-4 font-bold text-foreground" translate="no">
+                        {task.worker_name}
+                      </td>
+                      <td className="px-5 py-4">
+                        <Badge variant="outline" className="font-sans font-bold text-[11px] border-border bg-muted/40">
+                          Shift {task.shift_label.toUpperCase()}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {task.selected_games.length === 0 ? (
+                            <span className="text-muted-foreground/45 italic text-xs">No Game</span>
+                          ) : (
+                            task.selected_games.map((g) => (
+                              <Badge key={g} variant="outline" className="font-semibold text-[10px] border-primary/20 bg-primary/5 text-primary">
+                                {g}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 tabular-nums text-muted-foreground">
+                        {formatTime(task.submitted_at)}
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "font-bold text-[11px] px-2.5 h-6 uppercase tracking-wider",
+                            task.status === "approved" && "border-green-500/35 bg-green-500/10 text-green-400",
+                            task.status === "rejected" && "border-red-500/35 bg-red-500/10 text-red-400",
+                            task.status === "pending_review" && "border-yellow-500/35 bg-yellow-500/10 text-yellow-400",
+                            task.status === "draft" && "border-gray-500/35 bg-gray-500/10 text-gray-400",
+                            task.status === "belum_mengisi" && "border-neutral-500/35 bg-neutral-500/10 text-neutral-400"
+                          )}
+                        >
+                          {task.status === "pending_review" ? "pending" : task.status === "belum_mengisi" ? "belum mengisi" : task.status}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <Button
+                          onClick={() => setSelectedTask(task)}
+                          variant="outline"
+                          size="sm"
+                          disabled={isPlaceholder}
+                          className={cn(
+                            "h-8 border-border bg-background hover:bg-muted text-xs font-bold",
+                            isPlaceholder && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          <Eye className="size-3.5 mr-1" />
+                          Review
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -223,7 +325,7 @@ export function DailyTaskReviewTable({
       {/* Review Dialog */}
       {selectedTask && (
         <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-          <DialogContent className="max-w-6xl w-[95vw] sm:w-[90vw] max-h-[85vh] overflow-y-auto rounded-xl border p-6 md:p-8">
+          <DialogContent className="sm:max-w-5xl md:max-w-6xl lg:max-w-7xl w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl border p-6 md:p-8">
             <DialogHeader className="gap-1.5">
               <DialogTitle>Review Tugas Harian: {selectedTask.worker_name}</DialogTitle>
               <DialogDescription>

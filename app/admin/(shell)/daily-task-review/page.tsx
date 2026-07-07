@@ -32,24 +32,74 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
 
   const supabase = await createClient();
 
-  // 2. Fetch submissions for the selected date
+  // 2. Fetch all active members (tier = 'member' and is_deleted = false)
+  const { data: members } = await supabase
+    .from("users")
+    .select("id, name")
+    .eq("tier", "member")
+    .eq("is_deleted", false);
+
+  // 3. Fetch worker profiles to map their shifts
+  const { data: profiles } = await supabase
+    .from("worker_profiles")
+    .select("user_id, shift");
+
+  const shiftMap = new Map((profiles || []).map((p) => [p.user_id, p.shift]));
+
+  // 4. Fetch daily task submissions for the selected date
   const { data: tasks } = await supabase
     .from("daily_tasks")
     .select("*")
-    .eq("task_date", dateParam)
-    .order("submitted_at", { ascending: false });
+    .eq("task_date", dateParam);
 
-  // 3. Fetch active users to map names in-memory (safe and robust)
-  const { data: users } = await supabase
+  // 5. Fetch all users to map reviewer names
+  const { data: allUsers } = await supabase
     .from("users")
     .select("id, name");
 
-  const userMap = new Map((users || []).map((u) => [u.id, u.name]));
-  const mappedTasks = (tasks || []).map((task) => ({
-    ...task,
-    worker_name: userMap.get(task.user_id) || "Unknown",
-    reviewer_name: task.reviewed_by ? userMap.get(task.reviewed_by) || "System" : null,
-  }));
+  const userMap = new Map((allUsers || []).map((u) => [u.id, u.name]));
+  const taskMap = new Map((tasks || []).map((t) => [t.user_id, t]));
+
+  const mappedTasks = (members || []).map((member) => {
+    const task = taskMap.get(member.id);
+    const shift = shiftMap.get(member.id) || "flexible";
+
+    if (task) {
+      return {
+        ...task,
+        worker_name: member.name,
+        shift_label: task.shift_label || shift,
+        reviewer_name: task.reviewed_by ? userMap.get(task.reviewed_by) || "System" : null,
+      };
+    } else {
+      // Placeholder task object for workers who haven't submitted yet
+      return {
+        id: `placeholder-${member.id}`,
+        user_id: member.id,
+        worker_name: member.name,
+        task_date: dateParam,
+        shift_label: shift,
+        stream_name: null,
+        selected_games: [] as string[],
+        checklist_snapshot: [] as Array<{
+          id: string;
+          game: string;
+          phase: "before_work" | "while_work" | "after_work";
+          sort_order: number;
+          label: string;
+        }>,
+        checklist_answers: {} as Record<string, { checked: boolean; proof: string }>,
+        status: "belum_mengisi" as const,
+        reviewed_by: null,
+        reviewer_name: null,
+        reviewed_at: null,
+        submitted_at: null,
+      };
+    }
+  });
+
+  // Sort alphabetically by worker name by default
+  mappedTasks.sort((a, b) => a.worker_name.localeCompare(b.worker_name));
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
