@@ -41,20 +41,20 @@ export function getRecordsMonthRange(value?: string): RecordsMonthRange {
 }
 
 export function getEffectiveRecordMetric(
-  value: number,
-  overrideValue: number | null,
+  baseValue: number,
+  deltaValue: number,
 ): EffectiveRecordMetric;
 export function getEffectiveRecordMetric(
-  value: number | null,
-  overrideValue: number | null,
+  baseValue: number | null,
+  deltaValue: number,
 ): EffectiveRecordMetric<number | null>;
 export function getEffectiveRecordMetric(
-  value: number | null,
-  overrideValue: number | null,
+  baseValue: number | null,
+  deltaValue: number,
 ): EffectiveRecordMetric<number | null> {
   return {
-    isOverride: overrideValue !== null,
-    value: overrideValue ?? value,
+    isOverride: deltaValue !== 0,
+    value: baseValue !== null ? Math.max(0, baseValue + deltaValue) : null,
   };
 }
 

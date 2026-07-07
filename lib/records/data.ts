@@ -65,23 +65,23 @@ type UserRow = {
 
 type WorkerRecordRow = {
   alpha_count: number;
-  alpha_override_count: number | null;
-  break_late_override_seconds: number | null;
+  alpha_delta: number;
+  break_late_delta: number;
   break_late_seconds: number;
-  cuti_stock_override_snapshot: number | null;
+  cuti_stock_delta: number;
   cuti_stock_snapshot: number | null;
   last_source: string | null;
   last_source_action: string | null;
-  lembur_override_units: number | null;
+  lembur_delta: number;
   lembur_units: number;
   pending_days: number;
-  pending_override_days: number | null;
+  pending_delta: number;
   period_month: string;
   sakit_days: number;
-  sakit_override_days: number | null;
+  sakit_delta: number;
   updated_at: string | null;
   user_id: string;
-  work_late_override_seconds: number | null;
+  work_late_delta: number;
   work_late_seconds: number;
 };
 
@@ -159,13 +159,13 @@ export async function getRecordsData({
           "pending_days",
           "lembur_units",
           "cuti_stock_snapshot",
-          "work_late_override_seconds",
-          "break_late_override_seconds",
-          "alpha_override_count",
-          "sakit_override_days",
-          "pending_override_days",
-          "lembur_override_units",
-          "cuti_stock_override_snapshot",
+          "work_late_delta",
+          "break_late_delta",
+          "alpha_delta",
+          "sakit_delta",
+          "pending_delta",
+          "lembur_delta",
+          "cuti_stock_delta",
           "last_source",
           "last_source_action",
           "updated_at",
@@ -252,34 +252,34 @@ export async function getRecordsData({
         activeSpCount: spsCountMap.get(profile.user_id) ?? 0,
         alphaCount: getEffectiveRecordMetric(
           workerRecord.alpha_count,
-          workerRecord.alpha_override_count,
+          workerRecord.alpha_delta,
         ),
         breakLateSeconds: getEffectiveRecordMetric(
           workerRecord.break_late_seconds,
-          workerRecord.break_late_override_seconds,
+          workerRecord.break_late_delta,
         ),
         compactRoleShiftLabel,
         cutiStockSnapshot: getEffectiveRecordMetric(
           workerRecord.cuti_stock_snapshot ?? profile.cuti_stock,
-          workerRecord.cuti_stock_override_snapshot,
+          workerRecord.cuti_stock_delta,
         ),
         employeeRole: profile.employee_role,
         lastSource: parseRecordSource(workerRecord.last_source),
         lastSourceAction: workerRecord.last_source_action,
         lemburUnits: getEffectiveRecordMetric(
           workerRecord.lembur_units,
-          workerRecord.lembur_override_units,
+          workerRecord.lembur_delta,
         ),
         name: user.name,
         pendingDays: getEffectiveRecordMetric(
           workerRecord.pending_days,
-          workerRecord.pending_override_days,
+          workerRecord.pending_delta,
         ),
         periodMonth: workerRecord.period_month,
         roleShiftLabel,
         sakitDays: getEffectiveRecordMetric(
           workerRecord.sakit_days,
-          workerRecord.sakit_override_days,
+          workerRecord.sakit_delta,
         ),
         shift: profile.shift,
         shiftTimeLabel,
@@ -287,7 +287,7 @@ export async function getRecordsData({
         userId: profile.user_id,
         workLateSeconds: getEffectiveRecordMetric(
           workerRecord.work_late_seconds,
-          workerRecord.work_late_override_seconds,
+          workerRecord.work_late_delta,
         ),
       } satisfies RecordsRowDTO,
     ];
@@ -303,23 +303,23 @@ function createEmptyRecordRow(
 ): WorkerRecordRow {
   return {
     alpha_count: 0,
-    alpha_override_count: null,
-    break_late_override_seconds: null,
+    alpha_delta: 0,
+    break_late_delta: 0,
     break_late_seconds: 0,
-    cuti_stock_override_snapshot: null,
+    cuti_stock_delta: 0,
     cuti_stock_snapshot: cutiStockSnapshot,
     last_source: null,
     last_source_action: null,
-    lembur_override_units: null,
+    lembur_delta: 0,
     lembur_units: 0,
     pending_days: 0,
-    pending_override_days: null,
+    pending_delta: 0,
     period_month: periodMonth,
     sakit_days: 0,
-    sakit_override_days: null,
+    sakit_delta: 0,
     updated_at: null,
     user_id: userId,
-    work_late_override_seconds: null,
+    work_late_delta: 0,
     work_late_seconds: 0,
   };
 }
