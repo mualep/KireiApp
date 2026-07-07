@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 
@@ -45,6 +46,9 @@ export async function PATCH(request: NextRequest) {
         { status: 422 }
       );
     }
+
+    revalidatePath("/admin/absensi");
+    revalidatePath("/admin/tracker");
 
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {

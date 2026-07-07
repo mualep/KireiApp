@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 
@@ -22,7 +23,7 @@ const recordsOverrideSchema = z.object({
     "lembur_units",
     "cuti_stock_snapshot"
   ]),
-  desired_value: z.number().min(0),
+  desired_value: z.number().min(0).nullable().optional(),
   reason: z.string().trim().max(50).nullable().optional(),
 });
 
@@ -62,6 +63,9 @@ async function handleRequest(request: NextRequest) {
         { status: 422 }
       );
     }
+
+    revalidatePath("/admin/records");
+    revalidatePath("/admin/dashboard");
 
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {
