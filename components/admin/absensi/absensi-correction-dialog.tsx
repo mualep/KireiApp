@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useMemo, useState, useTransition } from "react";
-import { applyAbsensiCorrection } from "@/app/admin/(shell)/absensi/actions";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -105,6 +105,7 @@ function AbsensiCorrectionForm({
   onOpenChange: (open: boolean) => void;
 }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [afterStatus, setAfterStatus] = useState<CorrectionAfterStatus>(() =>
     getDefaultAfterStatus(correction.beforeStatus),
   );
@@ -150,32 +151,46 @@ function AbsensiCorrectionForm({
     }
 
     startTransition(async () => {
-      const result = await applyAbsensiCorrection({
-        afterStatus: selected.afterStatus,
-        attendanceDate: selected.attendanceDate,
-        beforeStatus: selected.beforeStatus,
-        expectedAttendanceId: selected.expectedAttendanceId,
-        expectedAttendanceUpdatedAt: selected.expectedAttendanceUpdatedAt,
-        reason: trimmedReason,
-        targetUserId: selected.targetUserId,
-      });
+      try {
+        const response = await fetch("/api/absensi/cell", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: selected.targetUserId,
+            date: selected.attendanceDate,
+            status: selected.afterStatus,
+            notes: trimmedReason || null,
+          }),
+        });
 
-      if (!result.ok) {
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          toast({
+            title: "Gagal",
+            description: result.error ? (actionErrorMessages[result.error] ?? result.error) : actionErrorMessages.generic_error,
+            variant: "error",
+          });
+          return;
+        }
+
+        toast({
+          title: "Berhasil",
+          description: "Koreksi absensi berhasil diterapkan.",
+          variant: "success",
+        });
+        setReason("");
+        onOpenChange(false);
+        router.refresh();
+      } catch {
         toast({
           title: "Gagal",
-          description: actionErrorMessages[result.error] ?? actionErrorMessages.generic_error,
+          description: "Terjadi kesalahan yang tidak terduga.",
           variant: "error",
         });
-        return;
       }
-
-      toast({
-        title: "Berhasil",
-        description: "Koreksi absensi berhasil diterapkan.",
-        variant: "success",
-      });
-      setReason("");
-      onOpenChange(false);
     });
   }
 

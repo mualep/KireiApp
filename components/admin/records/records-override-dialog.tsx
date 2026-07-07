@@ -1,11 +1,9 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckIcon, CircleAlertIcon } from "lucide-react";
 
-import { applyRecordsOverride } from "@/app/admin/(shell)/records/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -159,19 +157,26 @@ export function RecordsOverrideDialog({
 
     startTransition(async () => {
       try {
-        const result = await applyRecordsOverride({
-          targetUserId: row.userId,
-          periodMonth: `${periodMonth}-01`,
-          fieldName,
-          beforeValue,
-          afterValue: overrideAfterValue,
-          reason: reason.trim() || undefined,
+        const response = await fetch("/api/records/override", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: row.userId,
+            period_month: `${periodMonth}-01`,
+            field_name: fieldName,
+            desired_value: overrideAfterValue,
+            reason: reason.trim() || null,
+          }),
         });
 
-        if (!result.ok) {
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
           toast({
             title: "Gagal",
-            description: result.error ?? "An error occurred",
+            description: result.error ?? "Terjadi kesalahan saat memproses permintaan.",
             variant: "error",
           });
           return;
@@ -187,7 +192,7 @@ export function RecordsOverrideDialog({
       } catch {
         toast({
           title: "Gagal",
-          description: "An unexpected error occurred.",
+          description: "Terjadi kesalahan yang tidak terduga.",
           variant: "error",
         });
       }
