@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
 import { DailyTaskForm } from "@/components/admin/daily-task/daily-task-form";
+import { CalendarCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Daily Checklist Player | KireiApp",
@@ -42,13 +43,16 @@ export default async function DailyTaskPage() {
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-8">
       {/* Visual Header shell */}
-      <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl" translate="no">
-          Daily Checklist Player
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Lengkapi tugas harian Anda sebelum, selama, dan sesudah jam kerja.
-        </p>
+      <div className="flex items-center gap-3 mb-8">
+        <CalendarCheck className="size-8 text-primary shrink-0" />
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl" translate="no">
+            Daily Checklist Player
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Lengkapi tugas harian Anda sebelum, selama, dan sesudah jam kerja.
+          </p>
+        </div>
       </div>
 
       <DailyTaskForm

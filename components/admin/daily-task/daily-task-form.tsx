@@ -10,6 +10,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { RefreshCw, Flame, CheckCircle, AlertTriangle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 // 5 Motivational Quotes
@@ -245,9 +246,52 @@ export function DailyTaskForm({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-        <RefreshCw className="size-8 animate-spin text-primary" />
-        <span className="text-sm font-medium">Memuat formulir harian...</span>
+      <div className="flex flex-col gap-8 animate-pulse">
+        {/* Header fields skeleton */}
+        <div className="rounded-xl border border-border/40 bg-card/35 p-6 md:p-8 flex flex-col gap-6 shadow-xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-4 w-24 rounded" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-4 w-24 rounded" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-4 w-32 rounded" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-4 w-40 rounded" />
+              <div className="flex flex-wrap gap-2.5 mt-1">
+                <Skeleton className="h-9 w-20 rounded-lg" />
+                <Skeleton className="h-9 w-24 rounded-lg" />
+                <Skeleton className="h-9 w-20 rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Task lists skeletons */}
+        <div className="flex flex-col gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-border/30 bg-card/20 p-5 flex flex-col md:flex-row gap-5 items-start md:items-center justify-between">
+              <div className="flex items-start gap-4 flex-1 w-full">
+                <Skeleton className="size-5 rounded shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-2 w-full max-w-md">
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-3 w-1/2 rounded" />
+                </div>
+              </div>
+              <div className="w-full md:w-80">
+                <Skeleton className="h-[56px] w-full rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

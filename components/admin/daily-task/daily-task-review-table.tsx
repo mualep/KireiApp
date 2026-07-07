@@ -223,7 +223,7 @@ export function DailyTaskReviewTable({
       {/* Review Dialog */}
       {selectedTask && (
         <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-          <DialogContent className="max-w-5xl w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl border p-6 md:p-8">
+          <DialogContent className="max-w-6xl w-[95vw] sm:w-[90vw] max-h-[85vh] overflow-y-auto rounded-xl border p-6 md:p-8">
             <DialogHeader className="gap-1.5">
               <DialogTitle>Review Tugas Harian: {selectedTask.worker_name}</DialogTitle>
               <DialogDescription>
@@ -235,7 +235,7 @@ export function DailyTaskReviewTable({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 border-y border-border/20 my-4 text-sm">
               <div>
                 <span className="text-muted-foreground block text-xs">Stream Name / Link:</span>
-                <span className="font-medium text-foreground">
+                <span className="font-medium text-foreground break-all whitespace-normal overflow-hidden block">
                   {selectedTask.stream_name ? renderProofText(selectedTask.stream_name) : "-"}
                 </span>
               </div>
@@ -289,13 +289,15 @@ export function DailyTaskReviewTable({
                                   <X className="size-4 text-red-500 font-extrabold" />
                                 )}
                               </div>
-                              <span className="text-sm font-semibold text-foreground leading-snug">
+                              <span className="text-sm font-semibold text-foreground leading-snug break-words whitespace-normal overflow-hidden">
                                 {item.label}
                               </span>
                             </div>
-                            <div className="text-xs max-w-sm w-full sm:w-72 border-l border-border/20 pl-3 py-0.5">
+                            <div className="text-xs max-w-sm w-full sm:w-80 border-l border-border/20 pl-3 py-0.5 break-words whitespace-normal overflow-hidden">
                               <span className="text-muted-foreground block text-[10px] uppercase font-bold tracking-wide mb-1">Bukti:</span>
-                              {renderProofText(answer.proof)}
+                              <div className="break-all whitespace-normal overflow-hidden">
+                                {renderProofText(answer.proof)}
+                              </div>
                             </div>
                           </div>
                         );

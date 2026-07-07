@@ -1,14 +1,15 @@
 import {
   CalendarCheckIcon,
   ChartNoAxesCombinedIcon,
-  ClipboardListIcon,
+  ClipboardClockIcon,
   LayoutDashboardIcon,
-  MousePointerClickIcon,
+  IdCardIcon,
   NewspaperIcon,
   SidebarCloseIcon,
   SidebarOpenIcon,
   UserRoundIcon,
-  UsersIcon,
+  UserRoundCheckIcon,
+  UserCogIcon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,7 +21,8 @@ export type AdminNavIconKey =
   | "profile"
   | "records"
   | "tracker"
-  | "users";
+  | "users"
+  | "dailyTask";
 
 type AdminNavIconProps = {
   "aria-hidden"?: true;
@@ -29,14 +31,15 @@ type AdminNavIconProps = {
 };
 
 const adminNavIcons: Record<AdminNavIconKey, LucideIcon> = {
-  absensi: CalendarCheckIcon,
+  absensi: UserRoundCheckIcon,
   content: NewspaperIcon,
   dashboard: LayoutDashboardIcon,
   performance: ChartNoAxesCombinedIcon,
   profile: UserRoundIcon,
-  records: ClipboardListIcon,
-  tracker: MousePointerClickIcon,
-  users: UsersIcon,
+  records: ClipboardClockIcon,
+  tracker: IdCardIcon,
+  users: UserCogIcon,
+  dailyTask: CalendarCheckIcon,
 };
 
 export function AdminNavIcon({
