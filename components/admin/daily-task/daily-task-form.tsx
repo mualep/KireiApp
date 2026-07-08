@@ -354,7 +354,7 @@ export function DailyTaskForm({
       <Card className="tracker-glass-panel rounded-xl border p-6 md:p-8 flex flex-col gap-6 shadow-xl shadow-primary/5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Field>
-            <FieldLabel>Player Name</FieldLabel>
+            <FieldLabel>Nama Player</FieldLabel>
             <Input
               value={staff.profile.name}
               readOnly
@@ -377,12 +377,12 @@ export function DailyTaskForm({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Field>
-            <FieldLabel htmlFor="stream-input">Stream Name / Link</FieldLabel>
+            <FieldLabel htmlFor="stream-input">Nama / Link Stream</FieldLabel>
             <Input
               id="stream-input"
               value={streamName}
               onChange={(e) => setStreamName(e.target.value)}
-              placeholder="e.g. YouTube / Twitch stream link"
+              placeholder="cth. Link stream YouTube / Twitch"
               disabled={isLocked || isPending}
             />
           </Field>
@@ -442,7 +442,7 @@ export function DailyTaskForm({
               id="process-duration-input"
               type="text"
               value={processDurationMinutes !== "" ? `${Math.floor(processDurationMinutes / 60)} jam ${processDurationMinutes % 60} menit` : ""}
-              placeholder="Auto-calculated"
+              placeholder="Dihitung otomatis"
               disabled={isLocked || isPending}
               readOnly
             />

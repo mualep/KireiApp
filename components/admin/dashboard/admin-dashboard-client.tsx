@@ -363,7 +363,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
       <div className="flex flex-col lg:flex-row gap-6 w-full">
         {/* Left Side (1/4 width) */}
         <Card className="w-full lg:w-1/4 bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-6 flex flex-col justify-between min-h-[160px] hover:bg-white/5 hover:brightness-125 transition-all duration-300 group">
-          <span className="text-sm font-bold uppercase tracking-wider text-white">TOTAL WORKER</span>
+          <span className="text-sm font-bold uppercase tracking-wider text-white">TOTAL PEKERJA</span>
           <div className="flex flex-col">
             <span className="text-5xl font-black text-white tabular-nums">
               {counts.total_workers}
@@ -489,7 +489,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
       {/* 3. Recent Activity Section */}
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
-          <CardTitle className="text-lg font-bold text-foreground">Recent Activity</CardTitle>
+          <CardTitle className="text-lg font-bold text-foreground">Aktivitas Terbaru</CardTitle>
           <CardDescription>
             Daftar log tindakan admin terbaru.
           </CardDescription>
@@ -559,7 +559,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
       {/* 5. Live Shift Progress Bars Section */}
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
-          <CardTitle className="text-lg font-bold text-foreground">Active Shifts Overview</CardTitle>
+          <CardTitle className="text-lg font-bold text-foreground">Ringkasan Shift Aktif</CardTitle>
           <CardDescription>
             Persentase alokasi waktu berjalan pada shift kerja aktif saat ini.
           </CardDescription>
@@ -597,7 +597,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
       {/* 6. Monthly Summary Bento-Grid */}
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1.5 border-b border-border/10 pb-4">
-          <CardTitle className="text-lg font-bold text-foreground">Monthly Summary Overview</CardTitle>
+          <CardTitle className="text-lg font-bold text-foreground">Ringkasan Bulanan</CardTitle>
           <CardDescription>
             Akumulasi seluruh metrik efektif (Base + Delta) untuk bulan ini.
           </CardDescription>

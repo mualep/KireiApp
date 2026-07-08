@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Admin Dashboard | KireiApp",
-  description: "Aggregated real-time metrics, monthly records summary, and recent activity logs.",
+  description: "Agregat metrik real-time, ringkasan catatan bulanan, dan log aktivitas terbaru.",
 };
 
 export default async function AdminDashboardPage() {

@@ -7,7 +7,7 @@ import { CalendarCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Daily Checklist Player | KireiApp",
-  description: "Submit and review daily player checklist and task status.",
+  description: "Kirim dan tinjau checklist pemain harian dan status tugas.",
 };
 
 export default async function DailyTaskPage() {
