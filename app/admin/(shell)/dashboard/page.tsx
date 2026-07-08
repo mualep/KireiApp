@@ -4,6 +4,8 @@ import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { canAccessAdminDashboard } from "@/lib/auth/redirects";
 import { AdminDashboardClient } from "@/components/admin/dashboard/admin-dashboard-client";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Admin Dashboard | KireiApp",
   description: "Aggregated real-time metrics, monthly records summary, and recent activity logs.",

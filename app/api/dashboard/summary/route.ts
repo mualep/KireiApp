@@ -28,7 +28,7 @@ export async function GET() {
     ] = await Promise.all([
       supabase.from("users").select("id, name").eq("is_deleted", false).eq("tier", "member"),
       supabase.from("worker_profiles").select("user_id, shift, is_flexible, shift_start_hour, shift_start_min, shift_end_hour, shift_end_min"),
-      supabase.from("worker_status").select("user_id, current_status, alpha_done"),
+      supabase.from("worker_status").select("user_id, current_status, alpha_done, break_started_at"),
       supabase.from("worker_records").select("*"),
       supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(20)
     ]);
@@ -66,9 +66,14 @@ export async function GET() {
     };
 
     // 2. Aggregate active members status counts and identify urgent alerts
-    let workCount = 0;
-    let breakCount = 0;
+    let onCount = 0;
     let offCount = 0;
+    let breakCount = 0;
+    let breakLateCount = 0;
+    let cutiCount = 0;
+    let sakitCount = 0;
+    let pendingCount = 0;
+    let lemburCount = 0;
     let lateCount = 0;
     let alphaCount = 0;
 
@@ -130,19 +135,44 @@ export async function GET() {
       } else if (isLate) {
         lateCount++;
         urgentAlerts.push({ user_id: userId, name, status: "LATE" });
-      } else if (status.current_status === "work") {
-        workCount++;
       } else if (status.current_status === "break") {
-        breakCount++;
+        let isBreakLate = false;
+        if (status.break_started_at) {
+          const breakStart = new Date(status.break_started_at).getTime();
+          if (now.getTime() - breakStart > 60 * 60 * 1000) {
+            isBreakLate = true;
+          }
+        }
+        if (isBreakLate) {
+          breakLateCount++;
+        } else {
+          breakCount++;
+        }
+      } else if (status.current_status === "cuti") {
+        cutiCount++;
+      } else if (status.current_status === "sakit") {
+        sakitCount++;
+      } else if (status.current_status === "pending") {
+        pendingCount++;
+      } else if (status.current_status === "lembur") {
+        lemburCount++;
+      } else if (status.current_status === "on") {
+        onCount++;
       } else {
         offCount++;
       }
     }
 
     const statusCounts = {
-      work: workCount,
-      break: breakCount,
+      total_workers: activeUserMap.size,
+      on: onCount,
       off: offCount,
+      break: breakCount,
+      break_late: breakLateCount,
+      cuti: cutiCount,
+      sakit: sakitCount,
+      pending: pendingCount,
+      lembur: lemburCount,
       late: lateCount,
       alpha: alphaCount,
     };

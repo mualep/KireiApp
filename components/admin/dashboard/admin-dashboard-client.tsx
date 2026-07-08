@@ -7,23 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Play, 
-  Coffee, 
-  Power, 
   Clock, 
   AlertTriangle, 
   RefreshCw, 
-  Calendar, 
   UserCheck, 
   Flame,
-  LayoutDashboard
+  Coffee
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StatusCounts {
-  work: number;
-  break: number;
+  total_workers: number;
+  on: number;
   off: number;
+  break: number;
+  break_late: number;
+  cuti: number;
+  sakit: number;
+  pending: number;
+  lembur: number;
   late: number;
   alpha: number;
 }
@@ -68,17 +70,23 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [data, setData] = useState<DashboardData | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
       const res = await fetch("/api/dashboard/summary");
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
       const result = await res.json();
       if (result.success) {
         setData(result.data);
       } else {
+        setErrorMsg(result.error || "Gagal memuat data dari server.");
         toast({
           variant: "destructive",
           title: "Gagal memuat dashboard",
@@ -86,11 +94,13 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
           className: "border-red-500/30 bg-red-500/10 text-red-500 backdrop-blur-md",
         });
       }
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan koneksi.";
+      setErrorMsg(msg);
       toast({
         variant: "destructive",
         title: "Gagal memuat dashboard",
-        description: "Gagal menghubungi server.",
+        description: msg,
         className: "border-red-500/30 bg-red-500/10 text-red-500 backdrop-blur-md",
       });
     } finally {
@@ -129,7 +139,9 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
 
   function formatTimeAgo(isoString: string): string {
     if (!isoString) return "-";
-    const diffMs = new Date().getTime() - new Date(isoString).getTime();
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return "-";
+    const diffMs = new Date().getTime() - date.getTime();
     const diffSec = Math.floor(diffMs / 1000);
     const diffMin = Math.floor(diffSec / 60);
     const diffHr = Math.floor(diffMin / 60);
@@ -159,38 +171,57 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
     return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   }
 
+  if (errorMsg && !data) {
+    return (
+      <div className="w-full max-w-md mx-auto my-16 p-6 border border-red-500/30 bg-red-500/5 text-red-400 rounded-xl flex flex-col items-center gap-4 text-center">
+        <AlertTriangle className="size-12 text-red-500" />
+        <div>
+          <h3 className="text-lg font-bold text-foreground">Gagal Memuat Dashboard</h3>
+          <p className="text-xs text-muted-foreground mt-1">{errorMsg}</p>
+        </div>
+        <Button onClick={fetchDashboardData} variant="outline" className="font-bold border-red-500/20 bg-background text-red-400 hover:bg-red-500/10">
+          Coba Lagi
+        </Button>
+      </div>
+    );
+  }
+
   if (loading || !data) {
     return <DashboardSkeleton />;
   }
 
-  const { status_counts: counts, monthly_summary: summary, recent_activity: activity, urgent_alerts: alerts } = data;
-
-  const totalEmployees = counts.work + counts.break + counts.off + counts.late + counts.alpha;
+  const counts = data.status_counts || {
+    total_workers: 0,
+    on: 0,
+    off: 0,
+    break: 0,
+    break_late: 0,
+    cuti: 0,
+    sakit: 0,
+    pending: 0,
+    lembur: 0,
+    late: 0,
+    alpha: 0
+  };
+  const summary = data.monthly_summary || { work_late_seconds: 0, break_late_seconds: 0, alpha_count: 0, sakit_days: 0, pending_days: 0, lembur_units: 0 };
+  const activity = data.recent_activity || [];
+  const alerts = data.urgent_alerts || [];
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8">
       {/* 1. Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <LayoutDashboard className="size-8 text-primary shrink-0" />
-          <div className="flex flex-col gap-0.5">
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl" translate="no">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Hello, <span className="font-bold text-foreground" translate="no">{staffName}</span> &mdash; Selamat bekerja kembali! (Total {totalEmployees} pemain terdaftar)
-            </p>
-          </div>
-        </div>
+        <h1 className="text-3xl sm:text-4xl font-light text-foreground leading-tight">
+          Halo <span className="font-bold text-primary">{staffName}</span>, selamat bekerja!
+        </h1>
 
         <div className="flex items-center gap-3 self-end sm:self-center">
-          <span className="text-xs text-muted-foreground tabular-nums flex items-center gap-1.5 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40">
-            <Calendar className="size-3.5" />
+          <span className="text-sm text-muted-foreground font-medium tabular-nums">
             {new Date().toLocaleDateString("id-ID", {
               weekday: "long",
-              year: "numeric",
-              month: "short",
               day: "numeric",
+              month: "short",
+              year: "numeric",
             })}
           </span>
           <Button
@@ -206,216 +237,303 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
         </div>
       </div>
 
-      {/* 2. Top Row (Real-Time Metrics) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {/* WORK CARD */}
-        <Card className="border border-border/40 bg-card/35 hover:border-green-500/20 hover:shadow-lg hover:shadow-green-500/2 transition-all rounded-xl p-5 flex flex-col gap-3 relative overflow-hidden">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Work</span>
-            <div className="size-8 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center border border-green-500/20">
-              <Play className="size-4 fill-green-400/20" />
-            </div>
-          </div>
+      {/* 2. Top Status Cards */}
+      <div className="flex flex-col lg:flex-row gap-6 w-full">
+        {/* Left Side (1/4 width) */}
+        <Card className="w-full lg:w-1/4 bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-6 flex flex-col justify-between min-h-[160px] hover:shadow-md hover:border-primary/20 transition-all group">
+          <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Total Worker</span>
           <div className="flex flex-col">
-            <span className="text-3xl font-extrabold text-foreground tabular-nums leading-none mb-1">{counts.work}</span>
-            <span className="text-[10px] text-muted-foreground">Pemain aktif saat ini</span>
+            <span className="text-5xl font-black text-primary tabular-nums group-hover:scale-105 transition-transform origin-left">
+              {counts.total_workers}
+            </span>
+            <span className="text-xs text-muted-foreground mt-1">Pemain terdaftar aktif</span>
           </div>
         </Card>
 
-        {/* BREAK CARD */}
-        <Card className="border border-border/40 bg-card/35 hover:border-blue-500/20 hover:shadow-lg hover:shadow-blue-500/2 transition-all rounded-xl p-5 flex flex-col gap-3 relative overflow-hidden">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Break</span>
-            <div className="size-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
-              <Coffee className="size-4" />
-            </div>
+        {/* Right Side (3/4 width): Grid 2x5 */}
+        <div className="w-full lg:w-3/4 grid grid-cols-2 sm:grid-cols-5 gap-4">
+          {/* ON Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-emerald-500/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">ON</span>
+            <span className="text-3xl font-extrabold text-emerald-500 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.on}
+            </span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-3xl font-extrabold text-foreground tabular-nums leading-none mb-1">{counts.break}</span>
-            <span className="text-[10px] text-muted-foreground">Sedang beristirahat</span>
-          </div>
-        </Card>
 
-        {/* OFF CARD */}
-        <Card className="border border-border/40 bg-card/35 hover:border-muted/30 hover:shadow-lg hover:shadow-muted/2 transition-all rounded-xl p-5 flex flex-col gap-3 relative overflow-hidden">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Off</span>
-            <div className="size-8 rounded-full bg-muted/40 text-muted-foreground flex items-center justify-center border border-border">
-              <Power className="size-4" />
-            </div>
+          {/* OFF Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-zinc-500/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">OFF</span>
+            <span className="text-3xl font-extrabold text-zinc-500 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.off}
+            </span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-3xl font-extrabold text-foreground tabular-nums leading-none mb-1">{counts.off}</span>
-            <span className="text-[10px] text-muted-foreground">Di luar jam kerja</span>
-          </div>
-        </Card>
 
-        {/* LATE CARD */}
-        <Card className="border border-border/40 bg-card/35 hover:border-amber-500/20 hover:shadow-lg hover:shadow-amber-500/2 transition-all rounded-xl p-5 flex flex-col gap-3 relative overflow-hidden">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Late</span>
-            <div className="size-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
-              <Clock className="size-4" />
-            </div>
+          {/* BREAK Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-yellow-500/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-yellow-500">BREAK</span>
+            <span className="text-3xl font-extrabold text-yellow-500 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.break}
+            </span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-3xl font-extrabold text-foreground tabular-nums leading-none mb-1">{counts.late}</span>
-            <span className="text-[10px] text-muted-foreground">Terlambat masuk shift</span>
-          </div>
-        </Card>
 
-        {/* ALPHA CARD */}
-        <Card className="border border-border/40 bg-card/35 hover:border-red-500/20 hover:shadow-lg hover:shadow-red-500/2 transition-all rounded-xl p-5 flex flex-col gap-3 col-span-2 md:col-span-1 relative overflow-hidden">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Alpha</span>
-            <div className="size-8 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20">
-              <AlertTriangle className="size-4" />
-            </div>
+          {/* BREAK LATE Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-orange-600/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-orange-650">BREAK LATE</span>
+            <span className="text-3xl font-extrabold text-orange-600 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.break_late}
+            </span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-3xl font-extrabold text-foreground tabular-nums leading-none mb-1">{counts.alpha}</span>
-            <span className="text-[10px] text-muted-foreground">Hari ini absen alpha</span>
+
+          {/* LATE Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-yellow-500/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-yellow-550">LATE</span>
+            <span className="text-3xl font-extrabold text-yellow-500 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.late}
+            </span>
           </div>
-        </Card>
+
+          {/* ALPHA Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-red-500/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-red-500">ALPHA</span>
+            <span className="text-3xl font-extrabold text-red-500 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.alpha}
+            </span>
+          </div>
+
+          {/* CUTI Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-blue-500/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-500">CUTI</span>
+            <span className="text-3xl font-extrabold text-blue-500 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.cuti}
+            </span>
+          </div>
+
+          {/* SAKIT Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-orange-500/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-orange-500">SAKIT</span>
+            <span className="text-3xl font-extrabold text-orange-500 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.sakit}
+            </span>
+          </div>
+
+          {/* PENDING Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-purple-500/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-500">PENDING</span>
+            <span className="text-3xl font-extrabold text-purple-500 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.pending}
+            </span>
+          </div>
+
+          {/* LEMBUR Card */}
+          <div className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:shadow-md hover:border-yellow-600/20 transition-all group">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-yellow-650">LEMBUR</span>
+            <span className="text-3xl font-extrabold text-yellow-600 tabular-nums group-hover:translate-x-1 transition-transform">
+              {counts.lembur}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* 3. Middle Section (Grid Split) */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        {/* Left Column (col-span-5) */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          {/* Urgent Alerts Banner if any exist */}
-          {alerts.length > 0 && (
-            <Card className="border border-red-500/30 bg-red-500/5 text-red-400 p-5 rounded-xl flex flex-col gap-3 shadow-md shadow-red-500/2">
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <AlertTriangle className="size-4 shrink-0" />
-                <span>URGENT ALERTS: Terdeteksi {alerts.length} Masalah Kehadiran Hari Ini</span>
+      {/* 3. Middle Section: Recent Activity & Shift Overview */}
+      <div className="flex flex-col gap-6 w-full">
+        {/* Recent Activity */}
+        <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
+          <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
+            <CardTitle className="text-lg font-bold text-foreground">Recent Activity</CardTitle>
+            <CardDescription>
+              Daftar log tindakan admin terbaru.
+            </CardDescription>
+          </div>
+
+          <div className="flex flex-col gap-4 max-h-[350px] overflow-y-auto pr-1">
+            {activity.length === 0 ? (
+              <div className="text-center text-muted-foreground/60 italic py-12 text-sm">
+                Tidak ada aktivitas terbaru.
               </div>
-              <div className="flex flex-wrap gap-2">
-                {alerts.map((a) => (
-                  <Badge 
-                    key={a.user_id} 
-                    variant="outline" 
-                    className={cn(
-                      "font-sans font-bold text-[10px] px-2.5 h-6 uppercase tracking-wider border-red-500/30 bg-red-500/10 text-red-400",
-                      a.status === "LATE" && "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                    )}
-                  >
-                    {a.name} &mdash; {a.status}
-                  </Badge>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {/* Monthly Summary Bento-Grid */}
-          <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
-            <div className="flex flex-col gap-1.5 border-b border-border/10 pb-4">
-              <CardTitle className="text-lg font-bold text-foreground">Monthly Summary Overview</CardTitle>
-              <CardDescription>
-                Akumulasi seluruh metrik efektif (Base + Delta) untuk bulan ini.
-              </CardDescription>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {/* Work Late Card */}
-              <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-amber-500/20 hover:shadow-md hover:shadow-amber-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-                <div className="absolute right-3 top-3 text-amber-500/5 group-hover:text-amber-500/10 transition-colors pointer-events-none select-none">
-                  <Clock className="size-12" />
-                </div>
-                <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Work Late</span>
-                <span className="text-2xl font-extrabold text-amber-400 tabular-nums">{formatDuration(summary.work_late_seconds)}</span>
-                <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan kerja</span>
-              </div>
-
-              {/* Break Late Card */}
-              <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-                <div className="absolute right-3 top-3 text-blue-500/5 group-hover:text-blue-500/10 transition-colors pointer-events-none select-none">
-                  <Coffee className="size-12" />
-                </div>
-                <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Break Late</span>
-                <span className="text-2xl font-extrabold text-blue-400 tabular-nums">{formatDuration(summary.break_late_seconds)}</span>
-                <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan istirahat</span>
-              </div>
-
-              {/* Alpha Count Card */}
-              <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-red-500/20 hover:shadow-md hover:shadow-red-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-                <div className="absolute right-3 top-3 text-red-500/5 group-hover:text-red-500/10 transition-colors pointer-events-none select-none">
-                  <AlertTriangle className="size-12" />
-                </div>
-                <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Alpha Count</span>
-                <span className="text-2xl font-extrabold text-red-500 tabular-nums">{summary.alpha_count}x</span>
-                <span className="text-[10px] text-muted-foreground leading-snug">Total absen alpha</span>
-              </div>
-
-              {/* Total Sakit Card */}
-              <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-                <div className="absolute right-3 top-3 text-emerald-500/5 group-hover:text-emerald-500/10 transition-colors pointer-events-none select-none">
-                  <UserCheck className="size-12" />
-                </div>
-                <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Total Sakit</span>
-                <span className="text-2xl font-extrabold text-emerald-400 tabular-nums">{summary.sakit_days} Hari</span>
-                <span className="text-[10px] text-muted-foreground leading-snug">Akumulasi hari izin sakit</span>
-              </div>
-
-              {/* Pending Days Card */}
-              <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-purple-500/20 hover:shadow-md hover:shadow-purple-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-                <div className="absolute right-3 top-3 text-purple-500/5 group-hover:text-purple-500/10 transition-colors pointer-events-none select-none">
-                  <Clock className="size-12" />
-                </div>
-                <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Pending Days</span>
-                <span className="text-2xl font-extrabold text-purple-400 tabular-nums">{summary.pending_days} Hari</span>
-                <span className="text-[10px] text-muted-foreground leading-snug">Hari pending belum ditinjau</span>
-              </div>
-
-              {/* Lembur Units Card */}
-              <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-orange-500/20 hover:shadow-md hover:shadow-orange-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-                <div className="absolute right-3 top-3 text-orange-500/5 group-hover:text-orange-500/10 transition-colors pointer-events-none select-none">
-                  <Flame className="size-12" />
-                </div>
-                <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Lembur Units</span>
-                <span className="text-2xl font-extrabold text-orange-400 tabular-nums">{summary.lembur_units} Unit</span>
-                <span className="text-[10px] text-muted-foreground leading-snug">Total jam lembur tercatat</span>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Right Column (col-span-2) */}
-        <div className="lg:col-span-2">
-          <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2 h-full min-h-[460px]">
-            <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
-              <CardTitle className="text-lg font-bold text-foreground">Recent Activity</CardTitle>
-              <CardDescription>
-                Daftar log tindakan admin terbaru.
-              </CardDescription>
-            </div>
-
-            <div className="flex flex-col gap-4 overflow-y-auto pr-1 flex-1 max-h-[380px]">
-              {activity.length === 0 ? (
-                <div className="text-center text-muted-foreground/60 italic py-16 text-sm">
-                  Tidak ada aktivitas terbaru.
-                </div>
-              ) : (
-                activity.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center gap-3 border-b border-border/10 pb-3 last:border-b-0 last:pb-0">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="size-8 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold text-xs uppercase tracking-wider shrink-0 select-none">
-                        {item.actor_name.slice(0, 2)}
-                      </div>
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="text-sm font-bold text-foreground truncate block leading-snug">{item.actor_name}</span>
-                        <span className="text-xs text-muted-foreground leading-snug truncate block">{formatAction(item.domain, item.action)}</span>
-                      </div>
+            ) : (
+              activity.map((item) => (
+                <div key={item.id} className="flex justify-between items-center gap-3 border-b border-border/10 pb-3 last:border-b-0 last:pb-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="size-8 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold text-sm uppercase shrink-0 select-none">
+                      {(item.actor_name || "S").slice(0, 1)}
                     </div>
-                    <span className="text-[10px] font-medium tabular-nums text-muted-foreground shrink-0 pl-1">
-                      {formatTimeAgo(item.created_at)}
-                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium text-foreground leading-snug">
+                        <span className="font-bold">{item.actor_name || "System"}</span> &mdash;{" "}
+                        {formatAction(item.domain, item.action)}
+                        {item.target_name ? (
+                          <>
+                            {" "}
+                            &mdash; <span className="font-bold text-primary">{item.target_name}</span>
+                          </>
+                        ) : null}
+                      </span>
+                    </div>
                   </div>
-                ))
-              )}
+                  <span className="text-[10px] font-medium tabular-nums text-muted-foreground shrink-0 pl-2">
+                    {formatTimeAgo(item.created_at)}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+
+        {/* Urgent Alerts Banner if any exist */}
+        {alerts.length > 0 && (
+          <Card className="border border-red-500/30 bg-red-500/5 text-red-400 p-5 rounded-xl flex flex-col gap-3 shadow-md shadow-red-500/2">
+            <div className="flex items-center gap-2 font-bold text-sm">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>URGENT ALERTS: Terdeteksi {alerts.length} Masalah Kehadiran Hari Ini</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {alerts.map((a) => (
+                <Badge 
+                  key={a.user_id} 
+                  variant="outline" 
+                  className={cn(
+                    "font-sans font-bold text-[10px] px-2.5 h-6 uppercase tracking-wider border-red-500/30 bg-red-500/10 text-red-400",
+                    a.status === "LATE" && "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                  )}
+                >
+                  {a.name} &mdash; {a.status}
+                </Badge>
+              ))}
             </div>
           </Card>
-        </div>
+        )}
+
+        {/* Active Shifts Overview */}
+        <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
+          <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
+            <CardTitle className="text-lg font-bold text-foreground">Active Shifts Overview</CardTitle>
+            <CardDescription>
+              Persentase alokasi pemain aktif di setiap shift kerja saat ini.
+            </CardDescription>
+          </div>
+
+          <div className="flex flex-col gap-6">
+            {/* Shift C */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center text-sm font-semibold">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="font-sans font-bold text-[10px] px-2.5 h-6 uppercase tracking-wider border-primary/25 bg-primary/5 text-primary">
+                    Shift C
+                  </Badge>
+                  <span className="text-muted-foreground">14:00 - 22:00</span>
+                </div>
+                <span className="text-foreground tabular-nums">45%</span>
+              </div>
+              <div className="w-full bg-muted/40 h-3 rounded-full overflow-hidden border border-border/40">
+                <div className="bg-gradient-to-r from-primary to-rose-500 h-full rounded-full transition-all duration-500" style={{ width: "45%" }} />
+              </div>
+            </div>
+
+            {/* Shift 2 */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center text-sm font-semibold">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="font-sans font-bold text-[10px] px-2.5 h-6 uppercase tracking-wider border-primary/25 bg-primary/5 text-primary">
+                    Shift 2
+                  </Badge>
+                  <span className="text-muted-foreground">15:00 - 23:00</span>
+                </div>
+                <span className="text-foreground tabular-nums">33%</span>
+              </div>
+              <div className="w-full bg-muted/40 h-3 rounded-full overflow-hidden border border-border/40">
+                <div className="bg-gradient-to-r from-primary to-rose-500 h-full rounded-full transition-all duration-500" style={{ width: "33%" }} />
+              </div>
+            </div>
+
+            {/* Shift D */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center text-sm font-semibold">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="font-sans font-bold text-[10px] px-2.5 h-6 uppercase tracking-wider border-primary/25 bg-primary/5 text-primary">
+                    Shift D
+                  </Badge>
+                  <span className="text-muted-foreground">16:00 - 00:00</span>
+                </div>
+                <span className="text-foreground tabular-nums">20%</span>
+              </div>
+              <div className="w-full bg-muted/40 h-3 rounded-full overflow-hidden border border-border/40">
+                <div className="bg-gradient-to-r from-primary to-rose-500 h-full rounded-full transition-all duration-500" style={{ width: "20%" }} />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Monthly Summary Bento-Grid */}
+        <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
+          <div className="flex flex-col gap-1.5 border-b border-border/10 pb-4">
+            <CardTitle className="text-lg font-bold text-foreground">Monthly Summary Overview</CardTitle>
+            <CardDescription>
+              Akumulasi seluruh metrik efektif (Base + Delta) untuk bulan ini.
+            </CardDescription>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {/* Work Late Card */}
+            <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-amber-500/20 hover:shadow-md hover:shadow-amber-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+              <div className="absolute right-3 top-3 text-amber-500/5 group-hover:text-amber-500/10 transition-colors pointer-events-none select-none">
+                <Clock className="size-12" />
+              </div>
+              <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Work Late</span>
+              <span className="text-2xl font-extrabold text-amber-400 tabular-nums">{formatDuration(summary.work_late_seconds)}</span>
+              <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan kerja</span>
+            </div>
+
+            {/* Break Late Card */}
+            <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+              <div className="absolute right-3 top-3 text-blue-500/5 group-hover:text-blue-500/10 transition-colors pointer-events-none select-none">
+                <Coffee className="size-12" />
+              </div>
+              <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Break Late</span>
+              <span className="text-2xl font-extrabold text-blue-400 tabular-nums">{formatDuration(summary.break_late_seconds)}</span>
+              <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan istirahat</span>
+            </div>
+
+            {/* Alpha Count Card */}
+            <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-red-500/20 hover:shadow-md hover:shadow-red-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+              <div className="absolute right-3 top-3 text-red-500/5 group-hover:text-red-500/10 transition-colors pointer-events-none select-none">
+                <AlertTriangle className="size-12" />
+              </div>
+              <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Alpha Count</span>
+              <span className="text-2xl font-extrabold text-red-500 tabular-nums">{summary.alpha_count}x</span>
+              <span className="text-[10px] text-muted-foreground leading-snug">Total absen alpha</span>
+            </div>
+
+            {/* Total Sakit Card */}
+            <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+              <div className="absolute right-3 top-3 text-emerald-500/5 group-hover:text-emerald-500/10 transition-colors pointer-events-none select-none">
+                <UserCheck className="size-12" />
+              </div>
+              <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Total Sakit</span>
+              <span className="text-2xl font-extrabold text-emerald-400 tabular-nums">{summary.sakit_days} Hari</span>
+              <span className="text-[10px] text-muted-foreground leading-snug">Akumulasi hari izin sakit</span>
+            </div>
+
+            {/* Pending Days Card */}
+            <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-purple-500/20 hover:shadow-md hover:shadow-purple-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+              <div className="absolute right-3 top-3 text-purple-500/5 group-hover:text-purple-500/10 transition-colors pointer-events-none select-none">
+                <Clock className="size-12" />
+              </div>
+              <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Pending Days</span>
+              <span className="text-2xl font-extrabold text-purple-400 tabular-nums">{summary.pending_days} Hari</span>
+              <span className="text-[10px] text-muted-foreground leading-snug">Hari pending belum ditinjau</span>
+            </div>
+
+            {/* Lembur Units Card */}
+            <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-orange-500/20 hover:shadow-md hover:shadow-orange-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+              <div className="absolute right-3 top-3 text-orange-500/5 group-hover:text-orange-500/10 transition-colors pointer-events-none select-none">
+                <Flame className="size-12" />
+              </div>
+              <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Lembur Units</span>
+              <span className="text-2xl font-extrabold text-orange-400 tabular-nums">{summary.lembur_units} Unit</span>
+              <span className="text-[10px] text-muted-foreground leading-snug">Total jam lembur tercatat</span>
+            </div>
+          </div>
+        </Card>
       </div>
     </div>
   );
@@ -426,61 +544,77 @@ function DashboardSkeleton() {
     <div className="flex flex-col gap-8 animate-pulse w-full max-w-7xl mx-auto px-4 py-8">
       {/* Header skeleton */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-9 w-48 rounded-lg" />
-          <Skeleton className="h-5 w-64 rounded" />
+        <Skeleton className="h-10 w-80 rounded-lg" />
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-6 w-32 rounded" />
+          <Skeleton className="size-10 rounded-lg shrink-0" />
         </div>
-        <Skeleton className="h-10 w-36 rounded-lg shrink-0" />
       </div>
 
-      {/* Metric Cards Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="rounded-xl border border-border/30 bg-card/45 p-5 flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-              <Skeleton className="h-4 w-12 rounded" />
-              <Skeleton className="size-8 rounded-full" />
+      {/* Top Status Cards skeleton */}
+      <div className="flex flex-col lg:flex-row gap-6 w-full">
+        {/* Left Side skeleton */}
+        <div className="w-full lg:w-1/4 rounded-2xl border border-border bg-card/45 p-6 h-[160px] flex flex-col justify-between">
+          <Skeleton className="h-4 w-24 rounded" />
+          <Skeleton className="h-10 w-16 rounded" />
+        </div>
+        {/* Right Side skeleton */}
+        <div className="w-full lg:w-3/4 grid grid-cols-2 sm:grid-cols-5 gap-4">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-card/45 p-4 h-[86px] flex flex-col justify-between">
+              <Skeleton className="h-3 w-12 rounded" />
+              <Skeleton className="h-6 w-8 rounded" />
             </div>
-            <Skeleton className="h-8 w-16 rounded" />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {/* Middle Split Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        {/* Left Column (5 spans) */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          <div className="rounded-xl border border-border/30 bg-card/45 p-6 flex flex-col gap-4 h-[350px]">
-            <Skeleton className="h-6 w-40 rounded" />
-            <Skeleton className="h-4 w-60 rounded" />
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 flex-1">
-              {[1, 2, 3, 4, 5, 6].map((j) => (
-                <div key={j} className="border border-border/20 p-4 rounded-lg flex flex-col gap-2">
-                  <Skeleton className="h-4 w-20 rounded" />
-                  <Skeleton className="h-6 w-16 rounded" />
-                </div>
-              ))}
+      {/* Recent Activity skeleton */}
+      <div className="rounded-xl border border-border bg-card/45 p-6 h-[350px]">
+        <Skeleton className="h-6 w-40 rounded mb-4" />
+        <Skeleton className="h-4 w-60 rounded mb-6" />
+        <div className="flex flex-col gap-4">
+          {[...Array(4)].map((_, j) => (
+            <div key={j} className="flex justify-between items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
+                <Skeleton className="size-8 rounded-full" />
+                <Skeleton className="h-4 w-3/4 rounded" />
+              </div>
+              <Skeleton className="h-3 w-12 rounded" />
             </div>
-          </div>
+          ))}
         </div>
+      </div>
 
-        {/* Right Column (2 spans) */}
-        <div className="lg:col-span-2">
-          <div className="rounded-xl border border-border/30 bg-card/45 p-6 flex flex-col gap-4 h-[350px]">
-            <Skeleton className="h-6 w-32 rounded" />
-            <div className="flex flex-col gap-3 overflow-hidden flex-1">
-              {[1, 2, 3, 4].map((j) => (
-                <div key={j} className="flex justify-between items-center gap-3">
-                  <Skeleton className="size-8 rounded-full" />
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    <Skeleton className="h-4 w-24 rounded" />
-                    <Skeleton className="h-3 w-16 rounded" />
-                  </div>
-                  <Skeleton className="h-3 w-12 rounded" />
-                </div>
-              ))}
+      {/* Active Shifts Overview skeleton */}
+      <div className="rounded-xl border border-border bg-card/45 p-6">
+        <Skeleton className="h-6 w-48 rounded mb-4" />
+        <Skeleton className="h-4 w-64 rounded mb-6" />
+        <div className="flex flex-col gap-6">
+          {[...Array(3)].map((_, j) => (
+            <div key={j} className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-5 w-32 rounded" />
+                <Skeleton className="h-4 w-8 rounded" />
+              </div>
+              <Skeleton className="h-3 w-full rounded" />
             </div>
-          </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Monthly Summary skeleton */}
+      <div className="rounded-xl border border-border bg-card/45 p-6">
+        <Skeleton className="h-6 w-48 rounded mb-4" />
+        <Skeleton className="h-4 w-64 rounded mb-6" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, j) => (
+            <div key={j} className="border border-border/20 p-4 rounded-xl flex flex-col gap-2 h-[100px]">
+              <Skeleton className="h-3 w-20 rounded" />
+              <Skeleton className="h-6 w-16 rounded" />
+              <Skeleton className="h-2 w-28 rounded" />
+            </div>
+          ))}
         </div>
       </div>
     </div>
