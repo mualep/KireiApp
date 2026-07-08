@@ -94,6 +94,9 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
         reviewer_name: null,
         reviewed_at: null,
         submitted_at: null,
+        ss_before_time: null,
+        ss_after_time: null,
+        process_duration_minutes: null,
       };
     }
   });

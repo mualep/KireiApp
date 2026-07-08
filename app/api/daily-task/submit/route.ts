@@ -9,6 +9,9 @@ const submitTaskSchema = z.object({
   stream_name: z.string().trim().nullable().optional(),
   selected_games: z.array(z.string()).default([]),
   checklist_answers: z.record(z.string(), z.any()).default({}),
+  ss_before_time: z.string().trim().nullable().optional(),
+  ss_after_time: z.string().trim().nullable().optional(),
+  process_duration_minutes: z.number().int().nonnegative().nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -30,7 +33,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { task_date, shift_label, stream_name, selected_games, checklist_answers } = parsed.data;
+    const { 
+      task_date, 
+      shift_label, 
+      stream_name, 
+      selected_games, 
+      checklist_answers,
+      ss_before_time,
+      ss_after_time,
+      process_duration_minutes
+    } = parsed.data;
 
     const supabase = await createClient();
 
@@ -74,6 +86,9 @@ export async function POST(request: NextRequest) {
         status: "pending_review",
         submitted_at: new Date().toISOString(),
         editable_until: editableUntil.toISOString(),
+        ss_before_time: ss_before_time || null,
+        ss_after_time: ss_after_time || null,
+        process_duration_minutes: typeof process_duration_minutes === "number" ? process_duration_minutes : null,
       })
       .select("*")
       .single();

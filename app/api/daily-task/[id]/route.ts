@@ -7,6 +7,9 @@ const updateTaskSchema = z.object({
   stream_name: z.string().trim().nullable().optional(),
   selected_games: z.array(z.string()).optional(),
   checklist_answers: z.record(z.string(), z.any()).optional(),
+  ss_before_time: z.string().trim().nullable().optional(),
+  ss_after_time: z.string().trim().nullable().optional(),
+  process_duration_minutes: z.number().int().nonnegative().nullable().optional(),
 });
 
 type RouteContext = {

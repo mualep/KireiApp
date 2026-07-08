@@ -83,6 +83,10 @@ export function DailyTaskForm({
     Record<string, { checked: boolean; proof: string }>
   >({});
 
+  const [ssBeforeTime, setSsBeforeTime] = useState("");
+  const [ssAfterTime, setSsAfterTime] = useState("");
+  const [processDurationMinutes, setProcessDurationMinutes] = useState<number | "">("");
+
   // Random Motivational Quote selected once on client mount
   const [quote, setQuote] = useState({ text: "", author: "" });
 
@@ -122,11 +126,18 @@ export function DailyTaskForm({
           if (task.checklist_answers) {
             setChecklistAnswers(task.checklist_answers);
           }
+
+          setSsBeforeTime(task.ss_before_time ? task.ss_before_time.slice(0, 5) : "");
+          setSsAfterTime(task.ss_after_time ? task.ss_after_time.slice(0, 5) : "");
+          setProcessDurationMinutes(typeof task.process_duration_minutes === "number" ? task.process_duration_minutes : "");
         } else {
           // Reset if no task found for today
           setTaskId(null);
           setTaskStatus(null);
           setEditableUntil(null);
+          setSsBeforeTime("");
+          setSsAfterTime("");
+          setProcessDurationMinutes("");
         }
       } catch (err) {
         console.error("Failed to load today's daily task status", err);
@@ -147,6 +158,31 @@ export function DailyTaskForm({
       clearTimeout(timer);
     };
   }, [todayDate, version]);
+
+  const calculateDuration = (before: string, after: string) => {
+    if (!before || !after) return "";
+    const [hBefore, mBefore] = before.split(":").map(Number);
+    const [hAfter, mAfter] = after.split(":").map(Number);
+    if (!isNaN(hBefore) && !isNaN(mBefore) && !isNaN(hAfter) && !isNaN(mAfter)) {
+      const beforeMins = hBefore * 60 + mBefore;
+      let afterMins = hAfter * 60 + mAfter;
+      if (afterMins < beforeMins) {
+        afterMins += 24 * 60;
+      }
+      return afterMins - beforeMins;
+    }
+    return "";
+  };
+
+  const handleSsBeforeChange = (val: string) => {
+    setSsBeforeTime(val);
+    setProcessDurationMinutes(calculateDuration(val, ssAfterTime));
+  };
+
+  const handleSsAfterChange = (val: string) => {
+    setSsAfterTime(val);
+    setProcessDurationMinutes(calculateDuration(ssBeforeTime, val));
+  };
 
   // Lock status calculation
   const isLocked = (() => {
@@ -198,6 +234,9 @@ export function DailyTaskForm({
           stream_name: streamName || null,
           selected_games: selectedGames,
           checklist_answers: checklistAnswers,
+          ss_before_time: ssBeforeTime || null,
+          ss_after_time: ssAfterTime || null,
+          process_duration_minutes: typeof processDurationMinutes === "number" ? processDurationMinutes : null,
         };
 
         const endpoint = taskId ? `/api/daily-task/${taskId}` : "/api/daily-task/submit";
@@ -371,6 +410,47 @@ export function DailyTaskForm({
                 );
               })}
             </div>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Field>
+            <FieldLabel htmlFor="ss-before-input">Jam SS Before</FieldLabel>
+            <Input
+              id="ss-before-input"
+              type="time"
+              value={ssBeforeTime}
+              onChange={(e) => handleSsBeforeChange(e.target.value)}
+              disabled={isLocked || isPending}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="ss-after-input">Jam SS After</FieldLabel>
+            <Input
+              id="ss-after-input"
+              type="time"
+              value={ssAfterTime}
+              onChange={(e) => handleSsAfterChange(e.target.value)}
+              disabled={isLocked || isPending}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="process-duration-input">Durasi Proses (Menit)</FieldLabel>
+            <Input
+              id="process-duration-input"
+              type="number"
+              value={processDurationMinutes}
+              onChange={(e) => {
+                const val = e.target.value === "" ? "" : parseInt(e.target.value, 10);
+                if (val === "" || (!isNaN(val) && val >= 0)) {
+                  setProcessDurationMinutes(val);
+                }
+              }}
+              placeholder="Auto-calculated"
+              disabled={isLocked || isPending}
+            />
           </Field>
         </div>
       </Card>

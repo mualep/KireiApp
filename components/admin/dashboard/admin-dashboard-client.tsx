@@ -320,19 +320,14 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
     return a.name.localeCompare(b.name);
   });
 
-  const formattedName = staffName
-    ? staffName
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(" ")
-    : "";
+
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8">
       {/* 1. Header Section */}
       <div className="flex flex-row items-center justify-between gap-4">
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-          Halo <span translate="no" className="text-foreground font-bold">{formattedName}</span>, selamat bekerja!
+          Halo <span translate="no" className="text-primary capitalize">{staffName.toLowerCase()}</span>, selamat bekerja!
         </h1>
 
         <Button

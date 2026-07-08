@@ -31,6 +31,9 @@ export interface TaskRecord {
   reviewer_name: string | null;
   reviewed_at: string | null;
   submitted_at: string | null;
+  ss_before_time: string | null;
+  ss_after_time: string | null;
+  process_duration_minutes: number | null;
 }
 
 interface DailyTaskReviewTableProps {
@@ -335,11 +338,27 @@ export function DailyTaskReviewTable({
 
             {/* General Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 border-y border-border/20 my-4 text-sm">
-              <div>
-                <span className="text-muted-foreground block text-xs">Stream Name / Link:</span>
-                <span className="font-medium text-foreground break-all whitespace-normal overflow-hidden block">
-                  {selectedTask.stream_name ? renderProofText(selectedTask.stream_name) : "-"}
-                </span>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <span className="text-muted-foreground block text-xs">Stream Name / Link:</span>
+                  <span className="font-medium text-foreground break-all whitespace-normal overflow-hidden block">
+                    {selectedTask.stream_name ? renderProofText(selectedTask.stream_name) : "-"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 border-t border-border/10 pt-2">
+                  <div>
+                    <span className="text-muted-foreground block text-xs">SS Before:</span>
+                    <span className="font-medium text-foreground">{selectedTask.ss_before_time ? selectedTask.ss_before_time.slice(0, 5) : "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs">SS After:</span>
+                    <span className="font-medium text-foreground">{selectedTask.ss_after_time ? selectedTask.ss_after_time.slice(0, 5) : "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs">Durasi Proses:</span>
+                    <span className="font-medium text-foreground">{typeof selectedTask.process_duration_minutes === "number" ? `${selectedTask.process_duration_minutes}m` : "-"}</span>
+                  </div>
+                </div>
               </div>
               <div>
                 <span className="text-muted-foreground block text-xs">Reviewer:</span>
