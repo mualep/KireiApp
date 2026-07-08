@@ -237,6 +237,23 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
   }
 
   function formatAction(domain: string, action: string): string {
+    if (domain === "auth" && action === "login") return "Login ke sistem";
+    if (domain === "auth" && action === "logout") return "Logout dari sistem";
+    if (domain === "daily_task" && action === "create") return "Submit Daily Task";
+    if (domain === "daily_task" && action === "update") return "Update Daily Task";
+    if (domain === "profile" && action === "update") return "Memperbarui Profil";
+
+    // If the API already mapped it, return it
+    if (
+      action === "Login ke sistem" ||
+      action === "Logout dari sistem" ||
+      action === "Submit Daily Task" ||
+      action === "Update Daily Task" ||
+      action === "Memperbarui Profil"
+    ) {
+      return action;
+    }
+
     if (action === "tracker.start") return "Memulai Shift";
     if (action === "tracker.stop") return "Mengakhiri Shift";
     if (action === "tracker.break_start") return "Mulai Istirahat";

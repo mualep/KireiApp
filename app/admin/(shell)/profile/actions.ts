@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit-logger";
 
 const updateCredentialsSchema = z.object({
   emailPrefix: z
@@ -72,22 +73,11 @@ export async function updateOwnCredentials(payload: unknown): Promise<UpdateCred
       return { ok: false, error: userError.message };
     }
 
-    // 5. Write to audit logs using the user client (sets correct actor)
-    const { error: auditError } = await supabase.rpc("write_audit_log", {
-      p_domain: "profile",
-      p_action: "profile.update_credentials",
-      p_target_table: "users",
-      p_target_id: user.id,
-      p_target_user_id: user.id,
-      p_payload: {
-        email: fullEmail,
-        has_password: !!(newPassword && newPassword.length >= 6),
-      },
+    // 5. Write to audit logs using the secure server logAudit helper
+    await logAudit(user.id, "profile", "update", user.id, {
+      email: fullEmail,
+      has_password: !!(newPassword && newPassword.length >= 6),
     });
-
-    if (auditError) {
-      console.error("Failed to write profile credentials update audit log:", auditError.message);
-    }
 
     revalidatePath("/admin/profile");
     return { ok: true };

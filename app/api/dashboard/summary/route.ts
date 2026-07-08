@@ -253,6 +253,15 @@ export async function GET() {
       (allUsersWithStaff.data || []).map((u) => [u.id, { name: u.name, tier: u.tier }])
     );
 
+    const translateAction = (domain: string, action: string) => {
+      if (domain === "auth" && action === "login") return "Login ke sistem";
+      if (domain === "auth" && action === "logout") return "Logout dari sistem";
+      if (domain === "daily_task" && action === "create") return "Submit Daily Task";
+      if (domain === "daily_task" && action === "update") return "Update Daily Task";
+      if (domain === "profile" && action === "update") return "Memperbarui Profil";
+      return action;
+    };
+
     const recentActivity = (auditLogs || []).map((log) => {
       const actor = log.actor_user_id ? globalUserMap.get(log.actor_user_id) : null;
       const target = log.target_user_id ? globalUserMap.get(log.target_user_id) : null;
@@ -262,7 +271,7 @@ export async function GET() {
         actor_tier: actor ? actor.tier : "system",
         target_name: target ? target.name : null,
         domain: log.domain,
-        action: log.action,
+        action: translateAction(log.domain, log.action),
         payload: log.payload_json,
         created_at: log.created_at,
       };

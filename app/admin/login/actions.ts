@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getStaffRedirectPath } from "@/lib/auth/redirects";
 import { parseStaffTier } from "@/lib/auth/tiers";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit-logger";
 
 export type LoginFormState = {
   email?: string;
@@ -84,6 +85,8 @@ export async function signInStaff(
       message: GENERIC_LOGIN_ERROR,
     };
   }
+
+  await logAudit(user.id, "auth", "login");
 
   redirect(getStaffRedirectPath(tier));
 }
