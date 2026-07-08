@@ -440,16 +440,11 @@ export function DailyTaskForm({
             <FieldLabel htmlFor="process-duration-input">Durasi Proses (Menit)</FieldLabel>
             <Input
               id="process-duration-input"
-              type="number"
-              value={processDurationMinutes}
-              onChange={(e) => {
-                const val = e.target.value === "" ? "" : parseInt(e.target.value, 10);
-                if (val === "" || (!isNaN(val) && val >= 0)) {
-                  setProcessDurationMinutes(val);
-                }
-              }}
+              type="text"
+              value={processDurationMinutes !== "" ? `${Math.floor(processDurationMinutes / 60)} jam ${processDurationMinutes % 60} menit` : ""}
               placeholder="Auto-calculated"
               disabled={isLocked || isPending}
+              readOnly
             />
           </Field>
         </div>

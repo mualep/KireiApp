@@ -184,9 +184,14 @@ export async function GET() {
       return Math.max(0, baseVal + deltaVal);
     };
 
-    let totalWorkLateSeconds = 0;
-    let totalBreakLateSeconds = 0;
-    let totalLemburUnits = 0;
+    let workLateSum = 0;
+    const workLateWorkers = new Set<string>();
+
+    let breakLateSum = 0;
+    const breakLateWorkers = new Set<string>();
+
+    let lemburSum = 0;
+    const lemburWorkers = new Set<string>();
 
     let alphaSum = 0;
     const alphaWorkers = new Set<string>();
@@ -207,10 +212,18 @@ export async function GET() {
       const sakit = getEffectiveValue(record.sakit_days, record.sakit_delta);
       const pending = getEffectiveValue(record.pending_days, record.pending_delta);
 
-      totalWorkLateSeconds += workLate;
-      totalBreakLateSeconds += breakLate;
-      totalLemburUnits += lembur;
-
+      if (workLate > 0) {
+        workLateSum += workLate;
+        workLateWorkers.add(record.user_id);
+      }
+      if (breakLate > 0) {
+        breakLateSum += breakLate;
+        breakLateWorkers.add(record.user_id);
+      }
+      if (lembur > 0) {
+        lemburSum += lembur;
+        lemburWorkers.add(record.user_id);
+      }
       if (alpha > 0) {
         alphaSum += alpha;
         alphaWorkers.add(record.user_id);
@@ -226,9 +239,9 @@ export async function GET() {
     }
 
     const monthlySummary = {
-      work_late_seconds: totalWorkLateSeconds,
-      break_late_seconds: totalBreakLateSeconds,
-      lembur_units: totalLemburUnits,
+      work_late_seconds: { sum: workLateSum, workers: workLateWorkers.size },
+      break_late_seconds: { sum: breakLateSum, workers: breakLateWorkers.size },
+      lembur_units: { sum: lemburSum, workers: lemburWorkers.size },
       alpha: { sum: alphaSum, workers: alphaWorkers.size },
       sakit: { sum: sakitSum, workers: sakitWorkers.size },
       pending: { sum: pendingSum, workers: pendingWorkers.size },

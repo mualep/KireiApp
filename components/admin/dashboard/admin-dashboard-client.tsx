@@ -29,9 +29,9 @@ interface StatusCounts {
 }
 
 interface MonthlySummary {
-  work_late_seconds: number;
-  break_late_seconds: number;
-  lembur_units: number;
+  work_late_seconds: { sum: number; workers: number };
+  break_late_seconds: { sum: number; workers: number };
+  lembur_units: { sum: number; workers: number };
   alpha: { sum: number; workers: number };
   sakit: { sum: number; workers: number };
   pending: { sum: number; workers: number };
@@ -590,18 +590,34 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
           {/* Work Late Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-yellow-500/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Work Late</span>
-            <span className="text-2xl font-extrabold text-yellow-500 tabular-nums">
-              {formatDuration(summary.work_late_seconds)}
-            </span>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-yellow-500">
+                <div className="flex items-center gap-1.5">
+                  <User className="size-4 shrink-0" />
+                  <span className="text-xl font-extrabold tabular-nums">{summary.work_late_seconds?.workers || 0}</span>
+                </div>
+              </div>
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-yellow-500">
+                <span className="text-xl font-extrabold tabular-nums">{formatDuration(summary.work_late_seconds?.sum || 0)}</span>
+              </div>
+            </div>
             <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan kerja</span>
           </div>
 
           {/* Break Late Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-orange-600/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Break Late</span>
-            <span className="text-2xl font-extrabold text-orange-600 tabular-nums">
-              {formatDuration(summary.break_late_seconds)}
-            </span>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-orange-600">
+                <div className="flex items-center gap-1.5">
+                  <User className="size-4 shrink-0" />
+                  <span className="text-xl font-extrabold tabular-nums">{summary.break_late_seconds?.workers || 0}</span>
+                </div>
+              </div>
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-orange-600">
+                <span className="text-xl font-extrabold tabular-nums">{formatDuration(summary.break_late_seconds?.sum || 0)}</span>
+              </div>
+            </div>
             <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan istirahat</span>
           </div>
 
@@ -659,9 +675,17 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
           {/* Lembur Units Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-yellow-600/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Lembur Units</span>
-            <span className="text-2xl font-extrabold text-yellow-600 tabular-nums">
-              {formatDuration((summary.lembur_units || 0) * 60)}
-            </span>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-yellow-600">
+                <div className="flex items-center gap-1.5">
+                  <User className="size-4 shrink-0" />
+                  <span className="text-xl font-extrabold tabular-nums">{summary.lembur_units?.workers || 0}</span>
+                </div>
+              </div>
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-yellow-600">
+                <span className="text-xl font-extrabold tabular-nums">{formatDuration((summary.lembur_units?.sum || 0) * 60)}</span>
+              </div>
+            </div>
             <span className="text-[10px] text-muted-foreground leading-snug">Total jam lembur tercatat</span>
           </div>
         </div>
