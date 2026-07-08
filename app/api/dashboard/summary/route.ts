@@ -186,29 +186,52 @@ export async function GET() {
 
     let totalWorkLateSeconds = 0;
     let totalBreakLateSeconds = 0;
-    let totalAlphaCount = 0;
-    let totalSakitDays = 0;
-    let totalPendingDays = 0;
     let totalLemburUnits = 0;
+
+    let alphaSum = 0;
+    const alphaWorkers = new Set<string>();
+
+    let sakitSum = 0;
+    const sakitWorkers = new Set<string>();
+
+    let pendingSum = 0;
+    const pendingWorkers = new Set<string>();
 
     const monthlyRecords = (records || []).filter((r) => r.period_month === periodMonthStr);
 
     for (const record of monthlyRecords) {
-      totalWorkLateSeconds += getEffectiveValue(record.work_late_seconds, record.work_late_delta);
-      totalBreakLateSeconds += getEffectiveValue(record.break_late_seconds, record.break_late_delta);
-      totalAlphaCount += getEffectiveValue(record.alpha_count, record.alpha_delta);
-      totalSakitDays += getEffectiveValue(record.sakit_days, record.sakit_delta);
-      totalPendingDays += getEffectiveValue(record.pending_days, record.pending_delta);
-      totalLemburUnits += getEffectiveValue(record.lembur_units, record.lembur_delta);
+      const workLate = getEffectiveValue(record.work_late_seconds, record.work_late_delta);
+      const breakLate = getEffectiveValue(record.break_late_seconds, record.break_late_delta);
+      const lembur = getEffectiveValue(record.lembur_units, record.lembur_delta);
+      const alpha = getEffectiveValue(record.alpha_count, record.alpha_delta);
+      const sakit = getEffectiveValue(record.sakit_days, record.sakit_delta);
+      const pending = getEffectiveValue(record.pending_days, record.pending_delta);
+
+      totalWorkLateSeconds += workLate;
+      totalBreakLateSeconds += breakLate;
+      totalLemburUnits += lembur;
+
+      if (alpha > 0) {
+        alphaSum += alpha;
+        alphaWorkers.add(record.user_id);
+      }
+      if (sakit > 0) {
+        sakitSum += sakit;
+        sakitWorkers.add(record.user_id);
+      }
+      if (pending > 0) {
+        pendingSum += pending;
+        pendingWorkers.add(record.user_id);
+      }
     }
 
     const monthlySummary = {
       work_late_seconds: totalWorkLateSeconds,
       break_late_seconds: totalBreakLateSeconds,
-      alpha_count: totalAlphaCount,
-      sakit_days: totalSakitDays,
-      pending_days: totalPendingDays,
       lembur_units: totalLemburUnits,
+      alpha: { sum: alphaSum, workers: alphaWorkers.size },
+      sakit: { sum: sakitSum, workers: sakitWorkers.size },
+      pending: { sum: pendingSum, workers: pendingWorkers.size },
     };
 
     // 4. Map recent audit logs with username lookup

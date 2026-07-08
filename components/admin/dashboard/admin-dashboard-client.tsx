@@ -8,12 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Clock, 
   AlertTriangle, 
   RefreshCw, 
-  UserCheck, 
-  Flame,
-  Coffee
+  User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,10 +31,10 @@ interface StatusCounts {
 interface MonthlySummary {
   work_late_seconds: number;
   break_late_seconds: number;
-  alpha_count: number;
-  sakit_days: number;
-  pending_days: number;
   lembur_units: number;
+  alpha: { sum: number; workers: number };
+  sakit: { sum: number; workers: number };
+  pending: { sum: number; workers: number };
 }
 
 interface RecentActivity {
@@ -303,7 +300,16 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
     late: 0,
     alpha: 0
   };
-  const summary = data.monthly_summary || { work_late_seconds: 0, break_late_seconds: 0, alpha_count: 0, sakit_days: 0, pending_days: 0, lembur_units: 0 };
+  
+  const summary = data.monthly_summary || { 
+    work_late_seconds: 0, 
+    break_late_seconds: 0, 
+    lembur_units: 0,
+    alpha: { sum: 0, workers: 0 },
+    sakit: { sum: 0, workers: 0 },
+    pending: { sum: 0, workers: 0 }
+  };
+
   const activity = data.recent_activity || [];
   const alerts = data.urgent_alerts || [];
 
@@ -314,12 +320,19 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
     return a.name.localeCompare(b.name);
   });
 
+  const formattedName = staffName
+    ? staffName
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ")
+    : "";
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8">
       {/* 1. Header Section */}
       <div className="flex flex-row items-center justify-between gap-4">
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-          Halo <span translate="no" className="text-primary">{staffName}</span>, selamat bekerja!
+          Halo {formattedName}, selamat bekerja!
         </h1>
 
         <Button
@@ -443,7 +456,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
             className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:bg-white/5 hover:brightness-125 transition-all duration-300 cursor-pointer group"
           >
             <span className="text-[11px] font-bold uppercase tracking-wider text-white">PENDING</span>
-            <span className="text-3xl font-extrabold text-purple-500 tabular-nums">
+            <span className="text-3xl font-extrabold text-orange-500 tabular-nums">
               {counts.pending}
             </span>
           </Link>
@@ -581,61 +594,55 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {/* Work Late Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-amber-500/20 hover:shadow-md hover:shadow-amber-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-            <div className="absolute right-3 top-3 text-amber-500/5 group-hover:text-amber-500/10 transition-colors pointer-events-none select-none">
-              <Clock className="size-12" />
-            </div>
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Work Late</span>
-            <span className="text-2xl font-extrabold text-amber-400 tabular-nums">{formatDuration(summary.work_late_seconds)}</span>
+            <span className="text-2xl font-extrabold text-yellow-500 tabular-nums">
+              {formatDuration(summary.work_late_seconds)}
+            </span>
             <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan kerja</span>
           </div>
 
           {/* Break Late Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-            <div className="absolute right-3 top-3 text-blue-500/5 group-hover:text-blue-500/10 transition-colors pointer-events-none select-none">
-              <Coffee className="size-12" />
-            </div>
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Break Late</span>
-            <span className="text-2xl font-extrabold text-blue-400 tabular-nums">{formatDuration(summary.break_late_seconds)}</span>
+            <span className="text-2xl font-extrabold text-orange-600 tabular-nums">
+              {formatDuration(summary.break_late_seconds)}
+            </span>
             <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan istirahat</span>
           </div>
 
           {/* Alpha Count Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-red-500/20 hover:shadow-md hover:shadow-red-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-            <div className="absolute right-3 top-3 text-red-500/5 group-hover:text-red-500/10 transition-colors pointer-events-none select-none">
-              <AlertTriangle className="size-12" />
-            </div>
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Alpha Count</span>
-            <span className="text-2xl font-extrabold text-red-500 tabular-nums">{summary.alpha_count}x</span>
+            <span className="text-2xl font-extrabold text-red-500 tabular-nums flex items-center gap-1">
+              {summary.alpha?.workers || 0} <User className="inline size-4 mb-1 shrink-0" /> {summary.alpha?.sum || 0}d
+            </span>
             <span className="text-[10px] text-muted-foreground leading-snug">Total absen alpha</span>
           </div>
 
           {/* Total Sakit Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-            <div className="absolute right-3 top-3 text-emerald-500/5 group-hover:text-emerald-500/10 transition-colors pointer-events-none select-none">
-              <UserCheck className="size-12" />
-            </div>
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Total Sakit</span>
-            <span className="text-2xl font-extrabold text-emerald-400 tabular-nums">{summary.sakit_days} Hari</span>
+            <span className="text-2xl font-extrabold text-orange-500 tabular-nums flex items-center gap-1">
+              {summary.sakit?.workers || 0} <User className="inline size-4 mb-1 shrink-0" /> {summary.sakit?.sum || 0}d
+            </span>
             <span className="text-[10px] text-muted-foreground leading-snug">Akumulasi hari izin sakit</span>
           </div>
 
           {/* Pending Days Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-purple-500/20 hover:shadow-md hover:shadow-purple-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-            <div className="absolute right-3 top-3 text-purple-500/5 group-hover:text-purple-500/10 transition-colors pointer-events-none select-none">
-              <Clock className="size-12" />
-            </div>
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Pending Days</span>
-            <span className="text-2xl font-extrabold text-purple-400 tabular-nums">{summary.pending_days} Hari</span>
+            <span className="text-2xl font-extrabold text-orange-500 tabular-nums flex items-center gap-1">
+              {summary.pending?.workers || 0} <User className="inline size-4 mb-1 shrink-0" /> {summary.pending?.sum || 0}d
+            </span>
             <span className="text-[10px] text-muted-foreground leading-snug">Hari pending belum ditinjau</span>
           </div>
 
           {/* Lembur Units Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-orange-500/20 hover:shadow-md hover:shadow-orange-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
-            <div className="absolute right-3 top-3 text-orange-500/5 group-hover:text-orange-500/10 transition-colors pointer-events-none select-none">
-              <Flame className="size-12" />
-            </div>
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Lembur Units</span>
-            <span className="text-2xl font-extrabold text-orange-400 tabular-nums">{summary.lembur_units} Unit</span>
+            <span className="text-2xl font-extrabold text-yellow-600 tabular-nums">
+              {formatDuration((summary.lembur_units || 0) * 60)}
+            </span>
             <span className="text-[10px] text-muted-foreground leading-snug">Total jam lembur tercatat</span>
           </div>
         </div>
