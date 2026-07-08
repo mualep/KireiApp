@@ -332,7 +332,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
       {/* 1. Header Section */}
       <div className="flex flex-row items-center justify-between gap-4">
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-          Halo {formattedName}, selamat bekerja!
+          Halo <span translate="no" className="text-foreground font-bold">{formattedName}</span>, selamat bekerja!
         </h1>
 
         <Button
@@ -593,7 +593,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {/* Work Late Card */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-amber-500/20 hover:shadow-md hover:shadow-amber-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-yellow-500/20 hover:shadow-md hover:shadow-yellow-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Work Late</span>
             <span className="text-2xl font-extrabold text-yellow-500 tabular-nums">
               {formatDuration(summary.work_late_seconds)}
@@ -602,7 +602,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
           </div>
 
           {/* Break Late Card */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-orange-600/20 hover:shadow-md hover:shadow-orange-600/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Break Late</span>
             <span className="text-2xl font-extrabold text-orange-600 tabular-nums">
               {formatDuration(summary.break_late_seconds)}
@@ -610,35 +610,65 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
             <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan istirahat</span>
           </div>
 
-          {/* Alpha Count Card */}
+          {/* Alpha Count Card (Bento Box Redesign) */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-red-500/20 hover:shadow-md hover:shadow-red-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Alpha Count</span>
-            <span className="text-2xl font-extrabold text-red-500 tabular-nums flex items-center gap-1">
-              {summary.alpha?.workers || 0} <User className="inline size-4 mb-1 shrink-0" /> {summary.alpha?.sum || 0}d
-            </span>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {/* Card 1: Workers */}
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-red-500">
+                <div className="flex items-center gap-1.5">
+                  <User className="size-5 shrink-0" />
+                  <span className="text-xl font-extrabold tabular-nums">{summary.alpha?.workers || 0}</span>
+                </div>
+              </div>
+              {/* Card 2: Days */}
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-red-500">
+                <span className="text-xl font-extrabold tabular-nums">{summary.alpha?.sum || 0}d</span>
+              </div>
+            </div>
             <span className="text-[10px] text-muted-foreground leading-snug">Total absen alpha</span>
           </div>
 
-          {/* Total Sakit Card */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          {/* Total Sakit Card (Bento Box Redesign) */}
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-orange-500/20 hover:shadow-md hover:shadow-orange-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Total Sakit</span>
-            <span className="text-2xl font-extrabold text-orange-500 tabular-nums flex items-center gap-1">
-              {summary.sakit?.workers || 0} <User className="inline size-4 mb-1 shrink-0" /> {summary.sakit?.sum || 0}d
-            </span>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {/* Card 1: Workers */}
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-orange-500">
+                <div className="flex items-center gap-1.5">
+                  <User className="size-5 shrink-0" />
+                  <span className="text-xl font-extrabold tabular-nums">{summary.sakit?.workers || 0}</span>
+                </div>
+              </div>
+              {/* Card 2: Days */}
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-orange-500">
+                <span className="text-xl font-extrabold tabular-nums">{summary.sakit?.sum || 0}d</span>
+              </div>
+            </div>
             <span className="text-[10px] text-muted-foreground leading-snug">Akumulasi hari izin sakit</span>
           </div>
 
-          {/* Pending Days Card */}
+          {/* Pending Days Card (Bento Box Redesign) */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-purple-500/20 hover:shadow-md hover:shadow-purple-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Pending Days</span>
-            <span className="text-2xl font-extrabold text-orange-500 tabular-nums flex items-center gap-1">
-              {summary.pending?.workers || 0} <User className="inline size-4 mb-1 shrink-0" /> {summary.pending?.sum || 0}d
-            </span>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {/* Card 1: Workers */}
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-purple-500">
+                <div className="flex items-center gap-1.5">
+                  <User className="size-5 shrink-0" />
+                  <span className="text-xl font-extrabold tabular-nums">{summary.pending?.workers || 0}</span>
+                </div>
+              </div>
+              {/* Card 2: Days */}
+              <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-purple-500">
+                <span className="text-xl font-extrabold tabular-nums">{summary.pending?.sum || 0}d</span>
+              </div>
+            </div>
             <span className="text-[10px] text-muted-foreground leading-snug">Hari pending belum ditinjau</span>
           </div>
 
           {/* Lembur Units Card */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-orange-500/20 hover:shadow-md hover:shadow-orange-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-yellow-600/20 hover:shadow-md hover:shadow-yellow-600/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Lembur Units</span>
             <span className="text-2xl font-extrabold text-yellow-600 tabular-nums">
               {formatDuration((summary.lembur_units || 0) * 60)}
