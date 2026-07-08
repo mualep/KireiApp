@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
+import { logAudit } from "@/lib/audit-logger";
 
 const reviewTaskSchema = z.object({
   status: z.enum(["approved", "rejected", "pending_review"]),
@@ -54,6 +55,11 @@ export async function PATCH(
         { status: 422 }
       );
     }
+
+    await logAudit(staff.profile.id, "daily_task", "update", data.user_id, {
+      task_id: id,
+      status: parsed.data.status,
+    });
 
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {
