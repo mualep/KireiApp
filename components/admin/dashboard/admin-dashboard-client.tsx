@@ -588,7 +588,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {/* Work Late Card */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-yellow-500/20 hover:shadow-md hover:shadow-yellow-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-yellow-500/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Work Late</span>
             <span className="text-2xl font-extrabold text-yellow-500 tabular-nums">
               {formatDuration(summary.work_late_seconds)}
@@ -597,7 +597,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
           </div>
 
           {/* Break Late Card */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-orange-600/20 hover:shadow-md hover:shadow-orange-600/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-orange-600/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Break Late</span>
             <span className="text-2xl font-extrabold text-orange-600 tabular-nums">
               {formatDuration(summary.break_late_seconds)}
@@ -606,17 +606,15 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
           </div>
 
           {/* Alpha Count Card (Bento Box Redesign) */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-red-500/20 hover:shadow-md hover:shadow-red-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-red-500/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Alpha Count</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
-              {/* Card 1: Workers */}
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-red-500">
                 <div className="flex items-center gap-1.5">
-                  <User className="size-5 shrink-0" />
+                  <User className="size-4 shrink-0" />
                   <span className="text-xl font-extrabold tabular-nums">{summary.alpha?.workers || 0}</span>
                 </div>
               </div>
-              {/* Card 2: Days */}
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-red-500">
                 <span className="text-xl font-extrabold tabular-nums">{summary.alpha?.sum || 0}d</span>
               </div>
@@ -625,17 +623,15 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
           </div>
 
           {/* Total Sakit Card (Bento Box Redesign) */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-orange-500/20 hover:shadow-md hover:shadow-orange-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-orange-500/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Total Sakit</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
-              {/* Card 1: Workers */}
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-orange-500">
                 <div className="flex items-center gap-1.5">
-                  <User className="size-5 shrink-0" />
+                  <User className="size-4 shrink-0" />
                   <span className="text-xl font-extrabold tabular-nums">{summary.sakit?.workers || 0}</span>
                 </div>
               </div>
-              {/* Card 2: Days */}
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-orange-500">
                 <span className="text-xl font-extrabold tabular-nums">{summary.sakit?.sum || 0}d</span>
               </div>
@@ -644,17 +640,15 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
           </div>
 
           {/* Pending Days Card (Bento Box Redesign) */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-purple-500/20 hover:shadow-md hover:shadow-purple-500/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-purple-500/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Pending Days</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
-              {/* Card 1: Workers */}
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-purple-500">
                 <div className="flex items-center gap-1.5">
-                  <User className="size-5 shrink-0" />
+                  <User className="size-4 shrink-0" />
                   <span className="text-xl font-extrabold tabular-nums">{summary.pending?.workers || 0}</span>
                 </div>
               </div>
-              {/* Card 2: Days */}
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-purple-500">
                 <span className="text-xl font-extrabold tabular-nums">{summary.pending?.sum || 0}d</span>
               </div>
@@ -663,7 +657,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
           </div>
 
           {/* Lembur Units Card */}
-          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:border-yellow-600/20 hover:shadow-md hover:shadow-yellow-600/2 transition-all flex flex-col gap-1.5 relative overflow-hidden group">
+          <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-yellow-600/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Lembur Units</span>
             <span className="text-2xl font-extrabold text-yellow-600 tabular-nums">
               {formatDuration((summary.lembur_units || 0) * 60)}
