@@ -212,18 +212,25 @@ export async function GET() {
     };
 
     // 4. Map recent audit logs with username lookup
-    const allUsersWithStaff = await supabase.from("users").select("id, name");
-    const globalUserMap = new Map((allUsersWithStaff.data || []).map((u) => [u.id, u.name]));
+    const allUsersWithStaff = await supabase.from("users").select("id, name, tier");
+    const globalUserMap = new Map(
+      (allUsersWithStaff.data || []).map((u) => [u.id, { name: u.name, tier: u.tier }])
+    );
 
-    const recentActivity = (auditLogs || []).map((log) => ({
-      id: log.id,
-      actor_name: log.actor_user_id ? globalUserMap.get(log.actor_user_id) || "System" : "System",
-      target_name: log.target_user_id ? globalUserMap.get(log.target_user_id) || null : null,
-      domain: log.domain,
-      action: log.action,
-      payload: log.payload_json,
-      created_at: log.created_at,
-    }));
+    const recentActivity = (auditLogs || []).map((log) => {
+      const actor = log.actor_user_id ? globalUserMap.get(log.actor_user_id) : null;
+      const target = log.target_user_id ? globalUserMap.get(log.target_user_id) : null;
+      return {
+        id: log.id,
+        actor_name: actor ? actor.name : "System",
+        actor_tier: actor ? actor.tier : "system",
+        target_name: target ? target.name : null,
+        domain: log.domain,
+        action: log.action,
+        payload: log.payload_json,
+        created_at: log.created_at,
+      };
+    });
 
     return NextResponse.json({
       success: true,

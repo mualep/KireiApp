@@ -8,16 +8,51 @@ const LIVE_STATUS_PROBE_PATH = "/brand/kireiapp-mark.svg";
 const LIVE_STATUS_INTERVAL_MS = 15_000;
 const CLOCK_INTERVAL_MS = 1_000;
 
-const clockFormatter = new Intl.DateTimeFormat("id-ID", {
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  month: "short",
-  second: "2-digit",
-  timeZone: "Asia/Jakarta",
-  weekday: "short",
-  year: "numeric",
-});
+const INDO_DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const INDO_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Agu",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Des"
+];
+
+function formatIndoDateTime(date: Date): string {
+  const formatter = new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(date);
+  const partMap = new Map(parts.map(p => [p.type, p.value]));
+  
+  const year = partMap.get("year") || "";
+  const monthIdx = parseInt(partMap.get("month") || "1", 10) - 1;
+  const monthStr = INDO_MONTHS[monthIdx] || "";
+  const day = partMap.get("day") || "";
+  
+  const hour = (partMap.get("hour") || "00").padStart(2, "0");
+  const minute = (partMap.get("minute") || "00").padStart(2, "0");
+  const second = (partMap.get("second") || "00").padStart(2, "0");
+  
+  const wibTime = new Date(date.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+  const dayOfWeek = INDO_DAYS[wibTime.getDay()] || "";
+  
+  return `${dayOfWeek}, ${day} ${monthStr} ${year}, ${hour}:${minute}:${second}`;
+}
 
 export function AdminTopbarLiveStatus() {
   const [pingMs, setPingMs] = useState<number | null>(null);
@@ -115,10 +150,15 @@ export function AdminTopbarLiveStatus() {
 
 export function AdminTopbarClock({ initialText }: { initialText: string }) {
   const [timeText, setTimeText] = useState(initialText);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setMounted(true);
+    }, 0);
+
     function updateClock() {
-      setTimeText(clockFormatter.format(new Date()));
+      setTimeText(formatIndoDateTime(new Date()));
     }
 
     updateClock();
@@ -126,13 +166,14 @@ export function AdminTopbarClock({ initialText }: { initialText: string }) {
     const intervalId = window.setInterval(updateClock, CLOCK_INTERVAL_MS);
 
     return () => {
+      clearTimeout(timeoutId);
       window.clearInterval(intervalId);
     };
   }, []);
 
   return (
-    <time className="hidden text-sm tabular-nums text-muted-foreground sm:block">
-      {timeText}
+    <time className="hidden text-sm tabular-nums text-muted-foreground sm:block" translate="no">
+      {mounted ? timeText : initialText}
     </time>
   );
 }
