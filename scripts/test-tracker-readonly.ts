@@ -886,6 +886,7 @@ function buildCard({
     pendingDays: 0,
     sakitDays: 0,
     shift,
+    shiftStartedAt: null,
     showCard: true,
     statusUpdatedAt: "2026-04-27T00:00:00.000Z",
     storedStatus,
