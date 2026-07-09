@@ -216,11 +216,11 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
       return actionError("version_conflict");
     }
 
-    if (workerStatus.status !== "on") {
+    if (workerStatus.current_status !== "on") {
       return actionError("invalid_transition");
     }
 
-    if (!workerStatus.shift_started_at) {
+    if (!workerStatus.shift_active_started_at) {
       return {
         code: "generic_error",
         message: "Batas waktu pembatalan (15 menit) telah habis.",
@@ -228,7 +228,7 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
       };
     }
 
-    const startTime = new Date(workerStatus.shift_started_at).getTime();
+    const startTime = new Date(workerStatus.shift_active_started_at).getTime();
     const nowTime = new Date().getTime();
     if (nowTime - startTime > 15 * 60 * 1000) {
       return {
@@ -241,7 +241,7 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
     const { getOperationalDate } = await import("@/lib/utils");
 
     // 2. Delete worker_attendance for the target date
-    const targetDate = getOperationalDate(new Date(workerStatus.shift_started_at));
+    const targetDate = getOperationalDate(new Date(workerStatus.shift_active_started_at));
     const { error: deleteError } = await supabase
       .from("worker_attendance")
       .delete()
@@ -256,14 +256,15 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
     const { error: updateError } = await supabase
       .from("worker_status")
       .update({
-        status: "off",
-        shift_started_at: null,
+        current_status: "off",
+        shift_active_date: null,
+        shift_active_started_at: null,
         shift_active_label: null,
         shift_active_start_hour: null,
         shift_active_start_min: null,
         shift_active_end_hour: null,
         shift_active_end_min: null,
-        version: workerStatus.version + 1,
+        version: Number(workerStatus.version) + 1,
       })
       .eq("user_id", parsed.data.targetUserId);
 
