@@ -569,10 +569,10 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-              <Button variant="outline">Kembali</Button>
+              <Button variant="secondary">Kembali</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
-              <Button variant="outline" data-tone="danger" onClick={executeCancelStart}>
+              <Button variant="destructive" onClick={executeCancelStart}>
                 Ya, Batalkan
               </Button>
             </AlertDialogAction>
