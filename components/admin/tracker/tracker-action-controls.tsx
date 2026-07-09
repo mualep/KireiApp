@@ -131,6 +131,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   const [correctionReasonError, setCorrectionReasonError] = useState<string | null>(
     null,
   );
+  const [nowMs, setNowMs] = useState<number | null>(null);
   const controlGroups = getActiveControlGroups(card, nowMs);
   const isPending =
     isTransitionPending ||
@@ -140,7 +141,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
     pendingAbsenceMaterializationAction !== null;
   const isBreakCard =
     card.storedStatus === "break" && card.displayStatus === "BREAK";
-  const [nowMs, setNowMs] = useState<number | null>(null);
 
   const isOnCard = card.storedStatus === "on" && card.displayStatus === "ON";
   const shouldRunTimer =
