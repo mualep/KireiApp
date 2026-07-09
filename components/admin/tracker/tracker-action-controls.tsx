@@ -12,6 +12,7 @@ import {
   TimerIcon,
   TrendingUpIcon,
   UserPlusIcon,
+  XCircleIcon,
 } from "lucide-react";
 
 import {
@@ -130,7 +131,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   const [correctionReasonError, setCorrectionReasonError] = useState<string | null>(
     null,
   );
-  const controlGroups = getActiveControlGroups(card);
+  const controlGroups = getActiveControlGroups(card, nowMs);
   const isPending =
     isTransitionPending ||
     pendingAction !== null ||
@@ -141,8 +142,13 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
     card.storedStatus === "break" && card.displayStatus === "BREAK";
   const [nowMs, setNowMs] = useState<number | null>(null);
 
+  const isOnCard = card.storedStatus === "on" && card.displayStatus === "ON";
+  const shouldRunTimer =
+    (isBreakCard && card.breakTimerRunning && card.breakStartedAt) ||
+    (isOnCard && card.shiftStartedAt);
+
   useEffect(() => {
-    if (!isBreakCard || !card.breakTimerRunning || !card.breakStartedAt) {
+    if (!shouldRunTimer) {
       return;
     }
 
@@ -158,11 +164,18 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       window.clearTimeout(initialTimer);
       window.clearInterval(timer);
     };
-  }, [card.breakStartedAt, card.breakTimerRunning, isBreakCard]);
+  }, [shouldRunTimer]);
 
   function runTrackerAction(action: TrackerAction) {
     if (isPending) {
       return;
+    }
+
+    if (action === "CANCEL_START") {
+      const ok = window.confirm(
+        "Batalkan Kehadiran?\nApakah Anda yakin ingin membatalkan kehadiran? Data absensi hari ini akan dihapus."
+      );
+      if (!ok) return;
     }
 
     setPendingAction(action);
@@ -506,6 +519,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
 
 function getActiveControlGroups(
   card: TrackerCardDTO,
+  nowMs: number | null,
 ): TrackerControlConfig[][] {
   if (
     card.storedStatus === "off" &&
@@ -576,6 +590,13 @@ function getActiveControlGroups(
   }
 
   if (card.storedStatus === "on" && card.displayStatus === "ON") {
+    const isGracePeriodActive = (() => {
+      if (!card.shiftStartedAt) return false;
+      const startTime = new Date(card.shiftStartedAt).getTime();
+      const current = nowMs || Date.now();
+      return (current - startTime) <= 15 * 60 * 1000;
+    })();
+
     return [
       [
         {
@@ -592,6 +613,16 @@ function getActiveControlGroups(
           label: "BREAK",
           tone: "break",
         },
+        ...(isGracePeriodActive
+          ? [
+              {
+                action: "CANCEL_START" as TrackerAction,
+                icon: <XCircleIcon data-icon="inline-start" aria-hidden="true" />,
+                label: "BATAL START",
+                tone: "danger" as const,
+              },
+            ]
+          : []),
       ],
     ];
   }

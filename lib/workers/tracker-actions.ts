@@ -24,6 +24,7 @@ export const trackerActions = [
   "SAKIT",
   "LEMBUR",
   "BATAL_LEMBUR",
+  "CANCEL_START",
 ] as const;
 
 export type TrackerAction = (typeof trackerActions)[number];
@@ -38,6 +39,7 @@ export const trackerActionTargetStatuses = {
   START: "on",
   LEMBUR: "lembur",
   BATAL_LEMBUR: "off",
+  CANCEL_START: "off",
 } as const satisfies Record<TrackerAction, WorkerStoredStatus>;
 
 export const trackerActionAttendanceStatuses = {
@@ -50,6 +52,7 @@ export const trackerActionAttendanceStatuses = {
   START: "hadir",
   LEMBUR: null,
   BATAL_LEMBUR: null,
+  CANCEL_START: null,
 } as const satisfies Record<TrackerAction, WorkerAttendanceStatus | null>;
 
 export type TrackerActionTransitionRejectReason =
@@ -162,6 +165,8 @@ function isAllowedTransitionSource(
       return storedStatus === "on" || storedStatus === "lembur";
     case "LANJUT":
       return storedStatus === "break";
+    case "CANCEL_START":
+      return storedStatus === "on";
   }
 }
 

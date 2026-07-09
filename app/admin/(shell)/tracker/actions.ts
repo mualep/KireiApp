@@ -199,6 +199,99 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
   }
 
   const supabase = await createClient();
+
+  if (parsed.data.action === "CANCEL_START") {
+    // 1. Fetch current worker status
+    const { data: workerStatus, error: fetchError } = await supabase
+      .from("worker_status")
+      .select("*")
+      .eq("user_id", parsed.data.targetUserId)
+      .single();
+
+    if (fetchError || !workerStatus) {
+      return actionError("invalid_target");
+    }
+
+    if (workerStatus.version !== parsed.data.expectedVersion) {
+      return actionError("version_conflict");
+    }
+
+    if (workerStatus.status !== "on") {
+      return actionError("invalid_transition");
+    }
+
+    if (!workerStatus.shift_started_at) {
+      return {
+        code: "generic_error",
+        message: "Batas waktu pembatalan (15 menit) telah habis.",
+        ok: false,
+      };
+    }
+
+    const startTime = new Date(workerStatus.shift_started_at).getTime();
+    const nowTime = new Date().getTime();
+    if (nowTime - startTime > 15 * 60 * 1000) {
+      return {
+        code: "generic_error",
+        message: "Batas waktu pembatalan (15 menit) telah habis.",
+        ok: false,
+      };
+    }
+
+    const { getOperationalDate } = await import("@/lib/utils");
+
+    // 2. Delete worker_attendance for the target date
+    const targetDate = getOperationalDate(new Date(workerStatus.shift_started_at));
+    const { error: deleteError } = await supabase
+      .from("worker_attendance")
+      .delete()
+      .eq("user_id", parsed.data.targetUserId)
+      .eq("date", targetDate);
+
+    if (deleteError) {
+      return actionError("generic_error");
+    }
+
+    // 3. Revert worker_status (derived off revert)
+    const { error: updateError } = await supabase
+      .from("worker_status")
+      .update({
+        status: "off",
+        shift_started_at: null,
+        shift_active_label: null,
+        shift_active_start_hour: null,
+        shift_active_start_min: null,
+        shift_active_end_hour: null,
+        shift_active_end_min: null,
+        version: workerStatus.version + 1,
+      })
+      .eq("user_id", parsed.data.targetUserId);
+
+    if (updateError) {
+      return actionError("generic_error");
+    }
+
+    // 4. Log audit activity
+    const { logAudit } = await import("@/lib/audit-logger");
+    await logAudit(
+      staff.profile.id,
+      "tracker",
+      "tracker.cancel_start",
+      parsed.data.targetUserId,
+      { action: "CANCEL_START", date: targetDate }
+    );
+
+    revalidatePath("/admin/tracker");
+
+    return {
+      action: parsed.data.action,
+      code: "success",
+      message: RESULT_MESSAGES.success,
+      ok: true,
+      targetUserId: parsed.data.targetUserId,
+    };
+  }
+
   const { error } = await supabase.rpc("apply_tracker_action", {
     p_action: parsed.data.action,
     p_expected_version: parsed.data.expectedVersion,
