@@ -239,21 +239,24 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
     }
 
     const { getOperationalDate } = await import("@/lib/utils");
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const adminClient = createAdminClient();
 
     // 2. Delete worker_attendance for the target date
     const targetDate = getOperationalDate(new Date(workerStatus.shift_active_started_at));
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await adminClient
       .from("worker_attendance")
       .delete()
       .eq("user_id", parsed.data.targetUserId)
       .eq("date", targetDate);
 
     if (deleteError) {
+      console.error("[CANCEL_START] Delete Error:", deleteError);
       return actionError("generic_error");
     }
 
     // 3. Revert worker_status (derived off revert)
-    const { error: updateError } = await supabase
+    const { error: updateError } = await adminClient
       .from("worker_status")
       .update({
         current_status: "off",
@@ -269,6 +272,7 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
       .eq("user_id", parsed.data.targetUserId);
 
     if (updateError) {
+      console.error("[CANCEL_START] Update Error:", updateError);
       return actionError("generic_error");
     }
 

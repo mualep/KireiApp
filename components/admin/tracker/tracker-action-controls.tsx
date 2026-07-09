@@ -27,6 +27,16 @@ import {
 } from "@/app/admin/(shell)/tracker/actions";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   formatBreakRemainingSeconds,
   getBreakRemainingSeconds,
 } from "@/lib/tracker/break-timer";
@@ -131,6 +141,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   const [correctionReasonError, setCorrectionReasonError] = useState<string | null>(
     null,
   );
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
   const controlGroups = getActiveControlGroups(card, nowMs);
   const isPending =
@@ -172,10 +183,8 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
     }
 
     if (action === "CANCEL_START") {
-      const ok = window.confirm(
-        "Batalkan Kehadiran?\nApakah Anda yakin ingin membatalkan kehadiran? Data absensi hari ini akan dihapus."
-      );
-      if (!ok) return;
+      setShowCancelDialog(true);
+      return;
     }
 
     setPendingAction(action);
@@ -208,6 +217,42 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
         });
       } finally {
         setPendingAction(null);
+      }
+    });
+  }
+
+  function executeCancelStart() {
+    setPendingAction("CANCEL_START");
+
+    startTransition(async () => {
+      try {
+        const nextResult = await applyTrackerAction({
+          action: "CANCEL_START",
+          expectedVersion: card.version,
+          targetUserId: card.userId,
+        });
+
+        toast({
+          title: nextResult.ok ? "Berhasil" : "Gagal",
+          description: nextResult.message,
+          variant: nextResult.ok ? "success" : "error",
+        });
+
+        if (
+          nextResult.code === "success" ||
+          nextResult.code === "version_conflict"
+        ) {
+          router.refresh();
+        }
+      } catch {
+        toast({
+          title: "Gagal",
+          description: genericFailure.message,
+          variant: "error",
+        });
+      } finally {
+        setPendingAction(null);
+        setShowCancelDialog(false);
       }
     });
   }
@@ -513,6 +558,27 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           </div>
         </div>
       ) : null}
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan Kehadiran?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin membatalkan kehadiran? Data absensi hari ini akan dihapus.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Kembali</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="outline" data-tone="danger" onClick={executeCancelStart}>
+                Ya, Batalkan
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
