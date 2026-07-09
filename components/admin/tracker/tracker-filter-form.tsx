@@ -162,7 +162,7 @@ export function TrackerFilterForm({
                 type="search"
                 value={queryDraft}
                 onChange={(event) => setQueryDraft(event.currentTarget.value)}
-                placeholder="Search worker name…"
+                placeholder="Cari nama pekerja..."
                 autoComplete="off"
                 className="w-full min-w-0 rounded-lg border border-input px-2.5 py-1 text-base h-9 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
               />
@@ -180,7 +180,7 @@ export function TrackerFilterForm({
                 onChange={handleShiftChange}
                 className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <option value="">All Shifts</option>
+                <option value="">Semua Shift</option>
                 {workerShifts.map((shift) => (
                   <option key={shift} value={shift}>
                     {shift === "flexible" ? "Flexible" : shift}
@@ -205,7 +205,7 @@ export function TrackerFilterForm({
                 onChange={handleStatusChange}
                 className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <option value="">All Statuses</option>
+                <option value="">Semua Status</option>
                 {workerDisplayStatuses.map((status) => (
                   <option key={status} value={status}>
                     {status}
@@ -230,11 +230,11 @@ export function TrackerFilterForm({
                 onChange={handleSortChange}
                 className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <option value="name-asc">Name &#x2192; A-Z</option>
-                <option value="name-desc">Name &#x2192; Z-A</option>
-                <option value="status-urgent">Status &#x2192; Urgent</option>
+                <option value="name-asc">Nama &#x2192; A-Z</option>
+                <option value="name-desc">Nama &#x2192; Z-A</option>
+                <option value="status-urgent">Status &#x2192; Darurat</option>
                 <option value="status-not-urgent">
-                  Status &#x2192; Tidak Urgent
+                  Status &#x2192; Tidak Darurat
                 </option>
               </select>
               <ChevronDownIcon
@@ -251,7 +251,7 @@ export function TrackerFilterForm({
             >
               <Link href={pathname}>
                 <XIcon className="size-4" aria-hidden="true" />
-                Clear
+                Bersihkan
               </Link>
             </Button>
 
@@ -261,7 +261,7 @@ export function TrackerFilterForm({
               <span className="font-mono tabular-nums" translate="no">
                 {visibleCount}/{readableCount}
               </span>
-              <span className="hidden sm:inline">workers</span>
+              <span className="hidden sm:inline">pekerja</span>
             </div>
           </div>
         </div>
@@ -276,7 +276,7 @@ export function TrackerFilterForm({
                   key={tab.label}
                   href={getFilterHref({ role: tab.value })}
                   aria-current={isActive ? "page" : undefined}
-                  aria-label={`${tab.label}: ${tab.count} workers`}
+                  aria-label={`${tab.label}: ${tab.count} pekerja`}
                   title={tab.label}
                   className={cn(
                     "inline-flex h-7 min-w-0 items-center justify-center gap-1 rounded-lg border px-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",

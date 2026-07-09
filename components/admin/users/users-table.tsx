@@ -221,7 +221,7 @@ export function UsersTable({ initialData, currentTier }: UsersTableProps) {
               <div className="flex h-9 items-center justify-end gap-2 rounded-lg border border-border/75 bg-background/35 px-3 text-xs text-muted-foreground">
                 <UsersIcon className="size-4" aria-hidden="true" />
                 <span className="font-mono tabular-nums">{filteredData.length}</span>
-                <span className="hidden sm:inline">worker</span>
+                <span className="hidden sm:inline">pekerja</span>
               </div>
               <Button
                 className="h-9 px-3 gap-1.5 whitespace-nowrap"

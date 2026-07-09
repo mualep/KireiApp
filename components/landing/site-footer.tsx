@@ -61,7 +61,30 @@ export function SiteFooter({ footer }: SiteFooterProps) {
 
         <Separator className="max-w-4xl" />
 
-        <p className="text-xs text-muted-foreground">{footer.copyright}</p>
+        <p className="text-xs text-muted-foreground">
+          {(() => {
+            const copyright = footer.copyright || "";
+            const target = "@mual.alif";
+            if (copyright.includes(target)) {
+              const parts = copyright.split(target);
+              return (
+                <>
+                  {parts[0]}
+                  <a
+                    href="https://www.instagram.com/mual.alif/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary transition-colors"
+                  >
+                    {target}
+                  </a>
+                  {parts[1]}
+                </>
+              );
+            }
+            return copyright;
+          })()}
+        </p>
       </div>
     </footer>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition, useCallback } from "react";
 import Link from "next/link";
-import { Card, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
@@ -490,9 +490,6 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
           <CardTitle className="text-lg font-bold text-foreground">Aktivitas Terbaru</CardTitle>
-          <CardDescription>
-            Daftar log tindakan admin terbaru.
-          </CardDescription>
         </div>
 
         <div className="flex flex-col gap-4 max-h-[350px] overflow-y-auto pr-1">
@@ -537,7 +534,7 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
         <Card className="border border-red-500/30 bg-red-500/5 text-red-400 p-5 rounded-xl flex flex-col gap-3 shadow-md shadow-red-500/2">
           <div className="flex items-center gap-2 font-bold text-sm">
             <AlertTriangle className="size-4 shrink-0" />
-            <span>URGENT ALERTS: Terdeteksi {sortedAlerts.length} Masalah Kehadiran Hari Ini</span>
+            <span>PERINGATAN DARURAT: Terdeteksi {sortedAlerts.length} Masalah Kehadiran Hari Ini</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {sortedAlerts.map((a) => (
@@ -560,9 +557,6 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
           <CardTitle className="text-lg font-bold text-foreground">Ringkasan Shift Aktif</CardTitle>
-          <CardDescription>
-            Persentase alokasi waktu berjalan pada shift kerja aktif saat ini.
-          </CardDescription>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -598,9 +592,6 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1.5 border-b border-border/10 pb-4">
           <CardTitle className="text-lg font-bold text-foreground">Ringkasan Bulanan</CardTitle>
-          <CardDescription>
-            Akumulasi seluruh metrik efektif (Base + Delta) untuk bulan ini.
-          </CardDescription>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -638,9 +629,9 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
             <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan istirahat</span>
           </div>
 
-          {/* Alpha Count Card (Bento Box Redesign) */}
+          {/* Alpha Card (Bento Box Redesign) */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-red-500/20">
-            <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Alpha Count</span>
+            <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Alpha</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-red-500">
                 <div className="flex items-center gap-1.5">
@@ -655,9 +646,9 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
             <span className="text-[10px] text-muted-foreground leading-snug">Total absen alpha</span>
           </div>
 
-          {/* Total Sakit Card (Bento Box Redesign) */}
+          {/* Sakit Card (Bento Box Redesign) */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-orange-500/20">
-            <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Total Sakit</span>
+            <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Sakit</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-orange-500">
                 <div className="flex items-center gap-1.5">
@@ -672,9 +663,9 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
             <span className="text-[10px] text-muted-foreground leading-snug">Akumulasi hari izin sakit</span>
           </div>
 
-          {/* Pending Days Card (Bento Box Redesign) */}
+          {/* Pending Card (Bento Box Redesign) */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-purple-500/20">
-            <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Pending Days</span>
+            <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Pending</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-purple-500">
                 <div className="flex items-center gap-1.5">
@@ -689,9 +680,9 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
             <span className="text-[10px] text-muted-foreground leading-snug">Hari pending belum ditinjau</span>
           </div>
 
-          {/* Lembur Units Card */}
+          {/* Lembur Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-yellow-600/20">
-            <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Lembur Units</span>
+            <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Lembur</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center text-yellow-600">
                 <div className="flex items-center gap-1.5">

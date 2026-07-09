@@ -129,7 +129,7 @@ export function AbsensiToolbar({
                 type="search"
                 value={queryDraft}
                 onChange={(event) => setQueryDraft(event.currentTarget.value)}
-                placeholder="Search worker name…"
+                placeholder="Cari nama pekerja..."
                 autoComplete="off"
                 className="w-full min-w-0 rounded-lg border border-input px-2.5 py-1 text-base h-9 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
               />
@@ -147,8 +147,8 @@ export function AbsensiToolbar({
                 onChange={handleSortChange}
                 className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <option value="name-asc">Name &#x2192; A-Z</option>
-                <option value="name-desc">Name &#x2192; Z-A</option>
+                <option value="name-asc">Nama &#x2192; A-Z</option>
+                <option value="name-desc">Nama &#x2192; Z-A</option>
               </select>
               <ChevronDownIcon
                 className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground size-4"
@@ -195,7 +195,7 @@ export function AbsensiToolbar({
               >
                 <Link href={clearFiltersHref}>
                   <XIcon className="size-4" aria-hidden="true" />
-                  Clear Filters
+                  Bersihkan Filter
                 </Link>
               </Button>
             </div>
@@ -234,7 +234,7 @@ export function AbsensiToolbar({
               <span className="font-mono tabular-nums" translate="no">
                 {visibleCount}/{readableCount}
               </span>
-              <span className="hidden sm:inline">workers</span>
+              <span className="hidden sm:inline">pekerja</span>
             </div>
           </div>
         </div>
@@ -259,7 +259,7 @@ export function AbsensiToolbar({
                   key={tab.label}
                   href={href}
                   aria-current={isActive ? "page" : undefined}
-                  aria-label={`${tab.label}: ${tab.count} workers`}
+                  aria-label={`${tab.label}: ${tab.count} pekerja`}
                   title={tab.label}
                   className={cn(
                     "inline-flex h-7 min-w-0 items-center justify-center gap-1 rounded-lg border px-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",

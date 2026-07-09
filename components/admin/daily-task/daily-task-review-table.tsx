@@ -164,14 +164,14 @@ export function DailyTaskReviewTable({
               {/* Search */}
               <div role="group" className="flex flex-col">
                 <label htmlFor="review-search" className="sr-only">
-                  Cari Nama Worker
+                  Cari Nama Pekerja
                 </label>
                 <input
                   id="review-search"
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari nama worker..."
+                  placeholder="Cari nama pekerja..."
                   autoComplete="off"
                   className="w-full min-w-0 rounded-lg border border-input px-3 py-1.5 text-sm h-10 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 />
@@ -230,7 +230,7 @@ export function DailyTaskReviewTable({
 
             <div className="text-xs text-muted-foreground shrink-0 text-right">
               Menampilkan <span className="font-bold text-foreground">{filteredTasks.length}</span> dari{" "}
-              <span className="font-bold text-foreground">{initialTasks.length}</span> member
+              <span className="font-bold text-foreground">{initialTasks.length}</span> pekerja
             </div>
           </div>
         </CardContent>
@@ -242,7 +242,7 @@ export function DailyTaskReviewTable({
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="border-b border-border/30 bg-muted/20 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                <th className="px-5 py-4">Worker Name</th>
+                <th className="px-5 py-4">Nama Pekerja</th>
                 <th className="px-5 py-4">Shift</th>
                 <th className="px-5 py-4">Game</th>
                 <th className="px-5 py-4">Submitted At</th>
