@@ -152,59 +152,59 @@ const fallbackLandingData: LandingData = {
     },
   },
   stats: [
-    { label: "Order selesai", value: 1200, suffix: "+" },
-    { label: "Buyer terbantu", value: 850, suffix: "+" },
-    { label: "Game populer", value: 8, suffix: "+" },
-    { label: "Tahun pengalaman", value: 3, suffix: "+" },
+    { label: "Completed orders", value: 1200, suffix: "+" },
+    { label: "Buyers helped", value: 850, suffix: "+" },
+    { label: "Popular games", value: 8, suffix: "+" },
+    { label: "Years experience", value: 3, suffix: "+" },
   ],
   why: [
     {
-      title: "Proses jelas",
+      title: "Clear Process",
       description:
-        "Setiap order diarahkan dengan informasi layanan, estimasi, dan komunikasi yang tertata.",
+        "Every order is directed with organized service information, estimates, and communication.",
     },
     {
-      title: "Tim terkurasi",
+      title: "Curated Team",
       description:
-        "Pekerjaan ditangani oleh booster yang mengikuti standar operasional Kireiku.",
+        "Work is handled by boosters following Kireiku's operational standards.",
     },
     {
-      title: "Fokus keamanan",
+      title: "Security Focus",
       description:
-        "Instruksi akun dan progres ditangani secara hati-hati sesuai kebutuhan tiap game.",
+        "Account instructions and progress are handled carefully according to each game's needs.",
     },
     {
-      title: "Support responsif",
+      title: "Responsive Support",
       description:
-        "Tim Kireiku menjaga komunikasi tetap rapi agar buyer tahu progres dan langkah berikutnya.",
+        "The Kireiku team keeps communication neat so buyers know the progress and next steps.",
     },
   ],
   howItWorks: [
     {
-      title: "Pilih layanan",
+      title: "Choose a Service",
       description:
-        "Buyer memilih game, jenis boosting, dan target progres yang diinginkan.",
+        "The buyer selects the game, boosting type, and desired progress target.",
     },
     {
-      title: "Konfirmasi detail",
+      title: "Confirm Details",
       description:
-        "Tim Kireiku mengonfirmasi scope, estimasi, dan kebutuhan order sebelum mulai.",
+        "The Kireiku team confirms the scope, estimates, and order requirements before starting.",
     },
     {
-      title: "Pantau progres",
+      title: "Monitor Progress",
       description:
-        "Order dikerjakan bertahap dengan update yang rapi sampai target selesai.",
+        "Orders are processed gradually with neat updates until the target is complete.",
     },
   ],
   footer: {
     brandSummary:
-      "Kireiku adalah layanan game boosting yang mengutamakan proses rapi, komunikasi jelas, dan pengalaman buyer yang nyaman.",
+      "Kireiku is a game boosting service prioritizing neat processes, clear communication, and a comfortable buyer experience.",
     g2gUrl: "https://www.g2g.com/KireiBoost",
     socialLinks: [
       { label: "Instagram", href: "https://instagram.com/kireiku" },
       { label: "TikTok", href: "https://tiktok.com/@kireiku" },
     ],
-    copyright: "© 2026 Kireiku. All rights reserved.",
+    copyright: "© 2026 Kireiku. All rights reserved. Powered by Mualif Candra @mual.alif",
   },
   services: [
     {
@@ -212,7 +212,7 @@ const fallbackLandingData: LandingData = {
       gameName: "Mobile Legends",
       serviceType: "Rank Boost",
       description:
-        "Bantuan push rank bertahap dengan booster berpengalaman dan proses yang tertata.",
+        "Gradual rank push assistance with experienced boosters and an organized process.",
       iconUrl: null,
       imageUrl: null,
       sortOrder: 10,
@@ -222,7 +222,7 @@ const fallbackLandingData: LandingData = {
       gameName: "Valorant",
       serviceType: "Rank Boost",
       description:
-        "Layanan peningkatan rank dengan koordinasi detail target dan estimasi pengerjaan.",
+        "Rank enhancement service with detailed target coordination and completion estimates.",
       iconUrl: null,
       imageUrl: null,
       sortOrder: 20,
@@ -232,7 +232,7 @@ const fallbackLandingData: LandingData = {
       gameName: "Genshin Impact",
       serviceType: "Quest Completion",
       description:
-        "Bantuan penyelesaian quest, eksplorasi, dan progres akun sesuai kebutuhan buyer.",
+        "Quest completion, exploration, and account progress assistance tailored to buyer needs.",
       iconUrl: null,
       imageUrl: null,
       sortOrder: 30,
@@ -242,16 +242,16 @@ const fallbackLandingData: LandingData = {
   faqs: [
     {
       id: "fallback-faq-1",
-      question: "Layanan apa saja yang tersedia di Kireiku?",
+      question: "What services are available at Kireiku?",
       answer:
-        "Kireiku menyediakan layanan seperti rank boost, quest completion, account leveling, dan request custom sesuai game yang didukung.",
+        "Kireiku provides services such as rank boost, quest completion, account leveling, and custom requests matching supported games.",
       sortOrder: 10,
     },
     {
       id: "fallback-faq-2",
-      question: "Bagaimana proses order dimulai?",
+      question: "How does the order process start?",
       answer:
-        "Buyer memilih layanan, mengirim detail kebutuhan, lalu tim Kireiku mengonfirmasi scope dan estimasi sebelum pekerjaan dimulai.",
+        "The buyer selects a service, sends request details, and the Kireiku team confirms the scope and estimate before work begins.",
       sortOrder: 20,
     },
   ],

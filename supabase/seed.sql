@@ -76,29 +76,29 @@ values
   ('hero', 'testimonials_heading', '"Customer Reviews"'::jsonb),
   ('hero', 'testimonials_subheadline', '"Do not just take our word for it. Hear from buyers who reached their goals with us."'::jsonb),
 
-  ('stats', 'orders_completed', '{"label": "Order selesai", "value": 1200, "suffix": "+"}'::jsonb),
-  ('stats', 'happy_buyers', '{"label": "Buyer terbantu", "value": 850, "suffix": "+"}'::jsonb),
-  ('stats', 'supported_games', '{"label": "Game populer", "value": 8, "suffix": "+"}'::jsonb),
-  ('stats', 'service_years', '{"label": "Tahun pengalaman", "value": 3, "suffix": "+"}'::jsonb),
+  ('stats', 'orders_completed', '{"label": "Completed orders", "value": 1200, "suffix": "+"}'::jsonb),
+  ('stats', 'happy_buyers', '{"label": "Buyers helped", "value": 850, "suffix": "+"}'::jsonb),
+  ('stats', 'supported_games', '{"label": "Popular games", "value": 8, "suffix": "+"}'::jsonb),
+  ('stats', 'service_years', '{"label": "Years experience", "value": 3, "suffix": "+"}'::jsonb),
 
   ('why', 'heading', '"Why Kireiku"'::jsonb),
   ('why', 'subheadline', '"A safer boost lobby built around clear communication, focused execution, and consistent support."'::jsonb),
   ('why', 'cards', '[
     {
-      "title": "Proses jelas",
-      "description": "Setiap order diarahkan dengan informasi layanan, estimasi, dan komunikasi yang tertata."
+      "title": "Clear Process",
+      "description": "Every order is directed with organized service information, estimates, and communication."
     },
     {
-      "title": "Tim terkurasi",
-      "description": "Pekerjaan ditangani oleh booster yang mengikuti standar operasional Kireiku."
+      "title": "Curated Team",
+      "description": "Work is handled by boosters following Kireiku''s operational standards."
     },
     {
-      "title": "Fokus keamanan",
-      "description": "Instruksi akun dan progres ditangani secara hati-hati sesuai kebutuhan tiap game."
+      "title": "Security Focus",
+      "description": "Account instructions and progress are handled carefully according to each game''s needs."
     },
     {
-      "title": "Support responsif",
-      "description": "Tim Kireiku menjaga komunikasi tetap rapi agar buyer tahu progres dan langkah berikutnya."
+      "title": "Responsive Support",
+      "description": "The Kireiku team keeps communication neat so buyers know the progress and next steps."
     }
   ]'::jsonb),
 
@@ -107,20 +107,20 @@ values
   ('how_it_works', 'subheadline', '"The order flow stays lightweight, predictable, and easy to follow."'::jsonb),
   ('how_it_works', 'steps', '[
     {
-      "title": "Pilih layanan",
-      "description": "Buyer memilih game, jenis boosting, dan target progres yang diinginkan."
+      "title": "Choose a Service",
+      "description": "The buyer selects the game, boosting type, and desired progress target."
     },
     {
-      "title": "Konfirmasi detail",
-      "description": "Tim Kireiku mengonfirmasi scope, estimasi, dan kebutuhan order sebelum mulai."
+      "title": "Confirm Details",
+      "description": "The Kireiku team confirms the scope, estimates, and order requirements before starting."
     },
     {
-      "title": "Pantau progres",
-      "description": "Order dikerjakan bertahap dengan update yang rapi sampai target selesai."
+      "title": "Monitor Progress",
+      "description": "Orders are processed gradually with neat updates until the target is complete."
     }
   ]'::jsonb),
 
-  ('footer', 'brand_summary', '"Kireiku adalah layanan game boosting yang mengutamakan proses rapi, komunikasi jelas, dan pengalaman buyer yang nyaman."'::jsonb),
+  ('footer', 'brand_summary', '"Kireiku is a game boosting service prioritizing neat processes, clear communication, and a comfortable buyer experience."'::jsonb),
   ('footer', 'g2g_url', '"https://www.g2g.com/KireiBoost"'::jsonb),
   ('footer', 'social_links', '[
     {
@@ -132,33 +132,33 @@ values
       "href": "https://tiktok.com/@kireiku"
     }
   ]'::jsonb),
-  ('footer', 'copyright', '"© 2026 Kireiku. All rights reserved."'::jsonb)
+  ('footer', 'copyright', '"© 2026 Kireiku. All rights reserved. Powered by Mualif Candra @mual.alif"'::jsonb)
 on conflict (section, content_key) do nothing;
 
 insert into public.faq_items (id, question, answer, sort_order)
 values
   (
     '00000000-0000-4000-8000-000000000101',
-    'Layanan apa saja yang tersedia di Kireiku?',
-    'Kireiku menyediakan layanan seperti rank boost, quest completion, account leveling, dan request custom sesuai game yang didukung.',
+    'What services are available at Kireiku?',
+    'Kireiku provides services such as rank boost, quest completion, account leveling, and custom requests matching supported games.',
     10
   ),
   (
     '00000000-0000-4000-8000-000000000102',
-    'Bagaimana proses order dimulai?',
-    'Buyer memilih layanan, mengirim detail kebutuhan, lalu tim Kireiku mengonfirmasi scope dan estimasi sebelum pekerjaan dimulai.',
+    'How does the order process start?',
+    'The buyer selects a service, sends request details, and the Kireiku team confirms the scope and estimate before work begins.',
     20
   ),
   (
     '00000000-0000-4000-8000-000000000103',
-    'Apakah progres order bisa dipantau?',
-    'Ya. Tim Kireiku akan memberikan update progres sesuai alur komunikasi yang disepakati untuk setiap order.',
+    'Can order progress be monitored?',
+    'Yes. The Kireiku team will provide progress updates according to the agreed communication channel for each order.',
     30
   ),
   (
     '00000000-0000-4000-8000-000000000104',
-    'Apakah akun buyer aman?',
-    'Kireiku mengutamakan proses yang hati-hati dan hanya meminta informasi yang diperlukan untuk menyelesaikan layanan.',
+    'Is the buyer''s account safe?',
+    'Kireiku prioritizes a careful process and only requests information necessary to complete the service.',
     40
   )
 on conflict (id) do nothing;
@@ -169,7 +169,7 @@ values
     '00000000-0000-4000-8000-000000000201',
     'Mobile Legends',
     'Rank Boost',
-    'Bantuan push rank bertahap dengan booster berpengalaman dan proses yang tertata.',
+    'Gradual rank push assistance with experienced boosters and an organized process.',
     null,
     null,
     true,
@@ -179,7 +179,7 @@ values
     '00000000-0000-4000-8000-000000000202',
     'Valorant',
     'Rank Boost',
-    'Layanan peningkatan rank dengan koordinasi detail target dan estimasi pengerjaan.',
+    'Rank enhancement service with detailed target coordination and completion estimates.',
     null,
     null,
     true,
@@ -189,7 +189,7 @@ values
     '00000000-0000-4000-8000-000000000203',
     'Genshin Impact',
     'Quest Completion',
-    'Bantuan penyelesaian quest, eksplorasi, dan progres akun sesuai kebutuhan buyer.',
+    'Quest completion, exploration, and account progress assistance tailored to buyer needs.',
     null,
     null,
     true,
@@ -199,7 +199,7 @@ values
     '00000000-0000-4000-8000-000000000204',
     'Custom Request',
     'Custom',
-    'Diskusikan kebutuhan khusus untuk game atau target progres yang belum tercantum.',
+    'Discuss special requirements for games or progress targets that are not yet listed.',
     null,
     null,
     true,
@@ -214,7 +214,7 @@ values
     'Sample Buyer A',
     'Mobile Legends',
     5,
-    'Placeholder testimonial untuk kebutuhan local/dev. Ganti dengan testimoni terverifikasi sebelum ditampilkan.',
+    'Placeholder testimonial for local/dev needs. Replace with verified testimonials before displaying.',
     null,
     false,
     10
@@ -224,7 +224,7 @@ values
     'Sample Buyer B',
     'Valorant',
     5,
-    'Placeholder testimonial yang sengaja tidak terlihat publik secara default.',
+    'Placeholder testimonial that is deliberately hidden from the public by default.',
     null,
     false,
     20
@@ -234,7 +234,7 @@ values
     'Sample Buyer C',
     'Genshin Impact',
     4,
-    'Placeholder testimonial untuk memvalidasi CMS dan query ordering di lingkungan lokal.',
+    'Placeholder testimonial to validate the CMS and query ordering in the local environment.',
     null,
     false,
     30
