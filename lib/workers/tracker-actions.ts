@@ -25,6 +25,7 @@ export const trackerActions = [
   "LEMBUR",
   "BATAL_LEMBUR",
   "CANCEL_START",
+  "TERIMA_ALPHA",
 ] as const;
 
 export type TrackerAction = (typeof trackerActions)[number];
@@ -40,6 +41,7 @@ export const trackerActionTargetStatuses = {
   LEMBUR: "lembur",
   BATAL_LEMBUR: "off",
   CANCEL_START: "off",
+  TERIMA_ALPHA: "off",
 } as const satisfies Record<TrackerAction, WorkerStoredStatus>;
 
 export const trackerActionAttendanceStatuses = {
@@ -53,6 +55,7 @@ export const trackerActionAttendanceStatuses = {
   LEMBUR: null,
   BATAL_LEMBUR: null,
   CANCEL_START: null,
+  TERIMA_ALPHA: null,
 } as const satisfies Record<TrackerAction, WorkerAttendanceStatus | null>;
 
 export type TrackerActionTransitionRejectReason =
@@ -94,7 +97,7 @@ export function evaluateTrackerActionTransition({
     return { ok: false, reason: "member_read_only" };
   }
 
-  if (displayStatus === "ALPHA") {
+  if (displayStatus === "ALPHA" && action !== "TERIMA_ALPHA") {
     return { ok: false, reason: "alpha_rejected" };
   }
 
@@ -167,6 +170,8 @@ function isAllowedTransitionSource(
       return storedStatus === "break";
     case "CANCEL_START":
       return storedStatus === "on";
+    case "TERIMA_ALPHA":
+      return storedStatus === "alpha";
   }
 }
 

@@ -142,6 +142,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
     null,
   );
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showAlphaDialog, setShowAlphaDialog] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
   const controlGroups = getActiveControlGroups(card, nowMs);
   const isPending =
@@ -184,6 +185,11 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
 
     if (action === "CANCEL_START") {
       setShowCancelDialog(true);
+      return;
+    }
+
+    if (action === "TERIMA_ALPHA") {
+      setShowAlphaDialog(true);
       return;
     }
 
@@ -253,6 +259,42 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       } finally {
         setPendingAction(null);
         setShowCancelDialog(false);
+      }
+    });
+  }
+
+  function executeTerimaAlpha() {
+    setPendingAction("TERIMA_ALPHA");
+
+    startTransition(async () => {
+      try {
+        const nextResult = await applyTrackerAction({
+          action: "TERIMA_ALPHA",
+          expectedVersion: card.version,
+          targetUserId: card.userId,
+        });
+
+        toast({
+          title: nextResult.ok ? "Berhasil" : "Gagal",
+          description: nextResult.message,
+          variant: nextResult.ok ? "success" : "error",
+        });
+
+        if (
+          nextResult.code === "success" ||
+          nextResult.code === "version_conflict"
+        ) {
+          router.refresh();
+        }
+      } catch {
+        toast({
+          title: "Gagal",
+          description: genericFailure.message,
+          variant: "error",
+        });
+      } finally {
+        setPendingAction(null);
+        setShowAlphaDialog(false);
       }
     });
   }
@@ -579,6 +621,27 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={showAlphaDialog} onOpenChange={setShowAlphaDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Terima Status Alpha?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda telah ditandai Alpha karena tidak hadir pada shift ini. Dengan menekan tombol ini, shift akan ditutup dan status Anda akan dikembalikan ke OFF.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="secondary">Batal</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="default" onClick={executeTerimaAlpha}>
+                Ya, Mengerti
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -587,6 +650,19 @@ function getActiveControlGroups(
   card: TrackerCardDTO,
   nowMs: number | null,
 ): TrackerControlConfig[][] {
+  if (card.storedStatus === "alpha" || card.displayStatus === "ALPHA") {
+    return [
+      [
+        {
+          action: "TERIMA_ALPHA" as TrackerAction,
+          icon: <XCircleIcon data-icon="inline-start" aria-hidden="true" />,
+          label: "TERIMA ALPHA",
+          tone: "danger" as const,
+        },
+      ],
+    ];
+  }
+
   if (
     card.storedStatus === "off" &&
     (card.displayStatus === "OFF" || card.displayStatus === "LATE")

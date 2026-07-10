@@ -200,6 +200,65 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
 
   const supabase = await createClient();
 
+  if (parsed.data.action === "TERIMA_ALPHA") {
+    // 1. Fetch current worker status
+    const { data: workerStatus, error: fetchError } = await supabase
+      .from("worker_status")
+      .select("*")
+      .eq("user_id", parsed.data.targetUserId)
+      .single();
+
+    if (fetchError || !workerStatus) {
+      return actionError("invalid_target");
+    }
+
+    if (workerStatus.version !== parsed.data.expectedVersion) {
+      return actionError("version_conflict");
+    }
+
+    if (workerStatus.current_status !== "alpha") {
+      return actionError("invalid_transition");
+    }
+
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const adminClient = createAdminClient();
+
+    // 2. Revert worker_status (set status to off, alpha_done to false)
+    const { error: updateError } = await adminClient
+      .from("worker_status")
+      .update({
+        current_status: "off",
+        alpha_done: false,
+        version: Number(workerStatus.version) + 1,
+      })
+      .eq("user_id", parsed.data.targetUserId);
+
+    if (updateError) {
+      console.error("[TERIMA_ALPHA] Update Error:", updateError);
+      return actionError("generic_error");
+    }
+
+    // 3. Log audit activity
+    const { logAudit } = await import("@/lib/audit-logger");
+    await logAudit(
+      staff.profile.id,
+      "tracker",
+      "tracker.terima_alpha",
+      parsed.data.targetUserId,
+      { action: "TERIMA_ALPHA" }
+    );
+
+    revalidatePath("/admin/tracker");
+
+    return {
+      action: parsed.data.action,
+      code: "success",
+      message: RESULT_MESSAGES.success,
+      ok: true,
+      targetUserId: parsed.data.targetUserId,
+    };
+  }
+
   if (parsed.data.action === "CANCEL_START") {
     // 1. Fetch current worker status
     const { data: workerStatus, error: fetchError } = await supabase

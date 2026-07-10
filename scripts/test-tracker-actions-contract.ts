@@ -44,6 +44,7 @@ const expectedTrackerActions = [
   "LEMBUR",
   "BATAL_LEMBUR",
   "CANCEL_START",
+  "TERIMA_ALPHA",
 ] as const;
 
 assert.deepEqual(trackerActions, expectedTrackerActions);
@@ -68,6 +69,7 @@ assert.deepEqual(trackerActionTargetStatuses, {
   LEMBUR: "lembur",
   BATAL_LEMBUR: "off",
   CANCEL_START: "off",
+  TERIMA_ALPHA: "off",
 });
 
 assert.deepEqual(trackerActionAttendanceStatuses, {
@@ -81,6 +83,7 @@ assert.deepEqual(trackerActionAttendanceStatuses, {
   LEMBUR: null,
   BATAL_LEMBUR: null,
   CANCEL_START: null,
+  TERIMA_ALPHA: null,
 });
 
 assert.equal(workerStoredStatuses.includes("late" as never), false);
