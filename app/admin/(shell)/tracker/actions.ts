@@ -220,7 +220,9 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
       return actionError("invalid_transition");
     }
 
-    if (!workerStatus.shift_active_started_at) {
+    const shiftStartedAt = workerStatus.shift_active_started_at || workerStatus.shift_started_at;
+
+    if (!shiftStartedAt) {
       return {
         code: "generic_error",
         message: "Batas waktu pembatalan (15 menit) telah habis.",
@@ -228,7 +230,7 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
       };
     }
 
-    const startTime = new Date(workerStatus.shift_active_started_at).getTime();
+    const startTime = new Date(shiftStartedAt).getTime();
     const nowTime = new Date().getTime();
     if (nowTime - startTime > 15 * 60 * 1000) {
       return {
@@ -243,7 +245,7 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
     const adminClient = createAdminClient();
 
     // 2. Delete worker_attendance for the target date
-    const targetDate = getOperationalDate(new Date(workerStatus.shift_active_started_at));
+    const targetDate = getOperationalDate(new Date(shiftStartedAt));
     const { error: deleteError } = await adminClient
       .from("worker_attendance")
       .delete()
@@ -297,14 +299,19 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
     };
   }
 
-  const { error } = await supabase.rpc("apply_tracker_action", {
-    p_action: parsed.data.action,
-    p_expected_version: parsed.data.expectedVersion,
-    p_target_user_id: parsed.data.targetUserId,
-  });
+  try {
+    const { error } = await supabase.rpc("apply_tracker_action", {
+      p_action: parsed.data.action,
+      p_expected_version: parsed.data.expectedVersion,
+      p_target_user_id: parsed.data.targetUserId,
+    });
 
-  if (error) {
-    return actionError(mapTrackerRpcError(error.message));
+    if (error) {
+      return actionError(mapTrackerRpcError(error.message));
+    }
+  } catch (err) {
+    console.error("[applyTrackerAction] RPC Error:", err);
+    return actionError("generic_error");
   }
 
   revalidatePath("/admin/tracker");

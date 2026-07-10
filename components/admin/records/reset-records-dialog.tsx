@@ -118,7 +118,7 @@ export function ResetRecordsDialog({
           </Button>
           <Button
             type="button"
-            variant="destructive"
+            variant="default"
             disabled={!isConfirmed || isPending}
             onClick={handleReset}
           >

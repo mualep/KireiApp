@@ -37,7 +37,7 @@ export function LogoutButton({ children }: LogoutButtonProps) {
           <form action={signOutStaff}>
             <Button
               type="submit"
-              variant="destructive"
+              variant="default"
             >
               Ya, Logout
             </Button>

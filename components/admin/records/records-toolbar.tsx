@@ -228,8 +228,8 @@ export function RecordsToolbar({
           <div className="flex items-center gap-2 lg:ml-auto">
             {isOwner ? (
               <Button
-                variant="destructive"
-                className="h-9 px-3 gap-1.5 font-semibold text-xs border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.1)]"
+                variant="default"
+                className="h-9 px-3 gap-1.5 font-semibold text-xs"
                 onClick={() => setIsResetOpen(true)}
               >
                 Reset Records

@@ -224,9 +224,10 @@ export function AdminSidebar({
           <LogoutButton>
             <Button
               type="submit"
-              variant="default"
+              variant="outline"
+              data-tone="danger"
               className={cn(
-                "w-full rounded-lg",
+                "tracker-action-btn h-9 min-w-0 rounded-sm border px-3 text-sm font-bold tracker-action-btn-emphasis w-full",
                 collapsed && "px-0",
               )}
             >
