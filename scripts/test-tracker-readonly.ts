@@ -893,5 +893,7 @@ function buildCard({
     userId,
     version: 0,
     workLateSeconds: 0,
+    shiftActiveDate: null,
+    alphaDone: false,
   };
 }

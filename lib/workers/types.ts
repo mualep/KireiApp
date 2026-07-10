@@ -99,4 +99,6 @@ export type TrackerCardDTO = {
   userId: string;
   version: number;
   workLateSeconds: number;
+  shiftActiveDate: string | null;
+  alphaDone: boolean;
 };

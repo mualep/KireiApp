@@ -335,6 +335,8 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         userId: profile.user_id,
         version: Number(status.version),
         workLateSeconds: record?.work_late_seconds ?? 0,
+        shiftActiveDate: status.shift_active_date,
+        alphaDone: status.alpha_done,
       } satisfies TrackerCardDTO,
     ];
   });

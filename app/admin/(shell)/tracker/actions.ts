@@ -23,6 +23,7 @@ import {
   trackerCorrectionActions,
   type TrackerCorrectionAction,
 } from "@/lib/workers/tracker-corrections";
+import type { WorkerShift } from "@/lib/workers/types";
 
 const applyTrackerActionSchema = z.object({
   action: z.enum(trackerActions),
@@ -220,11 +221,24 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
       return actionError("invalid_transition");
     }
 
-    const { getOperationalDate } = await import("@/lib/utils");
+    // Fetch worker profile to get shift label
+    const { data: profile, error: profileError } = await supabase
+      .from("worker_profiles")
+      .select("shift")
+      .eq("user_id", parsed.data.targetUserId)
+      .single();
+
+    if (profileError || !profile) {
+      return actionError("invalid_target");
+    }
+
+    const { getShiftDefinition } = await import("@/lib/workers/helpers");
+    const { deriveTrackerAttendanceDate } = await import("@/lib/workers/tracker-actions");
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const adminClient = createAdminClient();
 
-    const targetDate = getOperationalDate(new Date());
+    const shift = getShiftDefinition(profile.shift as WorkerShift);
+    const targetDate = deriveTrackerAttendanceDate({ now: new Date(), shift });
 
     // 2. Revert worker_status (set status to off, preserve alpha_done as true, set shift_active_date to today, nullify active shift session fields)
     const { error: updateError } = await adminClient

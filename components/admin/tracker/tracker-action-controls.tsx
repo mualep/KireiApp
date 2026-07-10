@@ -40,7 +40,7 @@ import {
   formatBreakRemainingSeconds,
   getBreakRemainingSeconds,
 } from "@/lib/tracker/break-timer";
-import { cn } from "@/lib/utils";
+import { cn, getOperationalDate } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { type TrackerAction, isLemburAvailable } from "@/lib/workers/tracker-actions";
 import type { TrackerAbsenceMaterializationAction } from "@/lib/workers/tracker-absence-materialization";
@@ -650,6 +650,17 @@ function getActiveControlGroups(
   card: TrackerCardDTO,
   nowMs: number | null,
 ): TrackerControlConfig[][] {
+  const currentAttendanceDate = getOperationalDate(nowMs ? new Date(nowMs) : new Date());
+
+  // Lockout check: if they have accepted Alpha for today's operational date, no buttons are available
+  if (
+    card.storedStatus === "off" &&
+    card.alphaDone &&
+    card.shiftActiveDate === currentAttendanceDate
+  ) {
+    return [];
+  }
+
   if (card.displayStatus === "ALPHA") {
     return [
       [
