@@ -14,6 +14,7 @@ import {
   isWorkerShift,
   isWorkerStoredStatus,
   type TrackerCardDTO,
+  type WorkerStoredStatus,
 } from "@/lib/workers";
 import { scopeTrackerCards } from "@/lib/tracker/helpers";
 import { getRecordsMonthRange } from "@/lib/records/helpers";
@@ -58,6 +59,7 @@ type WorkerStatusRow = {
   pending_started_at: string | null;
   sakit_started_at: string | null;
   shift_active_started_at: string | null;
+  shift_active_date: string | null;
   updated_at: string;
   user_id: string;
   version: number | string;
@@ -132,7 +134,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
       supabase
         .from("worker_status")
         .select(
-          "user_id,version,current_status,alpha_done,updated_at,break_started_at,break_timer_running,break_accumulated_secs,cuti_set_date,sakit_started_at,pending_started_at,break_late_recorded,shift_active_started_at",
+          "user_id,version,current_status,alpha_done,updated_at,break_started_at,break_timer_running,break_accumulated_secs,cuti_set_date,sakit_started_at,pending_started_at,break_late_recorded,shift_active_started_at,shift_active_date",
         )
         .in("user_id", userIds)
         .returns<WorkerStatusRow[]>(),
@@ -303,11 +305,13 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         cutiStock: profile.cuti_stock,
         displayStatus: computeWorkerDisplayStatus({
           alphaDone: status.alpha_done,
-          currentStatus: status.current_status,
+          currentStatus: status.current_status as WorkerStoredStatus,
           isFlexible: profile.is_flexible,
           now,
           shift,
           hasStartedToday: hasWorkedDatesByUserId.get(profile.user_id)?.has(currentAttendanceDate) ?? false,
+          shiftActiveDate: status.shift_active_date,
+          currentAttendanceDate,
         }),
         employeeRole: profile.employee_role,
         gid: profile.user_id,

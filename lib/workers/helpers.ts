@@ -6,6 +6,7 @@ import {
   workerStatusDisplayLabels,
   workerStoredStatuses,
 } from "@/lib/workers/constants";
+import { getOperationalDate } from "@/lib/utils";
 import type {
   WorkerDisplayStatus,
   WorkerProfileInput,
@@ -138,6 +139,8 @@ export function computeWorkerDisplayStatus({
   now,
   shift,
   hasStartedToday,
+  shiftActiveDate = null,
+  currentAttendanceDate,
 }: {
   alphaDone: boolean;
   currentStatus: WorkerStoredStatus;
@@ -146,8 +149,14 @@ export function computeWorkerDisplayStatus({
   now: Date;
   shift: WorkerShiftDefinition;
   hasStartedToday?: boolean;
+  shiftActiveDate?: string | null;
+  currentAttendanceDate?: string;
 }): WorkerDisplayStatus {
   if (alphaDone) {
+    const attendanceDate = currentAttendanceDate || getOperationalDate(now);
+    if (currentStatus === "off" && shiftActiveDate && shiftActiveDate === attendanceDate) {
+      return "OFF";
+    }
     return "ALPHA";
   }
 

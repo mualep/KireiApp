@@ -220,15 +220,25 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
       return actionError("invalid_transition");
     }
 
+    const { getOperationalDate } = await import("@/lib/utils");
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const adminClient = createAdminClient();
 
-    // 2. Revert worker_status (set status to off, alpha_done to false)
+    const targetDate = getOperationalDate(new Date());
+
+    // 2. Revert worker_status (set status to off, preserve alpha_done as true, set shift_active_date to today, nullify active shift session fields)
     const { error: updateError } = await adminClient
       .from("worker_status")
       .update({
         current_status: "off",
-        alpha_done: false,
+        alpha_done: true,
+        shift_active_date: targetDate,
+        shift_active_started_at: null,
+        shift_active_label: null,
+        shift_active_start_hour: null,
+        shift_active_start_min: null,
+        shift_active_end_hour: null,
+        shift_active_end_min: null,
         version: Number(workerStatus.version) + 1,
       })
       .eq("user_id", parsed.data.targetUserId);
