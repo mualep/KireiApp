@@ -41,6 +41,8 @@ const ids = {
   materializeCutiLow: "20000000-0000-4000-8000-000000000133",
   materializeConflict: "20000000-0000-4000-8000-000000000134",
   materializeMonthBoundary: "20000000-0000-4000-8000-000000000135",
+  earlyCheckInShiftA: "20000000-0000-4000-8000-000000000136",
+  cancelStartGracePeriod: "20000000-0000-4000-8000-000000000137",
 } as const;
 
 const dbContainer = findLocalSupabaseDbContainer();
@@ -399,7 +401,9 @@ with fixture_users(id, email, tier, name) as (
     ('${ids.breakOver}'::uuid, 'r2c-d-break-over@example.test', 'member', 'R2C D Break Over'),
     ('${ids.breakCumulative}'::uuid, 'r2c-d-break-cumulative@example.test', 'member', 'R2C D Break Cumulative'),
     ('${ids.breakAuditFail}'::uuid, 'r2c-d-break-audit-fail@example.test', 'member', 'R2C D Break Audit Fail'),
-    ('${ids.absenceReuse}'::uuid, 'r2c-c-absence-reuse@example.test', 'member', 'R2C C Absence Reuse')
+    ('${ids.absenceReuse}'::uuid, 'r2c-c-absence-reuse@example.test', 'member', 'R2C C Absence Reuse'),
+    ('${ids.earlyCheckInShiftA}'::uuid, 'early-check-in-shift-a@example.test', 'member', 'Early Check-In Shift A'),
+    ('${ids.cancelStartGracePeriod}'::uuid, 'cancel-start-grace-period@example.test', 'member', 'Cancel Start Grace Period')
 )
 insert into auth.users (
   id,
@@ -452,7 +456,9 @@ with fixture_users(id, email, tier, name) as (
     ('${ids.breakOver}'::uuid, 'r2c-d-break-over@example.test', 'member', 'R2C D Break Over'),
     ('${ids.breakCumulative}'::uuid, 'r2c-d-break-cumulative@example.test', 'member', 'R2C D Break Cumulative'),
     ('${ids.breakAuditFail}'::uuid, 'r2c-d-break-audit-fail@example.test', 'member', 'R2C D Break Audit Fail'),
-    ('${ids.absenceReuse}'::uuid, 'r2c-c-absence-reuse@example.test', 'member', 'R2C C Absence Reuse')
+    ('${ids.absenceReuse}'::uuid, 'r2c-c-absence-reuse@example.test', 'member', 'R2C C Absence Reuse'),
+    ('${ids.earlyCheckInShiftA}'::uuid, 'early-check-in-shift-a@example.test', 'member', 'Early Check-In Shift A'),
+    ('${ids.cancelStartGracePeriod}'::uuid, 'cancel-start-grace-period@example.test', 'member', 'Cancel Start Grace Period')
 )
 insert into public.users (id, name, email, tier)
 select id, name, email, tier
@@ -487,7 +493,31 @@ values
   ('${ids.breakOver}'::uuid, 'Professional Player', 'flexible', true, 2),
   ('${ids.breakCumulative}'::uuid, 'Professional Player', 'flexible', true, 2),
   ('${ids.breakAuditFail}'::uuid, 'Professional Player', 'flexible', true, 2),
-  ('${ids.absenceReuse}'::uuid, 'Professional Player', 'flexible', true, 2);
+  ('${ids.absenceReuse}'::uuid, 'Professional Player', 'flexible', true, 2),
+  ('${ids.cancelStartGracePeriod}'::uuid, 'Professional Player', 'flexible', true, 2);
+
+insert into public.worker_profiles (
+  user_id,
+  employee_role,
+  shift,
+  shift_start_hour,
+  shift_start_min,
+  shift_end_hour,
+  shift_end_min,
+  is_flexible,
+  cuti_stock
+)
+values (
+  '${ids.earlyCheckInShiftA}'::uuid,
+  'Professional Player',
+  'A',
+  6,
+  0,
+  14,
+  0,
+  false,
+  2
+);
 
 with wib as (
   select (
@@ -576,7 +606,9 @@ values
   ('${ids.absenceReuse}'::uuid, 0, 'off'),
   ('${ids.stale}'::uuid, 3, 'off'),
   ('${ids.invalidTransition}'::uuid, 0, 'on'),
-  ('${ids.alpha}'::uuid, 0, 'off');
+  ('${ids.alpha}'::uuid, 0, 'off'),
+  ('${ids.earlyCheckInShiftA}'::uuid, 0, 'off'),
+  ('${ids.cancelStartGracePeriod}'::uuid, 0, 'off');
 
 insert into public.worker_status (
   user_id,
@@ -711,6 +743,13 @@ insert into public.worker_attendance (
   source_action
 )
 values
+  (
+    '${ids.earlyCheckInShiftA}'::uuid,
+    pg_temp.get_test_date(),
+    'hadir',
+    'absensi',
+    'absensi.manual'
+  ),
   (
     '${ids.startExistingHadir}'::uuid,
     pg_temp.get_test_date(),
@@ -2392,6 +2431,179 @@ select pg_temp.assert_true(
   ),
   'month boundary materialization must update the correct monthly records'
 );
+
+-- Test Early Check-In Forwarder
+-- Current test date is pg_temp.get_test_date().
+-- We check in at 01:00 AM WIB on pg_temp.get_test_date() + 1.
+-- This falls under the early check-in hours (< 06:00 AM WIB).
+-- Since yesterday (pg_temp.get_test_date()) already has an attendance record,
+-- the forwarder should shift v_attendance_date to pg_temp.get_test_date() + 1.
+with early_result as (
+  select app_private.apply_tracker_action_impl(
+    '${ids.admin}'::uuid,
+    '${ids.earlyCheckInShiftA}'::uuid,
+    'START',
+    0,
+    make_timestamptz(
+      date_part('year', (pg_temp.get_test_date() + 1)::timestamp)::integer,
+      date_part('month', (pg_temp.get_test_date() + 1)::timestamp)::integer,
+      date_part('day', (pg_temp.get_test_date() + 1)::timestamp)::integer,
+      1, -- 01:00 AM WIB
+      0,
+      0,
+      'Asia/Jakarta'
+    )
+  ) as payload
+)
+select
+  pg_temp.assert_true(payload->>'source_action' = 'tracker.start', 'early check-in start should return tracker.start'),
+  pg_temp.assert_true(payload->>'attendance_status' = 'hadir', 'early check-in should return hadir attendance'),
+  pg_temp.assert_true(not (payload->>'attendance_reused')::boolean, 'early check-in should not report reused attendance'),
+  pg_temp.assert_true((payload->>'attendance_date')::date = pg_temp.get_test_date() + 1, 'early check-in should shift attendance date to next day')
+from early_result;
+
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.earlyCheckInShiftA}'::uuid
+      and current_status = 'on'
+      and shift_active_date = pg_temp.get_test_date() + 1
+      and version = 1
+  ),
+  'early check-in should update worker_status to today/tomorrow active date'
+);
+
+select pg_temp.assert_true(
+  (select count(*) from public.worker_attendance where user_id = '${ids.earlyCheckInShiftA}'::uuid) = 2,
+  'early check-in must insert a second attendance row for today/tomorrow'
+);
+
+-- Test Cancel Start (15-Minute Grace Period)
+-- We check in (START) for cancelStartGracePeriod user.
+with start_res as (
+  select app_private.apply_tracker_action_impl(
+    '${ids.admin}'::uuid,
+    '${ids.cancelStartGracePeriod}'::uuid,
+    'START',
+    0,
+    pg_temp.get_test_now()
+  ) as payload
+)
+select
+  pg_temp.assert_true(payload->>'source_action' = 'tracker.start', 'cancel start pre-requisite: start should succeed'),
+  pg_temp.assert_true(payload->>'attendance_status' = 'hadir', 'cancel start pre-requisite: should create attendance record')
+from start_res;
+
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.cancelStartGracePeriod}'::uuid
+      and current_status = 'on'
+      and version = 1
+  ),
+  'cancel start pre-requisite: worker_status version must be 1 and status ON'
+);
+
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.cancelStartGracePeriod}'::uuid
+      and attendance_date = pg_temp.get_test_date()
+      and status = 'hadir'
+  ),
+  'cancel start pre-requisite: attendance row must exist'
+);
+
+-- Revert within grace period (10 minutes elapsed)
+with cancel_res as (
+  select app_private.apply_tracker_action_impl(
+    '${ids.admin}'::uuid,
+    '${ids.cancelStartGracePeriod}'::uuid,
+    'CANCEL_START',
+    1,
+    pg_temp.get_test_now() + interval '10 minutes'
+  ) as payload
+)
+select
+  pg_temp.assert_true(payload->>'action' = 'CANCEL_START', 'cancel start within 15 minutes should succeed'),
+  pg_temp.assert_true(payload->>'to_status' = 'off', 'cancel start should revert storedStatus to off')
+from cancel_res;
+
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.cancelStartGracePeriod}'::uuid
+      and attendance_date = pg_temp.get_test_date()
+  ),
+  'cancel start within 15 minutes must delete the attendance row'
+);
+
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.cancelStartGracePeriod}'::uuid
+      and current_status = 'off'
+      and shift_active_date is null
+      and shift_active_started_at is null
+      and version = 2
+  ),
+  'cancel start within 15 minutes must nullify shift active status columns and increment version'
+);
+
+-- Clock-in again (START)
+with start_res2 as (
+  select app_private.apply_tracker_action_impl(
+    '${ids.admin}'::uuid,
+    '${ids.cancelStartGracePeriod}'::uuid,
+    'START',
+    2,
+    pg_temp.get_test_now()
+  ) as payload
+)
+select
+  pg_temp.assert_true(payload->>'source_action' = 'tracker.start', 'cancel start second start: start should succeed')
+from start_res2;
+
+-- Reject after grace period (20 minutes elapsed)
+select pg_temp.expect_error(
+  'cancel start grace period expired',
+  'select app_private.apply_tracker_action_impl(
+    ''${ids.admin}''::uuid,
+    ''${ids.cancelStartGracePeriod}''::uuid,
+    ''CANCEL_START'',
+    3::bigint,
+    pg_temp.get_test_now() + interval ''20 minutes''
+  )',
+  'tracker.invalid_transition'
+);
+
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_attendance
+    where user_id = '${ids.cancelStartGracePeriod}'::uuid
+      and attendance_date = pg_temp.get_test_date()
+      and status = 'hadir'
+  ),
+  'cancel start after grace period: attendance record must still exist'
+);
+
+select pg_temp.assert_true(
+  exists (
+    select 1
+    from public.worker_status
+    where user_id = '${ids.cancelStartGracePeriod}'::uuid
+      and current_status = 'on'
+      and version = 3
+  ),
+  'cancel start after grace period: worker status must remain on and version unchanged'
+);
+
 rollback;
 `;
 }
