@@ -216,7 +216,7 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
       return actionError("version_conflict");
     }
 
-    if (workerStatus.current_status !== "alpha") {
+    if (workerStatus.current_status !== "off") {
       return actionError("invalid_transition");
     }
 

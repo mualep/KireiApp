@@ -650,7 +650,7 @@ function getActiveControlGroups(
   card: TrackerCardDTO,
   nowMs: number | null,
 ): TrackerControlConfig[][] {
-  if (card.storedStatus === "alpha" || card.displayStatus === "ALPHA") {
+  if (card.displayStatus === "ALPHA") {
     return [
       [
         {

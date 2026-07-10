@@ -171,7 +171,7 @@ function isAllowedTransitionSource(
     case "CANCEL_START":
       return storedStatus === "on";
     case "TERIMA_ALPHA":
-      return storedStatus === "alpha";
+      return displayStatus === "ALPHA";
   }
 }
 
