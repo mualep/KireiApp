@@ -23,24 +23,23 @@ export function LogoutButton({ children }: LogoutButtonProps) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Are You Sure You Want To Log Out?</DialogTitle>
+          <DialogTitle>Apakah Anda Yakin Ingin Logout?</DialogTitle>
           <DialogDescription>
-            Your admin session will end and you will return to the login screen.
+            Sesi admin Anda akan berakhir dan Anda akan kembali ke halaman login.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
+            <Button type="button" variant="secondary">
+              Batal
             </Button>
           </DialogClose>
           <form action={signOutStaff}>
             <Button
               type="submit"
               variant="destructive"
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Log Out
+              Ya, Logout
             </Button>
           </form>
         </DialogFooter>

@@ -119,8 +119,8 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
           </div>
         </div>
         <Link href="/admin/daily-task-config">
-          <Button variant="outline" className="h-10 px-4 font-bold bg-background hover:bg-muted text-foreground border border-border flex items-center gap-2">
-            <Settings className="size-4 text-muted-foreground" />
+          <Button variant="default" className="h-10 px-4 font-bold flex items-center gap-2">
+            <Settings className="size-4" />
             Konfigurasi Task
           </Button>
         </Link>

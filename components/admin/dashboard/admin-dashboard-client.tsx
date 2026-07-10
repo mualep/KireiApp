@@ -349,13 +349,13 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
 
         <Button
           onClick={handleRefresh}
-          variant="outline"
+          variant="default"
           disabled={isPending}
           size="icon-lg"
-          className="h-10 w-10 border-border bg-background hover:bg-muted shrink-0"
+          className="h-10 w-10 shrink-0"
           title="Refresh Data"
         >
-          <RefreshCw className={cn("size-4 text-foreground", isPending && "animate-spin")} />
+          <RefreshCw className={cn("size-4", isPending && "animate-spin")} />
         </Button>
       </div>
 

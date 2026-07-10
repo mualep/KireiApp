@@ -224,14 +224,14 @@ export function AdminSidebar({
           <LogoutButton>
             <Button
               type="submit"
-              variant="ghost"
+              variant="default"
               className={cn(
-                "w-full rounded-lg text-muted-foreground hover:text-primary",
+                "w-full rounded-lg",
                 collapsed && "px-0",
               )}
             >
               <LogOutIcon data-icon="inline-start" aria-hidden="true" />
-              <span className={collapsed ? "sr-only" : undefined}>Logout</span>
+              <span className={collapsed ? "sr-only" : undefined}>Keluar</span>
             </Button>
           </LogoutButton>
         </div>

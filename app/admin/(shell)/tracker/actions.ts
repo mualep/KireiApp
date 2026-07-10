@@ -248,7 +248,7 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
       .from("worker_attendance")
       .delete()
       .eq("user_id", parsed.data.targetUserId)
-      .eq("date", targetDate);
+      .eq("attendance_date", targetDate);
 
     if (deleteError) {
       console.error("[CANCEL_START] Delete Error:", deleteError);

@@ -679,17 +679,19 @@ function getActiveControlGroups(
           label: "BREAK",
           tone: "break",
         },
-        ...(isGracePeriodActive
-          ? [
+      ],
+      ...(isGracePeriodActive
+        ? [
+            [
               {
                 action: "CANCEL_START" as TrackerAction,
                 icon: <XCircleIcon data-icon="inline-start" aria-hidden="true" />,
                 label: "BATAL START",
                 tone: "danger" as const,
               },
-            ]
-          : []),
-      ],
+            ],
+          ]
+        : []),
     ];
   }
 
