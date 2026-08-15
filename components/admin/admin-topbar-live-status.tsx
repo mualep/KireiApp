@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const LIVE_STATUS_PROBE_PATH = "/brand/kireiapp-mark.svg";
-const LIVE_STATUS_INTERVAL_MS = 15_000;
+const LIVE_STATUS_INTERVAL_MS = 60_000;
 const CLOCK_INTERVAL_MS = 1_000;
 
 const INDO_DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];

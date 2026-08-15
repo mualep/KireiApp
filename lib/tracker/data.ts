@@ -93,6 +93,17 @@ type WorkerRecordRow = {
   work_late_seconds: number | null;
 };
 
+// Ambil attendance hanya 60 hari terakhir — cukup untuk semua use case tracker
+// (absensi correction window, absence materialization, active attendance detection)
+function getAttendanceLookbackDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 60);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDataResult> {
   const supabase = await createClient();
   const { data: profiles, error: profilesError } = await supabase
@@ -142,6 +153,8 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         .from("worker_attendance")
         .select("id,user_id,attendance_date,status,source,source_action,is_canceled")
         .in("user_id", userIds)
+        // ✅ FIX: hanya 60 hari terakhir — tidak lagi ambil seluruh histori attendance
+        .gte("attendance_date", getAttendanceLookbackDate())
         .order("attendance_date", { ascending: false })
         .returns<ActiveTrackerAttendanceRow[]>(),
       supabase

@@ -16,28 +16,7 @@ export async function GET() {
       );
     }
 
-    const supabase = await createClient();
-
-    // 1. Fetch data in parallel for high performance
-    const [
-      { data: users },
-      { data: profiles },
-      { data: statuses },
-      { data: records },
-      { data: auditLogs }
-    ] = await Promise.all([
-      supabase.from("users").select("id, name").eq("is_deleted", false).eq("tier", "member"),
-      supabase.from("worker_profiles").select("user_id, shift, is_flexible, shift_start_hour, shift_start_min, shift_end_hour, shift_end_min"),
-      supabase.from("worker_status").select("user_id, current_status, alpha_done, break_started_at"),
-      supabase.from("worker_records").select("*"),
-      supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(20)
-    ]);
-
-    const activeUserMap = new Map((users || []).map((u) => [u.id, u.name]));
-    const profilesMap = new Map((profiles || []).map((p) => [p.user_id, p]));
-    const statusMap = new Map((statuses || []).map((s) => [s.user_id, s]));
-
-    // Determine today's date context in Asia/Jakarta (WIB)
+    // Hitung konteks waktu WIB di awal, sebelum query — dipakai sebagai filter SQL
     const now = new Date();
     const wibTime = new Date(now.getTime() + WIB_OFFSET_MILLISECONDS);
     const wibYear = wibTime.getUTCFullYear();
@@ -45,6 +24,32 @@ export async function GET() {
     const wibDay = String(wibTime.getUTCDate()).padStart(2, "0");
     const wibDateStr = `${wibYear}-${wibMonth}-${wibDay}`;
     const periodMonthStr = `${wibYear}-${wibMonth}-01`;
+
+    const supabase = await createClient();
+
+    // 1. Fetch data in parallel — worker_records difilter di SQL, bukan di JS
+    const [
+      { data: users },
+      { data: profiles },
+      { data: statuses },
+      { data: records },
+      { data: auditLogs }
+    ] = await Promise.all([
+      // ✅ FIX: tambah "tier" ke select agar bisa dipakai untuk globalUserMap di bawah
+      supabase.from("users").select("id, name, tier").eq("is_deleted", false).eq("tier", "member"),
+      supabase.from("worker_profiles").select("user_id, shift, is_flexible, shift_start_hour, shift_start_min, shift_end_hour, shift_end_min"),
+      supabase.from("worker_status").select("user_id, current_status, alpha_done, break_started_at"),
+      // ✅ FIX: filter period_month di SQL — tidak lagi ambil seluruh histori ke memory JS
+      supabase.from("worker_records").select("*").eq("period_month", periodMonthStr),
+      supabase.from("audit_logs")
+        .select("id, actor_user_id, target_user_id, domain, action, payload_json, created_at")
+        .order("created_at", { ascending: false })
+        .limit(20)
+    ]);
+
+    const activeUserMap = new Map((users || []).map((u) => [u.id, u.name]));
+    const profilesMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+    const statusMap = new Map((statuses || []).map((s) => [s.user_id, s]));
 
     const parseIsoDate = (isoDate: string) => {
       const [year, month, day] = isoDate.split("-").map(Number);
@@ -177,7 +182,7 @@ export async function GET() {
       alpha: alphaCount,
     };
 
-    // 3. Compute Monthly Aggregation metrics (with V2 base + delta calculation)
+    // 3. Compute Monthly Aggregation metrics
     const getEffectiveValue = (base: number | null, delta: number | null) => {
       const baseVal = base || 0;
       const deltaVal = delta || 0;
@@ -186,25 +191,19 @@ export async function GET() {
 
     let workLateSum = 0;
     const workLateWorkers = new Set<string>();
-
     let breakLateSum = 0;
     const breakLateWorkers = new Set<string>();
-
     let lemburSum = 0;
     const lemburWorkers = new Set<string>();
-
     let alphaSum = 0;
     const alphaWorkers = new Set<string>();
-
     let sakitSum = 0;
     const sakitWorkers = new Set<string>();
-
     let pendingSum = 0;
     const pendingWorkers = new Set<string>();
 
-    const monthlyRecords = (records || []).filter((r) => r.period_month === periodMonthStr);
-
-    for (const record of monthlyRecords) {
+    // ✅ FIX: records sudah difilter period_month di SQL — tidak perlu .filter() JS lagi
+    for (const record of records || []) {
       const workLate = getEffectiveValue(record.work_late_seconds, record.work_late_delta);
       const breakLate = getEffectiveValue(record.break_late_seconds, record.break_late_delta);
       const lembur = getEffectiveValue(record.lembur_units, record.lembur_delta);
@@ -212,30 +211,12 @@ export async function GET() {
       const sakit = getEffectiveValue(record.sakit_days, record.sakit_delta);
       const pending = getEffectiveValue(record.pending_days, record.pending_delta);
 
-      if (workLate > 0) {
-        workLateSum += workLate;
-        workLateWorkers.add(record.user_id);
-      }
-      if (breakLate > 0) {
-        breakLateSum += breakLate;
-        breakLateWorkers.add(record.user_id);
-      }
-      if (lembur > 0) {
-        lemburSum += lembur;
-        lemburWorkers.add(record.user_id);
-      }
-      if (alpha > 0) {
-        alphaSum += alpha;
-        alphaWorkers.add(record.user_id);
-      }
-      if (sakit > 0) {
-        sakitSum += sakit;
-        sakitWorkers.add(record.user_id);
-      }
-      if (pending > 0) {
-        pendingSum += pending;
-        pendingWorkers.add(record.user_id);
-      }
+      if (workLate > 0) { workLateSum += workLate; workLateWorkers.add(record.user_id); }
+      if (breakLate > 0) { breakLateSum += breakLate; breakLateWorkers.add(record.user_id); }
+      if (lembur > 0) { lemburSum += lembur; lemburWorkers.add(record.user_id); }
+      if (alpha > 0) { alphaSum += alpha; alphaWorkers.add(record.user_id); }
+      if (sakit > 0) { sakitSum += sakit; sakitWorkers.add(record.user_id); }
+      if (pending > 0) { pendingSum += pending; pendingWorkers.add(record.user_id); }
     }
 
     const monthlySummary = {
@@ -247,10 +228,10 @@ export async function GET() {
       pending: { sum: pendingSum, workers: pendingWorkers.size },
     };
 
-    // 4. Map recent audit logs with username lookup
-    const allUsersWithStaff = await supabase.from("users").select("id, name, tier");
+    // 4. Map recent audit logs
+    // ✅ FIX: reuse users data dari query awal — tidak perlu fetch users kedua kali
     const globalUserMap = new Map(
-      (allUsersWithStaff.data || []).map((u) => [u.id, { name: u.name, tier: u.tier }])
+      (users || []).map((u) => [u.id, { name: u.name, tier: u.tier }])
     );
 
     const translateAction = (domain: string, action: string) => {
