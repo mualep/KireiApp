@@ -286,7 +286,7 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
 
 
   try {
-    const { error } = await supabase.rpc("apply_tracker_action", {
+    const { data, error } = await supabase.rpc("apply_tracker_action", {
       p_action: parsed.data.action,
       p_expected_version: parsed.data.expectedVersion,
       p_target_user_id: parsed.data.targetUserId,
@@ -294,6 +294,13 @@ export async function applyTrackerAction(input: unknown): Promise<ApplyTrackerAc
 
     if (error) {
       return actionError(mapTrackerRpcError(error.message));
+    }
+
+    if (data && typeof data === "object" && "ok" in data) {
+      const res = data as { ok?: boolean; code?: string; message?: string };
+      if (res.ok === false && res.code) {
+        return actionError(mapTrackerRpcError(res.code));
+      }
     }
   } catch (err) {
     console.error("[applyTrackerAction] RPC Error:", err);

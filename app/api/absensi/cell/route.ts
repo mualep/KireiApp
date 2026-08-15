@@ -47,6 +47,16 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    if (data && typeof data === "object" && "ok" in data) {
+      const res = data as { ok?: boolean; message?: string };
+      if (res.ok === false) {
+        return NextResponse.json(
+          { success: false, error: res.message || "Failed to edit absensi cell" },
+          { status: 422 }
+        );
+      }
+    }
+
     revalidatePath("/admin/absensi");
     revalidatePath("/admin/tracker");
 
