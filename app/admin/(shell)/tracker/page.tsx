@@ -5,6 +5,7 @@ import { CircleAlertIcon } from "lucide-react";
 
 import { TrackerCard } from "@/components/admin/tracker/tracker-card";
 import { TrackerFilterForm } from "@/components/admin/tracker/tracker-filter-form";
+import { TrackerAutoRefresh } from "@/components/admin/tracker/tracker-auto-refresh";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,6 +61,9 @@ export default async function AdminTrackerPage({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Refresh data setiap 60 detik agar version worker tetap sinkron dengan DB */}
+      <TrackerAutoRefresh />
+
       {data.issues.length > 0 ? <TrackerIssuePanel issues={data.issues} /> : null}
 
       <TrackerFilterForm
