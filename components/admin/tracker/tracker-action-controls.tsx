@@ -482,14 +482,27 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
           })()
         : null}
 
-      {controlGroups.map((group, index) => (
-        <div
-          key={index}
-          className={cn(
-            "grid gap-1.5",
-            group.length === 1 ? "grid-cols-1" : "grid-cols-2",
-          )}
-        >
+      {controlGroups.map((group) => {
+        const groupKey = group
+          .map((control) =>
+            "action" in control
+              ? control.action
+              : "correctionAction" in control
+                ? control.correctionAction
+                : "expiredAbsenceCloseAction" in control
+                  ? control.expiredAbsenceCloseAction
+                  : control.absenceMaterializationAction,
+          )
+          .join("-");
+
+        return (
+          <div
+            key={groupKey}
+            className={cn(
+              "grid gap-1.5",
+              group.length === 1 ? "grid-cols-1" : "grid-cols-2",
+            )}
+          >
           {group.map((control) => (
             <Button
               key={
@@ -545,7 +558,8 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
             </Button>
           ))}
         </div>
-      ))}
+        );
+      })}
 
       {selectedCorrectionAction ? (
         <div className="rounded-md border border-status-alpha/25 bg-status-alpha/8 p-2">
