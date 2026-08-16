@@ -747,7 +747,7 @@ function getActiveControlGroups(
       if (!card.shiftStartedAt) return false;
       const startTime = new Date(card.shiftStartedAt).getTime();
       const current = nowMs || Date.now();
-      return (current - startTime) <= 15 * 60 * 1000 && (!card.workLateSeconds || card.workLateSeconds === 0);
+      return (current - startTime) <= 15 * 60 * 1000;
     })();
 
     return [
