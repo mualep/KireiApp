@@ -7,6 +7,7 @@ export type RecordsMonthRange = {
 };
 
 export type EffectiveRecordMetric<T extends number | null = number> = {
+  delta: number;
   isOverride: boolean;
   value: T;
 };
@@ -53,6 +54,7 @@ export function getEffectiveRecordMetric(
   deltaValue: number,
 ): EffectiveRecordMetric<number | null> {
   return {
+    delta: deltaValue,
     isOverride: deltaValue !== 0,
     value: baseValue !== null ? Math.max(0, baseValue + deltaValue) : null,
   };
