@@ -666,15 +666,6 @@ function getActiveControlGroups(
 ): TrackerControlConfig[][] {
   const currentAttendanceDate = getOperationalDate(nowMs ? new Date(nowMs) : new Date());
 
-  // Lockout check: if they have accepted Alpha for today's operational date, no buttons are available
-  if (
-    card.storedStatus === "off" &&
-    card.alphaDone &&
-    card.shiftActiveDate === currentAttendanceDate
-  ) {
-    return [];
-  }
-
   if (card.displayStatus === "ALPHA") {
     return [
       [
