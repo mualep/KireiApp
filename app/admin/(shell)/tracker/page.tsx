@@ -80,8 +80,8 @@ export default async function AdminTrackerPage({
           className="tracker-card-grid gap-3"
         >
           {cards.map((card) => (
-          <TrackerCard
-              key={card.userId}
+            <TrackerCard
+              key={`${card.userId}:${card.version}`}
               card={card}
               canApplyTrackerActions={canApplyTrackerActions}
             />

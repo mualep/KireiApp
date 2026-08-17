@@ -34,7 +34,7 @@ export async function getUsersManagerList(): Promise<UsersManagerRowDTO[]> {
   const [usersRes, profilesRes, statusesRes, spsRes] = await Promise.all([
     supabase.from("users").select("id, name, email, tier, is_deleted").neq("tier", "owner"),
     supabase.from("worker_profiles").select("user_id, employee_role, shift"),
-    supabase.from("worker_status").select("user_id, status"),
+    supabase.from("worker_status").select("user_id, current_status"),
     supabase
       .from("worker_sp_logs")
       .select("user_id, sp_level")
@@ -45,7 +45,7 @@ export async function getUsersManagerList(): Promise<UsersManagerRowDTO[]> {
   if (usersRes.error) throw new Error("Users could not load.");
 
   const profilesMap = new Map((profilesRes.data ?? []).map((p) => [p.user_id, p]));
-  const statusMap = new Map((statusesRes.data ?? []).map((s) => [s.user_id, s.status]));
+  const statusMap = new Map((statusesRes.data ?? []).map((s) => [s.user_id, s.current_status]));
 
   const spsCountMap = new Map<string, number>();
   for (const sp of spsRes.data ?? []) {

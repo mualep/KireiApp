@@ -249,7 +249,7 @@ function TrackerControlZone({
     return null;
   }
 
-  return <TrackerActionControls card={card} />;
+  return <TrackerActionControls key={`${card.userId}:${card.version}`} card={card} />;
 }
 
 function getFullRoleShiftLabel(card: TrackerCardDTO): string {
