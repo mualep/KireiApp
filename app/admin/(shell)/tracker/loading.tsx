@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TrackerLoading() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" aria-hidden="true">
       {/* Filter Form Skeleton */}
       <div className="tracker-glass-panel flex flex-col gap-3 rounded-xl border p-3">
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.3fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_auto_auto]">
@@ -20,7 +20,7 @@ export default function TrackerLoading() {
         </div>
       </div>
 
-      {/* Tracker Card Grid Skeleton (9 cards) */}
+      {/* Tracker Card Grid Skeleton (9 cards matching exact layout) */}
       <section aria-label="Loading worker cards" className="tracker-card-grid gap-3">
         {Array.from({ length: 9 }).map((_, i) => (
           <div
@@ -30,9 +30,12 @@ export default function TrackerLoading() {
             <div className="flex flex-col gap-3">
               {/* Header: Name & Role */}
               <div className="flex items-start justify-between gap-2">
-                <div className="flex flex-col gap-1.5">
-                  <Skeleton className="h-5 w-32 rounded" />
-                  <Skeleton className="h-4 w-20 rounded" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex flex-col gap-1.5">
+                    <Skeleton className="h-5 w-32 rounded" />
+                    <Skeleton className="h-4 w-20 rounded" />
+                  </div>
                 </div>
                 <Skeleton className="h-6 w-16 rounded-full" />
               </div>
