@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 
 import { parseStaffTier, type StaffTier } from "@/lib/auth/tiers";
@@ -17,7 +18,7 @@ type StaffUser = {
   profile: StaffProfile;
 };
 
-export async function getCurrentStaffUser(): Promise<StaffUser | null> {
+export const getCurrentStaffUser = cache(async (): Promise<StaffUser | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,4 +50,4 @@ export async function getCurrentStaffUser(): Promise<StaffUser | null> {
       tier,
     },
   };
-}
+});
