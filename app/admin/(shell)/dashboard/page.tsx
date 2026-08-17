@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getCurrentStaffUser } from "@/lib/auth/staff";
-import { canAccessAdminDashboard } from "@/lib/auth/redirects";
 import { AdminDashboardClient } from "@/components/admin/dashboard/admin-dashboard-client";
+import { canAccessAdminDashboard } from "@/lib/auth/redirects";
+import { getCurrentStaffUser } from "@/lib/auth/staff";
+import { getDashboardSummaryData } from "@/lib/dashboard/data";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,9 @@ export default async function AdminDashboardPage() {
     redirect("/admin/profile");
   }
 
+  const initialData = await getDashboardSummaryData();
+
   return (
-    <AdminDashboardClient staffName={staff.profile.name} />
+    <AdminDashboardClient initialData={initialData} staffName={staff.profile.name} />
   );
 }

@@ -63,6 +63,7 @@ interface DashboardData {
 
 interface AdminDashboardClientProps {
   staffName: string;
+  initialData?: DashboardData;
 }
 
 interface ShiftDef {
@@ -91,18 +92,20 @@ const shifts: ShiftDef[] = [
   { label: "Shift F", startHour: 0, startMin: 0, endHour: 8, endMin: 0 },
 ];
 
-export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
+export function AdminDashboardClient({ staffName, initialData }: AdminDashboardClientProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialData);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [data, setData] = useState<DashboardData | null>(initialData ?? null);
   const [activeShifts, setActiveShifts] = useState<ActiveShiftProgress[]>([]);
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!initialData && !data) {
+        setLoading(true);
+      }
       setErrorMsg(null);
       const res = await fetch("/api/dashboard/summary");
       if (!res.ok) {
@@ -132,14 +135,13 @@ export function AdminDashboardClient({ staffName }: AdminDashboardClientProps) {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [initialData, data, toast]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (!initialData) {
       void fetchDashboardData();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [fetchDashboardData]);
+    }
+  }, [initialData, fetchDashboardData]);
 
   // Live shifts calculator hook
   useEffect(() => {

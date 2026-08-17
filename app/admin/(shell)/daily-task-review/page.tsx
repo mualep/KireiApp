@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, CalendarCheck } from "lucide-react";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
-import { DailyTaskReviewTable } from "@/components/admin/daily-task/daily-task-review-table";
+import { DailyTaskReviewClientShell } from "@/components/admin/daily-task/daily-task-review-client-shell";
 
 export const metadata: Metadata = {
   title: "Daily Task Review | KireiApp",
@@ -126,7 +126,7 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      <DailyTaskReviewTable
+      <DailyTaskReviewClientShell
         initialTasks={mappedTasks}
         selectedDate={dateParam}
       />

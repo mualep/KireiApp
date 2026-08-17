@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { UsersTable } from "@/components/admin/users/users-table";
+import { UsersClientShell } from "@/components/admin/users/users-client-shell";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { getUsersManagerList } from "@/lib/users/data";
 
@@ -24,7 +24,7 @@ export default async function AdminUsersPage() {
 
   return (
     <main className="flex flex-1 flex-col gap-4">
-      <UsersTable initialData={rows} currentTier={staff.profile.tier} />
+      <UsersClientShell currentTier={staff.profile.tier} initialData={rows} />
     </main>
   );
 }
