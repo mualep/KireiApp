@@ -2,7 +2,7 @@
 
 import type React from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowDownAZIcon, ChevronDownIcon, XIcon } from "lucide-react";
 
@@ -31,6 +31,7 @@ export function TrackerFilterForm({
 }: TrackerFilterFormProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [queryDraft, setQueryDraft] = useState(filters.q);
   const [shiftDraft, setShiftDraft] = useState(filters.shift ?? "");
   const [statusDraft, setStatusDraft] = useState(filters.status ?? "");
@@ -42,19 +43,21 @@ export function TrackerFilterForm({
     }
 
     const timeoutId = window.setTimeout(() => {
-      router.replace(
-        getTrackerHref({
-          filters: {
-            q: queryDraft,
-            role: filters.role,
-            shift: normalizeShift(shiftDraft),
-            sort: sortDraft,
-            status: normalizeStatus(statusDraft),
-          },
-          pathname,
-        }),
-        { scroll: false },
-      );
+      startTransition(() => {
+        router.replace(
+          getTrackerHref({
+            filters: {
+              q: queryDraft,
+              role: filters.role,
+              shift: normalizeShift(shiftDraft),
+              sort: sortDraft,
+              status: normalizeStatus(statusDraft),
+            },
+            pathname,
+          }),
+          { scroll: false },
+        );
+      });
     }, 300);
 
     return () => window.clearTimeout(timeoutId);
@@ -90,57 +93,63 @@ export function TrackerFilterForm({
     const shift = event.currentTarget.value;
 
     setShiftDraft(shift);
-    router.replace(
-      getTrackerHref({
-        filters: {
-          q: queryDraft,
-          role: filters.role,
-          shift: normalizeShift(shift),
-          sort: sortDraft,
-          status: normalizeStatus(statusDraft),
-        },
-        pathname,
-      }),
-      { scroll: false },
-    );
+    startTransition(() => {
+      router.replace(
+        getTrackerHref({
+          filters: {
+            q: queryDraft,
+            role: filters.role,
+            shift: normalizeShift(shift),
+            sort: sortDraft,
+            status: normalizeStatus(statusDraft),
+          },
+          pathname,
+        }),
+        { scroll: false },
+      );
+    });
   }
 
   function handleStatusChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const status = event.currentTarget.value;
 
     setStatusDraft(status);
-    router.replace(
-      getTrackerHref({
-        filters: {
-          q: queryDraft,
-          role: filters.role,
-          shift: normalizeShift(shiftDraft),
-          sort: sortDraft,
-          status: normalizeStatus(status),
-        },
-        pathname,
-      }),
-      { scroll: false },
-    );
+    startTransition(() => {
+      router.replace(
+        getTrackerHref({
+          filters: {
+            q: queryDraft,
+            role: filters.role,
+            shift: normalizeShift(shiftDraft),
+            sort: sortDraft,
+            status: normalizeStatus(status),
+          },
+          pathname,
+        }),
+        { scroll: false },
+      );
+    });
   }
 
   function handleSortChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const sort = event.currentTarget.value as TrackerSortOption;
 
     setSortDraft(sort);
-    router.replace(
-      getTrackerHref({
-        filters: {
-          q: queryDraft,
-          role: filters.role,
-          shift: normalizeShift(shiftDraft),
-          sort,
-          status: normalizeStatus(statusDraft),
-        },
-        pathname,
-      }),
-      { scroll: false },
-    );
+    startTransition(() => {
+      router.replace(
+        getTrackerHref({
+          filters: {
+            q: queryDraft,
+            role: filters.role,
+            shift: normalizeShift(shiftDraft),
+            sort,
+            status: normalizeStatus(statusDraft),
+          },
+          pathname,
+        }),
+        { scroll: false },
+      );
+    });
   }
 
   return (
