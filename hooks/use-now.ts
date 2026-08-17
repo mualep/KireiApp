@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 let globalNowMs: number = typeof window !== "undefined" ? Date.now() : 0;
 const listeners = new Set<() => void>();
@@ -36,12 +36,27 @@ function getServerSnapshot() {
 
 /**
  * Custom hook that returns the current timestamp (Date.now()) updated every 1000ms.
- * Uses a single global interval shared across all subscribing components to eliminate render storms.
+ * Uses a single global interval shared across subscribing components.
+ * If enabled === false, it DOES NOT subscribe to the store, preventing unnecessary card re-renders.
  */
 export function useNow(enabled: boolean = true): number | null {
+  const subscribeFn = useCallback(
+    (onStoreChange: () => void) => {
+      if (!enabled) {
+        return () => {};
+      }
+      return subscribe(onStoreChange);
+    },
+    [enabled],
+  );
+
+  const getSnapshotFn = useCallback(() => {
+    return enabled ? getSnapshot() : 0;
+  }, [enabled]);
+
   const nowMs = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
+    subscribeFn,
+    getSnapshotFn,
     getServerSnapshot,
   );
 
