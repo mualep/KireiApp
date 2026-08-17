@@ -84,13 +84,21 @@ type ActiveTrackerAttendanceRow = {
 
 type WorkerRecordRow = {
   alpha_count: number | null;
+  alpha_delta: number | null;
   break_late_seconds: number | null;
+  break_late_delta: number | null;
+  cuti_stock_snapshot: number | null;
+  cuti_stock_delta: number | null;
   lembur_units: number | null;
+  lembur_delta: number | null;
   pending_days: number | null;
+  pending_delta: number | null;
   period_month: string;
   sakit_days: number | null;
+  sakit_delta: number | null;
   user_id: string;
   work_late_seconds: number | null;
+  work_late_delta: number | null;
 };
 
 // Ambil attendance hanya 60 hari terakhir — cukup untuk semua use case tracker
@@ -160,7 +168,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
       supabase
         .from("worker_records")
         .select(
-          "user_id,period_month,work_late_seconds,break_late_seconds,alpha_count,sakit_days,pending_days,lembur_units",
+          "user_id,period_month,work_late_seconds,work_late_delta,break_late_seconds,break_late_delta,alpha_count,alpha_delta,sakit_days,sakit_delta,pending_days,pending_delta,lembur_units,lembur_delta,cuti_stock_snapshot,cuti_stock_delta",
         )
         .in("user_id", userIds)
         .eq("period_month", recordsMonth.monthStart)
@@ -311,24 +319,36 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         activeSpCount: spsCountMap.get(profile.user_id) ?? 0,
         activeTrackerAttendanceId: activeTrackerAttendance?.id ?? null,
         breakAccumulatedSecs: status.break_accumulated_secs,
-        breakLateSeconds: record?.break_late_seconds ?? 0,
+        breakLateSeconds: Math.max(
+          0,
+          (record?.break_late_seconds ?? 0) + (record?.break_late_delta ?? 0),
+        ),
         breakLateRecorded: status.break_late_recorded,
         breakStartedAt: status.break_started_at,
         breakTimerRunning: status.break_timer_running,
-        cutiStock: profile.cuti_stock,
+        cutiStock: Math.max(
+          0,
+          (record?.cuti_stock_snapshot ?? profile.cuti_stock) +
+            (record?.cuti_stock_delta ?? 0),
+        ),
         displayStatus: computeWorkerDisplayStatus({
           alphaDone: status.alpha_done,
           currentStatus: status.current_status as WorkerStoredStatus,
           isFlexible: profile.is_flexible,
           now,
           shift,
-          hasStartedToday: hasWorkedDatesByUserId.get(profile.user_id)?.has(currentAttendanceDate) ?? false,
+          hasStartedToday:
+            hasWorkedDatesByUserId.get(profile.user_id)?.has(currentAttendanceDate) ??
+            false,
           shiftActiveDate: status.shift_active_date,
           currentAttendanceDate,
         }),
         employeeRole: profile.employee_role,
         gid: profile.user_id,
-        alphaCount: record?.alpha_count ?? 0,
+        alphaCount: Math.max(
+          0,
+          (record?.alpha_count ?? 0) + (record?.alpha_delta ?? 0),
+        ),
         absenceMaterializationMissingDays: absenceMaterializationMissingDates.length,
         isFlexible: profile.is_flexible,
         isAbsenceMaterializationAvailable: isAbsenceMaterializationAvailable,
@@ -336,10 +356,19 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
           isTrackerAbsenceCloseIdentified && correctionWindowState === "expired",
         isTrackerCorrectionAvailable:
           activeTrackerAttendance !== null && correctionWindowState === "open",
-        lemburUnits: record?.lembur_units ?? 0,
+        lemburUnits: Math.max(
+          0,
+          (record?.lembur_units ?? 0) + (record?.lembur_delta ?? 0),
+        ),
         name: user.name,
-        pendingDays: record?.pending_days ?? 0,
-        sakitDays: record?.sakit_days ?? 0,
+        pendingDays: Math.max(
+          0,
+          (record?.pending_days ?? 0) + (record?.pending_delta ?? 0),
+        ),
+        sakitDays: Math.max(
+          0,
+          (record?.sakit_days ?? 0) + (record?.sakit_delta ?? 0),
+        ),
         shift: profile.shift,
         shiftStartedAt: status.shift_active_started_at,
         showCard: profile.show_card,
@@ -347,7 +376,10 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
         storedStatus: status.current_status,
         userId: profile.user_id,
         version: Number(status.version),
-        workLateSeconds: record?.work_late_seconds ?? 0,
+        workLateSeconds: Math.max(
+          0,
+          (record?.work_late_seconds ?? 0) + (record?.work_late_delta ?? 0),
+        ),
         shiftActiveDate: status.shift_active_date,
         alphaDone: status.alpha_done,
       } satisfies TrackerCardDTO,

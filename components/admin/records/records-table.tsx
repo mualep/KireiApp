@@ -248,21 +248,8 @@ function MetricValue({
       ? formatRecordsDuration(metric.value)
       : formatRecordsNumber(metric.value);
 
-  const deltaFormatted = (() => {
-    if (!metric.delta || metric.delta === 0) return null;
-    if (type === "duration" || type === "lembur") {
-      const absSeconds = Math.abs(metric.delta);
-      const formatted =
-        type === "lembur"
-          ? formatLemburMinutes(absSeconds)
-          : formatRecordsDuration(absSeconds);
-      return metric.delta > 0 ? `(Δ +${formatted})` : `(Δ -${formatted})`;
-    }
-    return metric.delta > 0 ? `(Δ +${metric.delta})` : `(Δ ${metric.delta})`;
-  })();
-
   return (
-    <span className="inline-flex min-w-0 items-center justify-center gap-1">
+    <span className="inline-flex min-w-0 items-center justify-center">
       <span
         className={cn(
           "font-sans font-bold tabular-nums",
@@ -274,15 +261,6 @@ function MetricValue({
       >
         {value}
       </span>
-      {deltaFormatted ? (
-        <span
-          className="text-[0.65rem] font-semibold text-muted-foreground/75"
-          translate="no"
-          title={`Delta override: ${metric.delta > 0 ? "+" : ""}${metric.delta}`}
-        >
-          {deltaFormatted}
-        </span>
-      ) : null}
     </span>
   );
 }
