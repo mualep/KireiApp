@@ -1,9 +1,6 @@
 "use client";
 
 import type React from "react";
-import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import { ArrowDownAZIcon, ChevronDownIcon, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -17,141 +14,38 @@ import type {
 import { workerDisplayStatuses, workerShifts } from "@/lib/workers";
 
 type TrackerFilterFormProps = {
-  filters: TrackerFilters;
+  onClearFilters: () => void;
+  onQueryChange: (query: string) => void;
+  onRoleChange: (role: TrackerFilters["role"]) => void;
+  onShiftChange: (shift: string) => void;
+  onSortChange: (sort: TrackerSortOption) => void;
+  onStatusChange: (status: string) => void;
+  query: string;
   readableCount: string;
+  role: TrackerFilters["role"];
   roleTabs: TrackerRoleTab[];
+  shift: string;
+  sort: TrackerSortOption;
+  status: string;
   visibleCount: string;
 };
 
 export function TrackerFilterForm({
-  filters,
+  onClearFilters,
+  onQueryChange,
+  onRoleChange,
+  onShiftChange,
+  onSortChange,
+  onStatusChange,
+  query,
   readableCount,
+  role,
   roleTabs,
+  shift,
+  sort,
+  status,
   visibleCount,
 }: TrackerFilterFormProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [queryDraft, setQueryDraft] = useState(filters.q);
-  const [shiftDraft, setShiftDraft] = useState(filters.shift ?? "");
-  const [statusDraft, setStatusDraft] = useState(filters.status ?? "");
-  const [sortDraft, setSortDraft] = useState<TrackerSortOption>(filters.sort);
-
-  useEffect(() => {
-    if (normalizeQuery(queryDraft) === filters.q) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      startTransition(() => {
-        router.replace(
-          getTrackerHref({
-            filters: {
-              q: queryDraft,
-              role: filters.role,
-              shift: normalizeShift(shiftDraft),
-              sort: sortDraft,
-              status: normalizeStatus(statusDraft),
-            },
-            pathname,
-          }),
-          { scroll: false },
-        );
-      });
-    }, 300);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [
-    filters.q,
-    filters.role,
-    pathname,
-    queryDraft,
-    router,
-    shiftDraft,
-    sortDraft,
-    statusDraft,
-  ]);
-
-  function getFilterHref({
-    role = filters.role,
-  }: {
-    role?: TrackerFilters["role"];
-  }) {
-    return getTrackerHref({
-      filters: {
-        q: queryDraft,
-        role,
-        shift: normalizeShift(shiftDraft),
-        sort: sortDraft,
-        status: normalizeStatus(statusDraft),
-      },
-      pathname,
-    });
-  }
-
-  function handleShiftChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const shift = event.currentTarget.value;
-
-    setShiftDraft(shift);
-    startTransition(() => {
-      router.replace(
-        getTrackerHref({
-          filters: {
-            q: queryDraft,
-            role: filters.role,
-            shift: normalizeShift(shift),
-            sort: sortDraft,
-            status: normalizeStatus(statusDraft),
-          },
-          pathname,
-        }),
-        { scroll: false },
-      );
-    });
-  }
-
-  function handleStatusChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const status = event.currentTarget.value;
-
-    setStatusDraft(status);
-    startTransition(() => {
-      router.replace(
-        getTrackerHref({
-          filters: {
-            q: queryDraft,
-            role: filters.role,
-            shift: normalizeShift(shiftDraft),
-            sort: sortDraft,
-            status: normalizeStatus(status),
-          },
-          pathname,
-        }),
-        { scroll: false },
-      );
-    });
-  }
-
-  function handleSortChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const sort = event.currentTarget.value as TrackerSortOption;
-
-    setSortDraft(sort);
-    startTransition(() => {
-      router.replace(
-        getTrackerHref({
-          filters: {
-            q: queryDraft,
-            role: filters.role,
-            shift: normalizeShift(shiftDraft),
-            sort,
-            status: normalizeStatus(statusDraft),
-          },
-          pathname,
-        }),
-        { scroll: false },
-      );
-    });
-  }
-
   return (
     <Card
       size="sm"
@@ -169,8 +63,8 @@ export function TrackerFilterForm({
                 id="tracker-search"
                 name="q"
                 type="search"
-                value={queryDraft}
-                onChange={(event) => setQueryDraft(event.currentTarget.value)}
+                value={query}
+                onChange={(event) => onQueryChange(event.currentTarget.value)}
                 placeholder="Cari nama pekerja..."
                 autoComplete="off"
                 className="w-full min-w-0 rounded-lg border border-input px-2.5 py-1 text-base h-9 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
@@ -185,14 +79,14 @@ export function TrackerFilterForm({
               <select
                 id="tracker-shift"
                 name="shift"
-                value={shiftDraft}
-                onChange={handleShiftChange}
+                value={shift}
+                onChange={(e) => onShiftChange(e.currentTarget.value)}
                 className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="">Semua Shift</option>
-                {workerShifts.map((shift) => (
-                  <option key={shift} value={shift}>
-                    {shift === "flexible" ? "Flexible" : shift}
+                {workerShifts.map((s) => (
+                  <option key={s} value={s}>
+                    {s === "flexible" ? "Flexible" : s}
                   </option>
                 ))}
               </select>
@@ -210,14 +104,14 @@ export function TrackerFilterForm({
               <select
                 id="tracker-status"
                 name="status"
-                value={statusDraft}
-                onChange={handleStatusChange}
+                value={status}
+                onChange={(e) => onStatusChange(e.currentTarget.value)}
                 className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="">Semua Status</option>
-                {workerDisplayStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
+                {workerDisplayStatuses.map((st) => (
+                  <option key={st} value={st}>
+                    {st}
                   </option>
                 ))}
               </select>
@@ -235,8 +129,8 @@ export function TrackerFilterForm({
               <select
                 id="tracker-sort"
                 aria-label="Sort order"
-                value={sortDraft}
-                onChange={handleSortChange}
+                value={sort}
+                onChange={(e) => onSortChange(e.currentTarget.value as TrackerSortOption)}
                 className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="name-asc">Nama &#x2192; A-Z</option>
@@ -254,14 +148,13 @@ export function TrackerFilterForm({
 
             {/* Clear */}
             <Button
-              asChild
+              type="button"
               variant="outline"
+              onClick={onClearFilters}
               className="h-9 w-full sm:w-auto px-2.5 gap-1.5 border-border bg-background hover:bg-muted hover:text-foreground"
             >
-              <Link href={pathname}>
-                <XIcon className="size-4" aria-hidden="true" />
-                Bersihkan
-              </Link>
+              <XIcon className="size-4" aria-hidden="true" />
+              Bersihkan
             </Button>
 
             {/* Counter */}
@@ -278,12 +171,13 @@ export function TrackerFilterForm({
         <nav aria-label="Tracker role groups" className="w-full">
           <div className="grid w-full grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-8">
             {roleTabs.map((tab) => {
-              const isActive = filters.role === tab.value;
+              const isActive = role === tab.value;
 
               return (
-                <Link
+                <button
                   key={tab.label}
-                  href={getFilterHref({ role: tab.value })}
+                  type="button"
+                  onClick={() => onRoleChange(tab.value)}
                   aria-current={isActive ? "page" : undefined}
                   aria-label={`${tab.label}: ${tab.count} pekerja`}
                   title={tab.label}
@@ -302,7 +196,7 @@ export function TrackerFilterForm({
                   <span className="rounded-full border border-current/20 bg-background/45 px-1.5 py-0.5 font-mono text-[0.65rem] tabular-nums">
                     {tab.count}
                   </span>
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -310,50 +204,4 @@ export function TrackerFilterForm({
       </CardContent>
     </Card>
   );
-}
-
-function getTrackerHref({
-  filters,
-  pathname,
-}: {
-  filters: TrackerFilters;
-  pathname: string;
-}) {
-  const params = new URLSearchParams();
-  const q = normalizeQuery(filters.q);
-
-  if (q) {
-    params.set("q", q);
-  }
-
-  if (filters.role) {
-    params.set("role", filters.role);
-  }
-
-  if (filters.shift) {
-    params.set("shift", filters.shift);
-  }
-
-  if (filters.status) {
-    params.set("status", filters.status);
-  }
-
-  if (filters.sort !== "name-asc") {
-    params.set("sort", filters.sort);
-  }
-
-  const query = params.toString();
-  return query ? `${pathname}?${query}` : pathname;
-}
-
-function normalizeQuery(value: string) {
-  return value.trim().replace(/\s+/g, " ");
-}
-
-function normalizeShift(value: string): TrackerFilters["shift"] {
-  return value === "" ? null : (value as TrackerFilters["shift"]);
-}
-
-function normalizeStatus(value: string): TrackerFilters["status"] {
-  return value === "" ? null : (value as TrackerFilters["status"]);
 }
