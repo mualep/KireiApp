@@ -505,7 +505,7 @@ export const TrackerActionControls = memo(function TrackerActionControls({
                   ? `${control.label} ${card.absenceMaterializationMissingDays} hari`
                   : undefined
               }
-              disabled={isPending}
+              disabled={isPending || control.tone === "muted"}
               variant="outline"
               className={cn(
                 "tracker-action-btn h-9 min-w-0 rounded-sm border px-3 text-sm font-bold",

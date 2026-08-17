@@ -101,11 +101,11 @@ type WorkerRecordRow = {
   work_late_delta: number | null;
 };
 
-// Ambil attendance hanya 60 hari terakhir — cukup untuk semua use case tracker
+// Ambil attendance 30 hari terakhir — efisien & cukup untuk semua use case tracker
 // (absensi correction window, absence materialization, active attendance detection)
 function getAttendanceLookbackDate(): string {
   const d = new Date();
-  d.setDate(d.getDate() - 60);
+  d.setDate(d.getDate() - 30);
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
   const day = String(d.getUTCDate()).padStart(2, "0");
