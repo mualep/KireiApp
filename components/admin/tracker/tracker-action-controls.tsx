@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { memo, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import {
@@ -122,7 +122,9 @@ const genericFailure: ApplyTrackerActionResult = {
   ok: false,
 };
 
-export function TrackerActionControls({ card }: TrackerActionControlsProps) {
+export const TrackerActionControls = memo(function TrackerActionControls({
+  card,
+}: TrackerActionControlsProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isTransitionPending, startTransition] = useTransition();
@@ -641,7 +643,7 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
       </AlertDialog>
     </div>
   );
-}
+});
 
 function getActiveControlGroups(
   card: TrackerCardDTO,

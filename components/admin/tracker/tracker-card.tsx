@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { OctagonX } from "lucide-react";
 import { TrackerActionControls } from "@/components/admin/tracker/tracker-action-controls";
 import { TrackerStatusBadge } from "@/components/admin/tracker/tracker-status-badge";
@@ -45,7 +46,7 @@ const compactRoleLabels: Record<WorkerRole, string> = {
   Security: "Security",
 };
 
-export function TrackerCard({
+export const TrackerCard = memo(function TrackerCard({
   card,
   canApplyTrackerActions,
 }: TrackerCardProps) {
@@ -151,7 +152,7 @@ export function TrackerCard({
       ) : null}
     </Card>
   );
-}
+});
 
 function getTrackerRecordBadges(card: TrackerCardDTO) {
   let liveBreakLate = card.breakLateSeconds;
