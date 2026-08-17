@@ -2,20 +2,12 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CircleAlertIcon } from "lucide-react";
 
-import { RecordsSummaryCards } from "@/components/admin/records/records-summary-cards";
-import { RecordsTable } from "@/components/admin/records/records-table";
-import { RecordsToolbar } from "@/components/admin/records/records-toolbar";
+import { RecordsClientShell } from "@/components/admin/records/records-client-shell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { canAccessAdminRecords } from "@/lib/auth/redirects";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { getRecordsData } from "@/lib/records/data";
-import {
-  filterRecordsRows,
-  getRecordsRoleTabs,
-  hasRecordsFilters,
-  parseRecordsFilters,
-  type RecordsSearchParams,
-} from "@/lib/records/filters";
+import { getRecordsRoleTabs, type RecordsSearchParams } from "@/lib/records/filters";
 
 export const metadata: Metadata = {
   title: "Records | KireiApp",
@@ -25,8 +17,6 @@ export const metadata: Metadata = {
 type AdminRecordsPageProps = {
   searchParams: Promise<RecordsSearchParams>;
 };
-
-const numberFormatter = new Intl.NumberFormat("id-ID");
 
 export default async function AdminRecordsPage({
   searchParams,
@@ -42,46 +32,23 @@ export default async function AdminRecordsPage({
   }
 
   const canCorrectRecords = staff.profile.tier !== "member";
-
   const params = await searchParams;
   const monthParam = typeof params.month === "string" ? params.month : undefined;
-  const filters = parseRecordsFilters(params);
-  const hasFilters = hasRecordsFilters(filters);
   const data = await getRecordsData({ monthParam, staff });
-  const filteredRows = filterRecordsRows(data.rows, filters);
   const roleTabs = getRecordsRoleTabs(data.rows);
   const scopeLabel = staff.profile.tier === "member" ? "Self-only" : null;
-  const emptyTitle = hasFilters
-    ? "No records match these filters."
-    : "No records available.";
-  const emptyDescription = hasFilters
-    ? "Clear filters to return to the full readable Records view."
-    : "Read-only monthly records appear after worker records are available.";
 
   return (
     <div className="flex flex-col gap-6">
       {data.issues.length > 0 ? <RecordsIssuePanel issues={data.issues} /> : null}
 
-      <RecordsToolbar
-        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}:${filters.shift ?? ""}:${filters.sort}`}
-        filters={filters}
+      <RecordsClientShell
+        canCorrectRecords={canCorrectRecords}
+        initialRows={data.rows}
+        isOwner={staff.profile.tier === "owner"}
         month={data.month}
-        readableCount={numberFormatter.format(data.rows.length)}
         roleTabs={roleTabs}
         scopeLabel={scopeLabel}
-        visibleCount={numberFormatter.format(filteredRows.length)}
-        isOwner={staff.profile.tier === "owner"}
-      />
-
-      <RecordsSummaryCards rows={filteredRows} />
-
-      <RecordsTable
-        canCorrectRecords={canCorrectRecords}
-        emptyDescription={emptyDescription}
-        emptyTitle={emptyTitle}
-        monthParam={data.month.monthParam}
-        monthLabel={data.month.monthLabel}
-        rows={filteredRows}
       />
     </div>
   );

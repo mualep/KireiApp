@@ -2,8 +2,8 @@
 
 import type React from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,102 +20,45 @@ import type { WorkerShift } from "@/lib/workers";
 import { ResetRecordsDialog } from "./reset-records-dialog";
 
 type RecordsToolbarProps = {
-  filters: RecordsFilters;
+  isOwner?: boolean;
   month: RecordsMonthRange;
+  onClearFilters: () => void;
+  onQueryChange: (query: string) => void;
+  onRoleChange: (role: RecordsFilters["role"]) => void;
+  onShiftChange: (shift: string) => void;
+  onSortChange: (sort: RecordsSortOption) => void;
+  query: string;
   readableCount: string;
+  role: RecordsFilters["role"];
   roleTabs: RecordsRoleTab[];
   scopeLabel: string | null;
+  shift: string;
+  sort: RecordsSortOption;
   visibleCount: string;
-  isOwner?: boolean;
 };
 
 export function RecordsToolbar({
-  filters,
+  isOwner,
   month,
+  onClearFilters,
+  onQueryChange,
+  onRoleChange,
+  onShiftChange,
+  onSortChange,
+  query,
   readableCount,
+  role,
   roleTabs,
   scopeLabel,
+  shift,
+  sort,
   visibleCount,
-  isOwner,
 }: RecordsToolbarProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [queryDraft, setQueryDraft] = useState(filters.q);
-  const [shiftDraft, setShiftDraft] = useState<WorkerShift | "">(filters.shift ?? "");
-  const [sortDraft, setSortDraft] = useState<RecordsSortOption>(filters.sort);
   const [isResetOpen, setIsResetOpen] = useState(false);
 
-  useEffect(() => {
-    if (normalizeQuery(queryDraft) === filters.q) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      router.replace(
-        getMonthHref({
-          filters: { q: queryDraft, role: filters.role, shift: shiftDraft || null, sort: sortDraft },
-          monthParam: month.monthParam,
-          pathname,
-        }),
-        { scroll: false },
-      );
-    }, 300);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [
-    filters.q,
-    filters.role,
-    month.monthParam,
-    pathname,
-    queryDraft,
-    router,
-    shiftDraft,
-    sortDraft,
-  ]);
-
-  const previousMonthHref = getMonthHref({
-    filters,
-    monthParam: month.previousMonthParam,
-    pathname,
-  });
-  const nextMonthHref = getMonthHref({
-    filters,
-    monthParam: month.nextMonthParam,
-    pathname,
-  });
-  const clearFiltersHref = getMonthHref({
-    filters: { q: "", role: null, shift: null, sort: "name-asc" },
-    monthParam: month.monthParam,
-    pathname,
-  });
-
-  function handleSortChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const sort = event.currentTarget.value as RecordsSortOption;
-
-    setSortDraft(sort);
-    router.replace(
-      getMonthHref({
-        filters: { q: queryDraft, role: filters.role, shift: shiftDraft || null, sort },
-        monthParam: month.monthParam,
-        pathname,
-      }),
-      { scroll: false },
-    );
-  }
-
-  function handleShiftChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const shift = (event.currentTarget.value || null) as WorkerShift | null;
-
-    setShiftDraft(shift ?? "");
-    router.replace(
-      getMonthHref({
-        filters: { q: queryDraft, role: filters.role, shift, sort: sortDraft },
-        monthParam: month.monthParam,
-        pathname,
-      }),
-      { scroll: false },
-    );
-  }
+  const previousMonthHref = getMonthHref({ monthParam: month.previousMonthParam, pathname });
+  const nextMonthHref = getMonthHref({ monthParam: month.nextMonthParam, pathname });
 
   return (
     <Card size="sm" className="tracker-glass-panel gap-0 rounded-xl border py-0">
@@ -131,8 +74,8 @@ export function RecordsToolbar({
                 id="records-search"
                 name="q"
                 type="search"
-                value={queryDraft}
-                onChange={(event) => setQueryDraft(event.currentTarget.value)}
+                value={query}
+                onChange={(event) => onQueryChange(event.currentTarget.value)}
                 placeholder="Cari nama pekerja..."
                 autoComplete="off"
                 className="w-full min-w-0 rounded-lg border border-input px-2.5 py-1 text-base h-9 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
@@ -147,8 +90,8 @@ export function RecordsToolbar({
               <select
                 id="records-sort"
                 aria-label="Sort order"
-                value={sortDraft}
-                onChange={handleSortChange}
+                value={sort}
+                onChange={(e) => onSortChange(e.currentTarget.value as RecordsSortOption)}
                 className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="name-asc">Nama &#x2192; A-Z</option>
@@ -168,8 +111,8 @@ export function RecordsToolbar({
               <select
                 id="records-shift"
                 aria-label="Shift Filter"
-                value={shiftDraft}
-                onChange={handleShiftChange}
+                value={shift}
+                onChange={(e) => onShiftChange(e.currentTarget.value)}
                 className="w-full appearance-none rounded-lg border border-input px-2.5 py-1 pr-8 text-sm h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <option value="">Semua Shift</option>
@@ -193,14 +136,13 @@ export function RecordsToolbar({
             {/* Clear */}
             <div className="flex items-center gap-2">
               <Button
-                asChild
+                type="button"
                 variant="outline"
+                onClick={onClearFilters}
                 className="h-9 w-full sm:w-auto px-2.5 gap-1.5 border-border bg-background hover:bg-muted hover:text-foreground"
               >
-                <Link href={clearFiltersHref}>
-                  <XIcon className="size-4" aria-hidden="true" />
-                  Bersihkan Filter
-                </Link>
+                <XIcon className="size-4" aria-hidden="true" />
+                Bersihkan Filter
               </Button>
             </div>
           </div>
@@ -264,22 +206,13 @@ export function RecordsToolbar({
         <nav aria-label="Records role groups" className="records-toolbar-tabs w-full">
           <div className="grid w-full grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-8">
             {roleTabs.map((tab) => {
-              const isActive = filters.role === tab.value;
-              const href = getMonthHref({
-                filters: {
-                  q: queryDraft,
-                  role: tab.value,
-                  shift: shiftDraft || null,
-                  sort: sortDraft,
-                },
-                monthParam: month.monthParam,
-                pathname,
-              });
+              const isActive = role === tab.value;
 
               return (
-                <Link
+                <button
                   key={tab.label}
-                  href={href}
+                  type="button"
+                  onClick={() => onRoleChange(tab.value)}
                   aria-current={isActive ? "page" : undefined}
                   aria-label={`${tab.label}: ${tab.count} records`}
                   title={tab.label}
@@ -298,7 +231,7 @@ export function RecordsToolbar({
                   <span className="rounded-full border border-current/20 bg-background/45 px-1.5 py-0.5 font-mono text-[0.65rem] tabular-nums">
                     {tab.count}
                   </span>
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -309,37 +242,11 @@ export function RecordsToolbar({
 }
 
 function getMonthHref({
-  filters,
   monthParam,
   pathname,
 }: {
-  filters: RecordsFilters;
   monthParam: string;
   pathname: string;
 }) {
-  const params = new URLSearchParams();
-  params.set("month", monthParam);
-
-  const q = normalizeQuery(filters.q);
-  if (q) {
-    params.set("q", q);
-  }
-
-  if (filters.role) {
-    params.set("role", filters.role);
-  }
-
-  if (filters.shift) {
-    params.set("shift", filters.shift);
-  }
-
-  if (filters.sort !== "name-asc") {
-    params.set("sort", filters.sort);
-  }
-
-  return `${pathname}?${params.toString()}`;
-}
-
-function normalizeQuery(value: string): string {
-  return value.trim().replace(/\s+/g, " ");
+  return `${pathname}?month=${monthParam}`;
 }

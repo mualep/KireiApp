@@ -2,19 +2,12 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CircleAlertIcon } from "lucide-react";
 
-import { AbsensiMonthGrid } from "@/components/admin/absensi/absensi-month-grid";
-import { AbsensiToolbar } from "@/components/admin/absensi/absensi-toolbar";
+import { AbsensiClientShell } from "@/components/admin/absensi/absensi-client-shell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { canAccessAdminAbsensi } from "@/lib/auth/redirects";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { getAbsensiData } from "@/lib/absensi/data";
-import {
-  filterAbsensiRows,
-  getAbsensiRoleTabs,
-  hasAbsensiFilters,
-  parseAbsensiFilters,
-  type AbsensiSearchParams,
-} from "@/lib/absensi/filters";
+import { getAbsensiRoleTabs, type AbsensiSearchParams } from "@/lib/absensi/filters";
 import { getCurrentWibDateParam } from "@/lib/absensi/helpers";
 
 export const metadata: Metadata = {
@@ -25,8 +18,6 @@ export const metadata: Metadata = {
 type AdminAbsensiPageProps = {
   searchParams: Promise<AbsensiSearchParams>;
 };
-
-const numberFormatter = new Intl.NumberFormat("id-ID");
 
 export default async function AdminAbsensiPage({
   searchParams,
@@ -43,42 +34,23 @@ export default async function AdminAbsensiPage({
 
   const params = await searchParams;
   const monthParam = typeof params.month === "string" ? params.month : undefined;
-  const filters = parseAbsensiFilters(params);
-  const hasFilters = hasAbsensiFilters(filters);
   const data = await getAbsensiData({ monthParam, staff });
-  const filteredRows = filterAbsensiRows(data.rows, filters);
   const roleTabs = getAbsensiRoleTabs(data.rows);
   const canCorrectAbsensi = staff.profile.tier !== "member";
   const currentWibDate = getCurrentWibDateParam();
   const scopeLabel = staff.profile.tier === "member" ? "Self-only" : null;
-  const emptyTitle = hasFilters
-    ? "No workers match these filters."
-    : "No workers available.";
-  const emptyDescription = hasFilters
-    ? "Clear filters to return to the full readable Absensi view."
-    : "Read-only attendance appears after worker profiles and attendance rows are available.";
 
   return (
     <div className="flex flex-col gap-6">
       {data.issues.length > 0 ? <AbsensiIssuePanel issues={data.issues} /> : null}
 
-      <AbsensiToolbar
-        key={`${data.month.monthParam}:${filters.q}:${filters.role ?? ""}:${filters.shift ?? ""}:${filters.sort}`}
-        filters={filters}
-        month={data.month}
-        readableCount={numberFormatter.format(data.rows.length)}
-        roleTabs={roleTabs}
-        scopeLabel={scopeLabel}
-        visibleCount={numberFormatter.format(filteredRows.length)}
-      />
-
-      <AbsensiMonthGrid
+      <AbsensiClientShell
         canCorrect={canCorrectAbsensi}
         currentWibDate={currentWibDate}
-        emptyDescription={emptyDescription}
-        emptyTitle={emptyTitle}
+        initialRows={data.rows}
         month={data.month}
-        rows={filteredRows}
+        roleTabs={roleTabs}
+        scopeLabel={scopeLabel}
       />
     </div>
   );
