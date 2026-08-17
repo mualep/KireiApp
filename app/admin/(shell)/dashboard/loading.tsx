@@ -1,57 +1,58 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 
 export default function DashboardLoading() {
   return (
     <div
       aria-hidden="true"
-      className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8"
+      className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8"
     >
       {/* 1. Header Section */}
       <div className="flex flex-row items-center justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-9 w-72 rounded-lg bg-muted/90" />
-        </div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+          <Skeleton className="h-10 w-80 rounded-lg bg-muted/80" />
+        </h1>
         <Skeleton className="h-10 w-10 shrink-0 rounded-lg bg-muted/80" />
       </div>
 
       {/* 2. Top Status Cards */}
-      <div className="flex w-full flex-col gap-6 lg:flex-row">
-        {/* Left Side (1/4 width - Total Workers) */}
-        <Card className="flex min-h-[160px] w-full flex-col justify-between rounded-2xl border border-border/80 bg-card/60 p-6 backdrop-blur-md shadow-sm lg:w-1/4">
-          <Skeleton className="h-4 w-28 rounded bg-muted/70" />
-          <div className="flex flex-col gap-2 mt-3">
-            <Skeleton className="h-12 w-20 rounded bg-muted/90" />
+      <div className="flex flex-col lg:flex-row gap-6 w-full">
+        {/* Left Side (1/4 width) */}
+        <Card className="w-full lg:w-1/4 bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-6 flex flex-col justify-between min-h-[160px]">
+          <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">TOTAL PEKERJA</span>
+          <div className="flex flex-col gap-2 mt-2">
+            <Skeleton className="h-12 w-20 rounded-lg bg-muted/90" />
             <Skeleton className="h-3 w-36 rounded bg-muted/50" />
           </div>
         </Card>
 
-        {/* Right Side (3/4 width - 10 Status Cards 2x5 Grid) */}
-        <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-5 lg:w-3/4">
-          {Array.from({ length: 10 }).map((_, i) => (
+        {/* Right Side (3/4 width): Grid 2x5 */}
+        <div className="w-full lg:w-3/4 grid grid-cols-2 sm:grid-cols-5 gap-4">
+          {["ON", "OFF", "BREAK", "BREAK LATE", "LATE", "ALPHA", "CUTI", "SAKIT", "PENDING", "LEMBUR"].map((label) => (
             <div
-              key={i}
-              className="flex flex-col justify-between rounded-2xl border border-border/80 bg-card/60 p-4 backdrop-blur-md shadow-sm"
+              key={label}
+              className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between"
             >
-              <Skeleton className="h-3.5 w-12 rounded bg-muted/70" />
-              <Skeleton className="mt-4 h-8 w-10 rounded bg-muted/90" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
+              <Skeleton className="h-8 w-12 rounded-lg bg-muted/80 mt-3" />
             </div>
           ))}
         </div>
       </div>
 
       {/* 3. Recent Activity Section */}
-      <Card className="tracker-glass-panel flex flex-col gap-5 rounded-xl border p-6 shadow-xl">
-        <div className="border-b border-border/20 pb-4">
-          <Skeleton className="h-6 w-40 rounded bg-muted/90" />
+      <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
+        <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
+          <CardTitle className="text-lg font-bold text-foreground">Aktivitas Terbaru</CardTitle>
         </div>
-        <div className="flex flex-col divide-y divide-border/20">
+
+        <div className="flex flex-col gap-4 max-h-[350px] overflow-y-auto pr-1">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between gap-3 py-3">
+            <div key={i} className="flex justify-between items-center gap-3 border-b border-border/10 pb-3 last:border-b-0 last:pb-0">
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <Skeleton className="size-8 shrink-0 rounded-full bg-muted/80" />
-                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                  <Skeleton className="h-4 w-3/4 max-w-md rounded bg-muted/90" />
+                <Skeleton className="size-8 rounded-full shrink-0 bg-muted/80" />
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <Skeleton className="h-4 w-3/4 max-w-sm rounded bg-muted/80" />
                 </div>
               </div>
               <Skeleton className="h-3 w-16 shrink-0 rounded bg-muted/50" />
@@ -61,56 +62,61 @@ export default function DashboardLoading() {
       </Card>
 
       {/* 4. Urgent Alerts Section */}
-      <Card className="flex flex-col gap-3 rounded-xl border border-border/50 bg-card/40 p-5 shadow-md">
-        <div className="flex items-center gap-2">
+      <Card className="border border-border/40 bg-card/40 p-5 rounded-xl flex flex-col gap-3 shadow-md">
+        <div className="flex items-center gap-2 font-bold text-sm text-muted-foreground">
           <Skeleton className="size-4 shrink-0 rounded bg-muted/80" />
-          <Skeleton className="h-4 w-80 rounded bg-muted/90" />
+          <Skeleton className="h-4 w-72 rounded bg-muted/80" />
         </div>
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap gap-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-6 w-32 rounded-full bg-muted/70" />
+            <Skeleton key={i} className="h-6 w-28 rounded-full bg-muted/70" />
           ))}
         </div>
       </Card>
 
       {/* 5. Live Shift Progress Bars Section */}
-      <Card className="tracker-glass-panel flex flex-col gap-6 rounded-xl border p-6 shadow-xl">
-        <div className="border-b border-border/20 pb-4">
-          <Skeleton className="h-6 w-44 rounded bg-muted/90" />
+      <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
+        <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
+          <CardTitle className="text-lg font-bold text-foreground">Ringkasan Shift Aktif</CardTitle>
         </div>
+
         <div className="flex flex-col gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between items-center text-sm font-semibold">
                 <div className="flex items-center gap-2">
-                  <Skeleton className="h-6 w-20 rounded bg-muted/80" />
+                  <Skeleton className="h-6 w-16 rounded bg-muted/70" />
                   <Skeleton className="h-4 w-28 rounded bg-muted/50" />
                 </div>
-                <Skeleton className="h-4 w-10 rounded bg-muted/80" />
+                <Skeleton className="h-4 w-8 rounded bg-muted/80" />
               </div>
-              <Skeleton className="h-3 w-full rounded-full bg-muted/40" />
+              <div className="w-full bg-muted/40 h-3 rounded-full overflow-hidden border border-border/40">
+                <Skeleton className="h-full w-1/2 rounded-full bg-muted/80" />
+              </div>
             </div>
           ))}
         </div>
       </Card>
 
       {/* 6. Monthly Summary Bento-Grid */}
-      <Card className="tracker-glass-panel flex flex-col gap-6 rounded-xl border p-6 shadow-xl">
-        <div className="border-b border-border/20 pb-4">
-          <Skeleton className="h-6 w-44 rounded bg-muted/90" />
+      <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
+        <div className="flex flex-col gap-1.5 border-b border-border/10 pb-4">
+          <CardTitle className="text-lg font-bold text-foreground">Ringkasan Bulanan</CardTitle>
         </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex flex-col gap-2 rounded-xl border border-border/40 bg-card/30 p-4"
-            >
-              <Skeleton className="h-3.5 w-24 rounded bg-muted/70" />
-              <div className="mt-1 grid grid-cols-2 gap-2">
-                <Skeleton className="h-12 rounded-lg bg-background/50 border border-border/30" />
-                <Skeleton className="h-12 rounded-lg bg-background/50 border border-border/30" />
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {["Work Late", "Break Late", "Alpha", "Sakit", "Pending", "Lembur"].map((label) => (
+            <div key={label} className="p-4 rounded-xl border border-border/40 bg-card/30 flex flex-col gap-1.5">
+              <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">{label}</span>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center">
+                  <Skeleton className="h-6 w-12 rounded bg-muted/80" />
+                </div>
+                <div className="bg-background/50 border border-border/40 rounded-lg p-2 flex flex-col items-center justify-center">
+                  <Skeleton className="h-6 w-12 rounded bg-muted/80" />
+                </div>
               </div>
-              <Skeleton className="h-3 w-32 rounded bg-muted/40 mt-1" />
+              <Skeleton className="h-3 w-28 rounded bg-muted/40 mt-1" />
             </div>
           ))}
         </div>
