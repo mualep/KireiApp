@@ -62,6 +62,8 @@ function getBreakTimerColorClass(remainingSeconds: number): string {
   return "text-foreground";
 }
 
+import { useNow } from "@/hooks/use-now";
+
 type TrackerActionControlsProps = {
   card: TrackerCardDTO;
 };
@@ -143,7 +145,14 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
   );
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showAlphaDialog, setShowAlphaDialog] = useState(false);
-  const [nowMs, setNowMs] = useState<number | null>(null);
+  const isBreakCard =
+    card.storedStatus === "break" && card.displayStatus === "BREAK";
+  const isOnCard = card.storedStatus === "on" && card.displayStatus === "ON";
+  const shouldRunTimer =
+    Boolean((isBreakCard && card.breakTimerRunning && card.breakStartedAt) ||
+    (isOnCard && card.shiftStartedAt));
+
+  const nowMs = useNow(shouldRunTimer);
   const controlGroups = getActiveControlGroups(card, nowMs);
   const isPending =
     isTransitionPending ||
@@ -151,32 +160,6 @@ export function TrackerActionControls({ card }: TrackerActionControlsProps) {
     pendingCorrectionAction !== null ||
     pendingExpiredAbsenceCloseAction !== null ||
     pendingAbsenceMaterializationAction !== null;
-  const isBreakCard =
-    card.storedStatus === "break" && card.displayStatus === "BREAK";
-
-  const isOnCard = card.storedStatus === "on" && card.displayStatus === "ON";
-  const shouldRunTimer =
-    (isBreakCard && card.breakTimerRunning && card.breakStartedAt) ||
-    (isOnCard && card.shiftStartedAt);
-
-  useEffect(() => {
-    if (!shouldRunTimer) {
-      return;
-    }
-
-    const initialTimer = window.setTimeout(() => {
-      setNowMs(Date.now());
-    }, 0);
-
-    const timer = window.setInterval(() => {
-      setNowMs(Date.now());
-    }, 1000);
-
-    return () => {
-      window.clearTimeout(initialTimer);
-      window.clearInterval(timer);
-    };
-  }, [shouldRunTimer]);
 
   function runTrackerAction(action: TrackerAction) {
     if (isPending) {
