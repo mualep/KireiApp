@@ -37,12 +37,24 @@ export default function DailyTaskReviewLoading() {
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="border-b border-border/30 bg-muted/20 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                <th className="px-5 py-4">Nama Pekerja</th>
-                <th className="px-5 py-4">Shift</th>
-                <th className="px-5 py-4">Game</th>
-                <th className="px-5 py-4">Submitted At</th>
-                <th className="px-5 py-4 text-center">Status</th>
-                <th className="px-5 py-4 text-right">Actions</th>
+                <th className="px-5 py-4">
+                  <Skeleton className="h-4 w-24 rounded bg-muted/70" />
+                </th>
+                <th className="px-5 py-4">
+                  <Skeleton className="h-4 w-12 rounded bg-muted/70" />
+                </th>
+                <th className="px-5 py-4">
+                  <Skeleton className="h-4 w-16 rounded bg-muted/70" />
+                </th>
+                <th className="px-5 py-4">
+                  <Skeleton className="h-4 w-24 rounded bg-muted/70" />
+                </th>
+                <th className="px-5 py-4 text-center">
+                  <Skeleton className="h-4 w-16 mx-auto rounded bg-muted/70" />
+                </th>
+                <th className="px-5 py-4 text-right">
+                  <Skeleton className="h-4 w-16 ml-auto rounded bg-muted/70" />
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/20 text-sm">

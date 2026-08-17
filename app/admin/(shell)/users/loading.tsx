@@ -55,14 +55,30 @@ export default function UsersLoading() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50 text-muted-foreground">
-                <th className="px-4 py-3 text-left font-medium">Worker</th>
-                <th className="px-4 py-3 text-center font-medium">Tier</th>
-                <th className="px-4 py-3 text-center font-medium">Role</th>
-                <th className="px-4 py-3 text-center font-medium">Shift</th>
-                <th className="px-4 py-3 text-center font-medium">Status SP</th>
-                <th className="px-4 py-3 text-center font-medium">Edit</th>
-                <th className="px-4 py-3 text-center font-medium">Manage SP</th>
-                <th className="px-4 py-3 text-center font-medium">Pecat</th>
+                <th className="px-4 py-3 text-left font-medium">
+                  <Skeleton className="h-4 w-20 rounded bg-muted/70" />
+                </th>
+                <th className="px-4 py-3 text-center font-medium">
+                  <Skeleton className="h-4 w-12 mx-auto rounded bg-muted/70" />
+                </th>
+                <th className="px-4 py-3 text-center font-medium">
+                  <Skeleton className="h-4 w-12 mx-auto rounded bg-muted/70" />
+                </th>
+                <th className="px-4 py-3 text-center font-medium">
+                  <Skeleton className="h-4 w-12 mx-auto rounded bg-muted/70" />
+                </th>
+                <th className="px-4 py-3 text-center font-medium">
+                  <Skeleton className="h-4 w-16 mx-auto rounded bg-muted/70" />
+                </th>
+                <th className="px-4 py-3 text-center font-medium">
+                  <Skeleton className="h-4 w-10 mx-auto rounded bg-muted/70" />
+                </th>
+                <th className="px-4 py-3 text-center font-medium">
+                  <Skeleton className="h-4 w-20 mx-auto rounded bg-muted/70" />
+                </th>
+                <th className="px-4 py-3 text-center font-medium">
+                  <Skeleton className="h-4 w-12 mx-auto rounded bg-muted/70" />
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
