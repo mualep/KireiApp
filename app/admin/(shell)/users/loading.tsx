@@ -28,7 +28,7 @@ export default function UsersLoading() {
               {/* Clear */}
               <Skeleton className="h-9 w-full sm:w-28 rounded-lg bg-background/55" />
               {/* Add Worker Button */}
-              <Skeleton className="h-9 w-32 rounded-lg bg-primary/20" />
+              <Skeleton className="h-9 w-32 rounded-lg bg-muted/80" />
             </div>
 
             {/* Role Tabs Nav */}

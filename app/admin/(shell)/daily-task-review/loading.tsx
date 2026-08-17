@@ -10,7 +10,7 @@ export default function DailyTaskReviewLoading() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Skeleton className="h-9 w-40 rounded-lg bg-background/55" />
-              <Skeleton className="h-9 w-28 rounded-lg bg-primary/20" />
+              <Skeleton className="h-9 w-28 rounded-lg bg-muted/80" />
             </div>
             <Skeleton className="h-9 w-36 rounded-lg bg-background/35" />
           </div>
@@ -55,7 +55,7 @@ export default function DailyTaskReviewLoading() {
                   <td className="p-3"><Skeleton className="h-6 w-24 rounded-full bg-muted/80" /></td>
                   <td className="p-3">
                     <div className="flex items-center gap-1.5">
-                      <Skeleton className="h-8 w-20 rounded-md bg-primary/20" />
+                      <Skeleton className="h-8 w-20 rounded-md bg-muted/80" />
                     </div>
                   </td>
                 </tr>

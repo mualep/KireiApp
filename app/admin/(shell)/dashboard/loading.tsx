@@ -1,82 +1,120 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 
 export default function DashboardLoading() {
   return (
-    <div className="flex flex-col gap-6" aria-hidden="true">
-      {/* Header Banner Skeleton */}
-      <div className="tracker-glass-panel flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-5">
+    <div
+      aria-hidden="true"
+      className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8"
+    >
+      {/* 1. Header Section */}
+      <div className="flex flex-row items-center justify-between gap-4">
         <div className="flex flex-col gap-2">
-          <Skeleton className="h-7 w-56 rounded-lg" />
-          <Skeleton className="h-4 w-72 rounded-md" />
+          <Skeleton className="h-9 w-72 rounded-lg bg-muted/90" />
         </div>
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-9 w-28 rounded-lg" />
-          <Skeleton className="h-9 w-9 rounded-lg" />
-        </div>
+        <Skeleton className="h-10 w-10 shrink-0 rounded-lg bg-muted/80" />
       </div>
 
-      {/* Metric Cards Skeleton (10 Status Badges) */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <div
-            key={i}
-            className="tracker-glass-panel flex flex-col justify-between rounded-xl border p-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-4 w-20 rounded" />
-              <Skeleton className="h-5 w-5 rounded-full" />
+      {/* 2. Top Status Cards */}
+      <div className="flex w-full flex-col gap-6 lg:flex-row">
+        {/* Left Side (1/4 width - Total Workers) */}
+        <Card className="flex min-h-[160px] w-full flex-col justify-between rounded-2xl border border-border/80 bg-card/60 p-6 backdrop-blur-md shadow-sm lg:w-1/4">
+          <Skeleton className="h-4 w-28 rounded bg-muted/70" />
+          <div className="flex flex-col gap-2 mt-3">
+            <Skeleton className="h-12 w-20 rounded bg-muted/90" />
+            <Skeleton className="h-3 w-36 rounded bg-muted/50" />
+          </div>
+        </Card>
+
+        {/* Right Side (3/4 width - 10 Status Cards 2x5 Grid) */}
+        <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-5 lg:w-3/4">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex flex-col justify-between rounded-2xl border border-border/80 bg-card/60 p-4 backdrop-blur-md shadow-sm"
+            >
+              <Skeleton className="h-3.5 w-12 rounded bg-muted/70" />
+              <Skeleton className="mt-4 h-8 w-10 rounded bg-muted/90" />
             </div>
-            <div className="mt-3 flex items-baseline justify-between">
-              <Skeleton className="h-8 w-12 rounded" />
-              <Skeleton className="h-3 w-14 rounded" />
+          ))}
+        </div>
+      </div>
+
+      {/* 3. Recent Activity Section */}
+      <Card className="tracker-glass-panel flex flex-col gap-5 rounded-xl border p-6 shadow-xl">
+        <div className="border-b border-border/20 pb-4">
+          <Skeleton className="h-6 w-40 rounded bg-muted/90" />
+        </div>
+        <div className="flex flex-col divide-y divide-border/20">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between gap-3 py-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <Skeleton className="size-8 shrink-0 rounded-full bg-muted/80" />
+                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                  <Skeleton className="h-4 w-3/4 max-w-md rounded bg-muted/90" />
+                </div>
+              </div>
+              <Skeleton className="h-3 w-16 shrink-0 rounded bg-muted/50" />
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Main Grid: Urgent Alerts & Recent Activity */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Urgent Alerts Skeleton (1 col) */}
-        <div className="tracker-glass-panel flex flex-col gap-4 rounded-2xl border p-5">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-5 w-36 rounded" />
-            <Skeleton className="h-5 w-8 rounded-full" />
-          </div>
-          <div className="flex flex-col gap-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg border border-border/40 p-3">
-                <div className="flex flex-col gap-1">
-                  <Skeleton className="h-4 w-28 rounded" />
-                  <Skeleton className="h-3 w-20 rounded" />
-                </div>
-                <Skeleton className="h-6 w-16 rounded-full" />
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
+      </Card>
 
-        {/* Recent Activity Skeleton (2 cols) */}
-        <div className="tracker-glass-panel flex flex-col gap-4 rounded-2xl border p-5 lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-5 w-44 rounded" />
-            <Skeleton className="h-4 w-24 rounded" />
-          </div>
-          <div className="flex flex-col divide-y divide-border/30">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div className="flex flex-col gap-1">
-                    <Skeleton className="h-4 w-48 rounded" />
-                    <Skeleton className="h-3 w-32 rounded" />
-                  </div>
-                </div>
-                <Skeleton className="h-3 w-16 rounded" />
-              </div>
-            ))}
-          </div>
+      {/* 4. Urgent Alerts Section */}
+      <Card className="flex flex-col gap-3 rounded-xl border border-border/50 bg-card/40 p-5 shadow-md">
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-4 shrink-0 rounded bg-muted/80" />
+          <Skeleton className="h-4 w-80 rounded bg-muted/90" />
         </div>
-      </div>
+        <div className="flex flex-wrap gap-2 pt-1">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-6 w-32 rounded-full bg-muted/70" />
+          ))}
+        </div>
+      </Card>
+
+      {/* 5. Live Shift Progress Bars Section */}
+      <Card className="tracker-glass-panel flex flex-col gap-6 rounded-xl border p-6 shadow-xl">
+        <div className="border-b border-border/20 pb-4">
+          <Skeleton className="h-6 w-44 rounded bg-muted/90" />
+        </div>
+        <div className="flex flex-col gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-6 w-20 rounded bg-muted/80" />
+                  <Skeleton className="h-4 w-28 rounded bg-muted/50" />
+                </div>
+                <Skeleton className="h-4 w-10 rounded bg-muted/80" />
+              </div>
+              <Skeleton className="h-3 w-full rounded-full bg-muted/40" />
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* 6. Monthly Summary Bento-Grid */}
+      <Card className="tracker-glass-panel flex flex-col gap-6 rounded-xl border p-6 shadow-xl">
+        <div className="border-b border-border/20 pb-4">
+          <Skeleton className="h-6 w-44 rounded bg-muted/90" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex flex-col gap-2 rounded-xl border border-border/40 bg-card/30 p-4"
+            >
+              <Skeleton className="h-3.5 w-24 rounded bg-muted/70" />
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                <Skeleton className="h-12 rounded-lg bg-background/50 border border-border/30" />
+                <Skeleton className="h-12 rounded-lg bg-background/50 border border-border/30" />
+              </div>
+              <Skeleton className="h-3 w-32 rounded bg-muted/40 mt-1" />
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
