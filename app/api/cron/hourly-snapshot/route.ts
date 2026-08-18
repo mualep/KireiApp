@@ -5,17 +5,22 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Validate Cron Secret if set in environment
     const authHeader = request.headers.get("authorization");
+    const urlSecret = request.nextUrl.searchParams.get("secret");
     const cronSecret = process.env.CRON_SECRET;
 
     if (cronSecret) {
-      if (authHeader !== `Bearer ${cronSecret}`) {
-        const urlSecret = request.nextUrl.searchParams.get("secret");
-        if (urlSecret !== cronSecret) {
-          return NextResponse.json(
-            { success: false, error: "Unauthorized" },
-            { status: 401 }
-          );
-        }
+      const isHeaderValid = authHeader === `Bearer ${cronSecret}`;
+      const isUrlValid = urlSecret === cronSecret;
+
+      if (!isHeaderValid && !isUrlValid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Unauthorized",
+            message: "Invalid or missing CRON_SECRET in authorization header or url query parameter.",
+          },
+          { status: 401 }
+        );
       }
     }
 
@@ -35,20 +40,43 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
 
     // 3. Fetch active member worker statuses
-    const { data: memberUsers } = await supabase
+    const { data: memberUsers, error: userError } = await supabase
       .from("users")
       .select("id")
       .eq("tier", "member")
       .eq("is_deleted", false);
 
+    if (userError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Failed to query users table: ${userError.message}`,
+          details: userError,
+        },
+        { status: 400 }
+      );
+    }
+
     const memberUserIds = (memberUsers || []).map((u) => u.id);
 
-    const { data: statusRows } = memberUserIds.length > 0
-      ? await supabase
-          .from("worker_status")
-          .select("current_status")
-          .in("user_id", memberUserIds)
-      : { data: [] };
+    const { data: statusRows, error: statusError } =
+      memberUserIds.length > 0
+        ? await supabase
+            .from("worker_status")
+            .select("current_status")
+            .in("user_id", memberUserIds)
+        : { data: [], error: null };
+
+    if (statusError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Failed to query worker_status table: ${statusError.message}`,
+          details: statusError,
+        },
+        { status: 400 }
+      );
+    }
 
     // 4. Group worker counts by current_status
     const statusCounts: Record<string, number> = {
@@ -68,7 +96,7 @@ export async function GET(request: NextRequest) {
     });
 
     // 5. Upsert snapshot into activity_snapshots table
-    const { data, error } = await supabase
+    const { data, error: upsertError } = await supabase
       .from("activity_snapshots")
       .upsert(
         {
@@ -79,12 +107,17 @@ export async function GET(request: NextRequest) {
         { onConflict: "snapshot_date,snapshot_hour" }
       )
       .select("*")
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (upsertError) {
       return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
+        {
+          success: false,
+          error: `Failed to upsert activity_snapshots: ${upsertError.message}`,
+          details: upsertError,
+          hint: "Ensure 20260818020000_activity_snapshots.sql migration is applied to production database.",
+        },
+        { status: 400 }
       );
     }
 
@@ -97,8 +130,13 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal Server Error";
+    const stack = err instanceof Error ? err.stack : undefined;
     return NextResponse.json(
-      { success: false, error: message },
+      {
+        success: false,
+        error: message,
+        stack,
+      },
       { status: 500 }
     );
   }
