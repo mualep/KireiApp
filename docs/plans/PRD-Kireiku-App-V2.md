@@ -1430,6 +1430,8 @@ CI/CD:              GitHub Actions + Vercel Preview Deployments
 | Mobile Native App | Web-first strategy sufficient for current operational needs. | V3+ |
 | Direct G2G API Integration | G2G does not offer public API for order management. | V3+ |
 | Worker Performance Score Card Ranking | Requires defined scoring formula and ranking algorithm. | V2.x |
+| Customizable Dashboard Layout (Drag-and-drop widgets, personalized layout state) | Requires complex persistent state management and deviates from V2 static analytical hierarchy. | V3 |
+
 
 ---
 
