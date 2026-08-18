@@ -250,7 +250,7 @@ AGAR saya merasa yakin dengan kualitas layanan Kireiku.
   - Ketika event sistem selanjutnya terjadi (misal worker Alpha lagi), auto-aggregate menjadi 3, ditambah delta +1 = efektif 4.
   - Ketika Admin mengubah Alpha dari 2 ke 1, delta = -1. Jika worker Alpha lagi, auto-aggregate 2, ditambah delta -1 = efektif 1.
   - Nilai efektif minimum di-hardlock pada `0`. Tidak pernah ada nilai negatif yang ditampilkan atau disimpan.
-  - UI Records menampilkan: `nilai efektif` secara prominent, dengan indikator kecil `(delta: ±N)` jika ada delta aktif.
+  - UI Records menampilkan: `nilai efektif` secara prominent, dengan indikator kecil `(delta: ±N)` jika ada delta aktif. *(CANCELLED BY PO: UI will only show effective value for cleanliness)*
 
 ---
 

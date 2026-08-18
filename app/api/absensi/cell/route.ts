@@ -59,6 +59,7 @@ export async function PATCH(request: NextRequest) {
 
     revalidatePath("/admin/absensi");
     revalidatePath("/admin/tracker");
+    revalidatePath("/admin/records");
 
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {

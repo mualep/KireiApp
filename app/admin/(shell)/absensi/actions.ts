@@ -34,6 +34,8 @@ export async function applyAbsensiCorrection(
   }
 
   revalidatePath("/admin/absensi");
+  revalidatePath("/admin/tracker");
+  revalidatePath("/admin/records");
 
   return result;
 }
