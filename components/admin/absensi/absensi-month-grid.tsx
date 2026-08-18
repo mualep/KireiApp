@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { AbsensiCellDTO, AbsensiWorkerRowDTO } from "@/lib/absensi/data";
+import type { AbsensiCellDTO, AbsensiWorkerRowDTO, ScheduledCellDTO } from "@/lib/absensi/data";
 import {
   absensiAttendanceInitials,
   getAbsensiDayNumber,
@@ -24,6 +24,8 @@ type AbsensiMonthGridProps = {
   emptyTitle?: string;
   month: AbsensiMonthRange;
   rows: AbsensiWorkerRowDTO[];
+  onOpenScheduleModal?: (userId: string, workerName: string, targetDate: string) => void;
+  onOpenScheduledDetail?: (scheduled: ScheduledCellDTO & { workerName: string }) => void;
 };
 
 const statusCellClasses: Record<AbsensiCellDTO["status"], string> = {
@@ -44,6 +46,8 @@ export function AbsensiMonthGrid({
   emptyTitle = "No workers available.",
   month,
   rows,
+  onOpenScheduleModal,
+  onOpenScheduledDetail,
 }: AbsensiMonthGridProps) {
   const [selectedCorrection, setSelectedCorrection] =
     useState<AbsensiCorrectionDraft | null>(null);
@@ -176,6 +180,8 @@ export function AbsensiMonthGrid({
                           dateState={dateState}
                           day={day}
                           onSelectCorrection={setSelectedCorrection}
+                          onOpenScheduleModal={onOpenScheduleModal}
+                          onOpenScheduledDetail={onOpenScheduledDetail}
                           row={row}
                         />
                       </td>
@@ -206,6 +212,8 @@ function AbsensiCell({
   dateState,
   day,
   onSelectCorrection,
+  onOpenScheduleModal,
+  onOpenScheduledDetail,
   row,
 }: {
   canCorrect: boolean;
@@ -214,10 +222,81 @@ function AbsensiCell({
   dateState: AbsensiDateState;
   day: string;
   onSelectCorrection: (correction: AbsensiCorrectionDraft) => void;
+  onOpenScheduleModal?: (userId: string, workerName: string, targetDate: string) => void;
+  onOpenScheduledDetail?: (scheduled: ScheduledCellDTO & { workerName: string }) => void;
   row: AbsensiWorkerRowDTO;
 }) {
   const beforeStatus = cell?.status ?? "none";
   const isHistorical = day <= currentWibDate;
+  const isFuture = dateState === "future";
+
+  // 1. FUTURE DATE CELL HANDLING
+  if (isFuture) {
+    const scheduled = cell?.scheduledCell;
+
+    if (!canCorrect) {
+      // Member read-only view for future cells
+      if (scheduled) {
+        return (
+          <span
+            className={cn(
+              "flex h-8 w-full items-center justify-center rounded-md border border-dashed border-primary/40 bg-primary/10 text-primary font-bold text-[0.75rem] tabular-nums opacity-85",
+            )}
+            title={`Jadwal Mendatang: ${scheduled.status.toUpperCase()} (${scheduled.targetDate})`}
+            translate="no"
+          >
+            {absensiAttendanceInitials[scheduled.status]}
+          </span>
+        );
+      }
+      return (
+        <span
+          className="flex h-8 w-full items-center justify-center rounded-md border border-border/60 bg-background/30 text-muted-foreground/40 text-sm font-mono font-black"
+          title="Belum ada absensi"
+          translate="no"
+        >
+          -
+        </span>
+      );
+    }
+
+    // Admin/Owner interactive view for future cells
+    if (scheduled) {
+      return (
+        <button
+          type="button"
+          aria-label={`Detail Jadwal ${row.name} tanggal ${day}`}
+          className={cn(
+            "flex h-8 w-full items-center justify-center rounded-md border border-dashed border-primary/60 bg-primary/15 text-primary font-extrabold text-[0.75rem] tabular-nums transition-colors cursor-pointer hover:bg-primary/25 hover:border-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+          )}
+          title={`Klik untuk lihat/batalkan jadwal ${scheduled.status.toUpperCase()} (${day})`}
+          onClick={() => {
+            onOpenScheduledDetail?.({ ...scheduled, workerName: row.name });
+          }}
+          translate="no"
+        >
+          {absensiAttendanceInitials[scheduled.status]}
+        </button>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        aria-label={`Jadwalkan ${row.name} tanggal ${day}`}
+        className="flex h-8 w-full items-center justify-center rounded-md border border-dashed border-transparent bg-background/20 text-muted-foreground/50 text-sm font-mono font-black transition-all cursor-pointer hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:opacity-100 opacity-40 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        title={`Klik untuk jadwalkan absensi masa depan (${day})`}
+        onClick={() => {
+          onOpenScheduleModal?.(row.userId, row.name, day);
+        }}
+        translate="no"
+      >
+        -
+      </button>
+    );
+  }
+
+  // 2. HISTORICAL / TODAY CELL HANDLING
   const canOpenCorrection = canCorrect && isHistorical;
   const label = cell?.label ?? "No recorded attendance";
   const title = getCellTitle({
@@ -225,12 +304,12 @@ function AbsensiCell({
     cell,
     isHistorical,
   });
+
   const cellClassName = cn(
     "flex h-8 w-full items-center justify-center rounded-md border px-1 font-mono font-black tabular-nums transition-colors",
     cell ? "text-[0.75rem]" : "text-sm",
     cell ? statusCellClasses[cell.status] : emptyCellClasses,
     dateState === "past" && "opacity-80",
-    dateState === "future" && "opacity-55 grayscale",
   );
 
   if (!canOpenCorrection) {

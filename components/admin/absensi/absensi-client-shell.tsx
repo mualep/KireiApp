@@ -5,8 +5,8 @@ import { useMemo, useState } from "react";
 import { AbsensiMonthGrid } from "@/components/admin/absensi/absensi-month-grid";
 import { AbsensiToolbar } from "@/components/admin/absensi/absensi-toolbar";
 import { ScheduleAttendanceModal } from "@/components/admin/absensi/schedule-attendance-modal";
-import { ScheduledAttendanceList } from "@/components/admin/absensi/scheduled-attendance-list";
-import type { AbsensiWorkerRowDTO } from "@/lib/absensi/data";
+import { ScheduledCellDetailDialog } from "@/components/admin/absensi/scheduled-cell-detail-dialog";
+import type { AbsensiWorkerRowDTO, ScheduledCellDTO } from "@/lib/absensi/data";
 import type {
   AbsensiFilters,
   AbsensiRoleTab,
@@ -39,9 +39,16 @@ export function AbsensiClientShell({
   const [shift, setShift] = useState<string>("");
   const [sort, setSort] = useState<AbsensiSortOption>("name-asc");
 
-  // Future scheduling modal & list states
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [scheduleListOpen, setScheduleListOpen] = useState(false);
+  // Grid scheduling states
+  const [scheduleFormTarget, setScheduleFormTarget] = useState<{
+    userId: string;
+    workerName: string;
+    targetDate: string;
+  } | null>(null);
+
+  const [scheduledDetail, setScheduledDetail] = useState<
+    (ScheduledCellDTO & { workerName: string }) | null
+  >(null);
 
   const workers = useMemo(
     () => initialRows.map((r) => ({ id: r.userId, name: r.name })),
@@ -99,9 +106,6 @@ export function AbsensiClientShell({
         roleTabs={roleTabs}
         scopeLabel={scopeLabel}
         visibleCount={numberFormatter.format(filteredRows.length)}
-        canManageScheduling={canCorrect}
-        onOpenScheduleModal={() => setScheduleModalOpen(true)}
-        onOpenScheduleList={() => setScheduleListOpen(true)}
       />
 
       <AbsensiMonthGrid
@@ -111,19 +115,32 @@ export function AbsensiClientShell({
         emptyTitle={emptyTitle}
         month={month}
         rows={filteredRows}
+        onOpenScheduleModal={(userId, workerName, targetDate) => {
+          setScheduleFormTarget({ userId, workerName, targetDate });
+        }}
+        onOpenScheduledDetail={(scheduled) => {
+          setScheduledDetail(scheduled);
+        }}
       />
 
-      {/* Modal Penjadwalan Absensi Masa Depan */}
+      {/* Modal Penjadwalan Absensi Masa Depan (Pre-filled dari klik sel matriks) */}
       <ScheduleAttendanceModal
-        open={scheduleModalOpen}
-        onOpenChange={setScheduleModalOpen}
+        open={Boolean(scheduleFormTarget)}
+        onOpenChange={(open) => {
+          if (!open) setScheduleFormTarget(null);
+        }}
         workers={workers}
+        initialUserId={scheduleFormTarget?.userId}
+        initialWorkerName={scheduleFormTarget?.workerName}
+        initialTargetDate={scheduleFormTarget?.targetDate}
       />
 
-      {/* Dialog Daftar Penjadwalan Mendatang */}
-      <ScheduledAttendanceList
-        open={scheduleListOpen}
-        onOpenChange={setScheduleListOpen}
+      {/* Dialog Detail / Pembatalan Penjadwalan (Klik sel yang sudah terjadwal) */}
+      <ScheduledCellDetailDialog
+        scheduled={scheduledDetail}
+        onOpenChange={(open) => {
+          if (!open) setScheduledDetail(null);
+        }}
         canManage={canCorrect}
       />
     </div>

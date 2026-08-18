@@ -17,10 +17,20 @@ export type AbsensiDataIssue = {
   message: string;
 };
 
+export type ScheduledCellDTO = {
+  id: string;
+  notes: string | null;
+  scheduledBy: string;
+  schedulerName?: string;
+  status: AbsensiAttendanceStatus;
+  targetDate: string;
+};
+
 export type AbsensiCellDTO = {
   attendanceId: string;
   attendanceUpdatedAt: string;
   label: (typeof absensiAttendanceLabels)[AbsensiAttendanceStatus];
+  scheduledCell?: ScheduledCellDTO;
   source: WorkerAttendanceSource;
   sourceAction: string;
   status: AbsensiAttendanceStatus;
@@ -126,6 +136,7 @@ export async function getAbsensiData({
     { data: users, error: usersError },
     { data: attendanceRows, error: attendanceError },
     { data: sps, error: spsError },
+    { data: scheduledRows, error: scheduledError },
   ] = await Promise.all([
     supabase
       .from("users")
@@ -146,6 +157,14 @@ export async function getAbsensiData({
       .select("user_id,sp_level")
       .gt("expires_at", new Date().toISOString())
       .is("revoked_at", null),
+    supabase
+      .from("scheduled_attendance")
+      .select("id, user_id, target_date, status, scheduled_by, notes, scheduler:users!scheduled_attendance_scheduled_by_fkey(name)")
+      .in("user_id", userIds)
+      .gte("target_date", month.monthStart)
+      .lt("target_date", month.nextMonthStart)
+      .is("applied_at", null)
+      .is("cancelled_at", null),
   ]);
 
   if (usersError) {
@@ -158,6 +177,11 @@ export async function getAbsensiData({
 
   if (spsError) {
     throw new Error("Absensi SP logs could not load.");
+  }
+
+  if (scheduledError) {
+    // Non-blocking if scheduled table query fails
+    console.warn("Absensi scheduled attendance query error:", scheduledError);
   }
 
   const usersById = new Map((users ?? []).map((user) => [user.id, user]));
@@ -196,6 +220,40 @@ export async function getAbsensiData({
       status: attendance.status,
     };
     cellsByUserId.set(attendance.user_id, cells);
+  }
+
+  // Process future scheduled_attendance rows
+  for (const scheduled of scheduledRows ?? []) {
+    if (!isAbsensiAttendanceStatus(scheduled.status)) {
+      continue;
+    }
+
+    const cells = cellsByUserId.get(scheduled.user_id) ?? {};
+    const existingCell = cells[scheduled.target_date];
+    const schedulerName = (scheduled.scheduler as any)?.name || "System";
+    const scheduledDto: ScheduledCellDTO = {
+      id: scheduled.id,
+      notes: scheduled.notes,
+      scheduledBy: scheduled.scheduled_by,
+      schedulerName,
+      status: scheduled.status,
+      targetDate: scheduled.target_date,
+    };
+
+    if (existingCell) {
+      existingCell.scheduledCell = scheduledDto;
+    } else {
+      cells[scheduled.target_date] = {
+        attendanceId: "",
+        attendanceUpdatedAt: "",
+        label: absensiAttendanceLabels[scheduled.status],
+        scheduledCell: scheduledDto,
+        source: "absensi",
+        sourceAction: "scheduled",
+        status: scheduled.status,
+      };
+    }
+    cellsByUserId.set(scheduled.user_id, cells);
   }
 
   const rows = profileRows.flatMap((profile) => {
@@ -258,63 +316,46 @@ export async function getAbsensiData({
   };
 }
 
-function getAbsensiRoleShiftLabel(role: WorkerRole, shift: WorkerShift): string {
-  if (shift === "flexible") {
-    return `${role} • Flexible`;
-  }
+function parseAttendanceSource(source: string): WorkerAttendanceSource | null {
+  if (source === "manual" || source === "absensi") return "absensi";
+  if (source === "auto_tracker" || source === "tracker") return "tracker";
+  if (source === "auto_cron" || source === "cron") return "cron";
+  if (source === "system") return "system";
+  return null;
+}
 
-  return `${role}-${shift}`;
+function getAbsensiRoleShiftLabel(role: WorkerRole, shift: WorkerShift): string {
+  const shiftDef = getShiftDefinition(shift);
+  return `${role} - ${shiftDef.label}`;
 }
 
 function getCompactAbsensiRoleShiftLabel(
   role: WorkerRole,
   shift: WorkerShift,
 ): string {
-  const compactRole = compactRoleLabels[role];
-
-  if (shift === "flexible") {
-    return `${compactRole} • Flexible`;
-  }
-
-  return `${compactRole}-${shift}`;
+  const compactRole = compactRoleLabels[role] ?? role;
+  const shiftDef = getShiftDefinition(shift);
+  return `${compactRole}/${shiftDef.label}`;
 }
 
 function getAbsensiShiftTimeLabel(shift: WorkerShift): string | null {
-  const definition = getShiftDefinition(shift);
+  const shiftDef = getShiftDefinition(shift);
+
+  if (shiftDef.isFlexible) {
+    return "Flexible";
+  }
 
   if (
-    definition.isFlexible ||
-    definition.startHour === null ||
-    definition.endHour === null
+    shiftDef.startHour === null ||
+    shiftDef.startMinute === null ||
+    shiftDef.endHour === null ||
+    shiftDef.endMinute === null
   ) {
     return null;
   }
 
-  const start = formatShiftTime(
-    definition.startHour,
-    definition.startMinute ?? 0,
-  );
-  const end = formatShiftTime(
-    definition.endHour,
-    definition.endMinute ?? 0,
-  );
+  const startStr = `${String(shiftDef.startHour).padStart(2, "0")}:${String(shiftDef.startMinute).padStart(2, "0")}`;
+  const endStr = `${String(shiftDef.endHour).padStart(2, "0")}:${String(shiftDef.endMinute).padStart(2, "0")}`;
 
-  return `${start}\u2013${end}`;
-}
-
-function formatShiftTime(hour: number, minute: number): string {
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-}
-
-function parseAttendanceSource(value: string): WorkerAttendanceSource | null {
-  if (
-    value === "tracker" ||
-    value === "absensi" ||
-    value === "cron" ||
-    value === "system"
-  ) {
-    return value;
-  }
-
-  return null;
+  return `${startStr}-${endStr}`;
 }

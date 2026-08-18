@@ -8,8 +8,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   XIcon,
-  CalendarPlus,
-  CalendarClock,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -38,9 +36,6 @@ type AbsensiToolbarProps = {
   shift: string;
   sort: AbsensiSortOption;
   visibleCount: string;
-  canManageScheduling?: boolean;
-  onOpenScheduleModal?: () => void;
-  onOpenScheduleList?: () => void;
 };
 
 export function AbsensiToolbar({
@@ -58,9 +53,6 @@ export function AbsensiToolbar({
   shift,
   sort,
   visibleCount,
-  canManageScheduling = false,
-  onOpenScheduleModal,
-  onOpenScheduleList,
 }: AbsensiToolbarProps) {
   const pathname = usePathname();
 
@@ -174,31 +166,6 @@ export function AbsensiToolbar({
               </Link>
             </Button>
           </div>
-
-          {/* Scheduling Actions (Admin/Owner) */}
-          {canManageScheduling ? (
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="default"
-                onClick={onOpenScheduleModal}
-                className="h-9 px-3 gap-1.5 font-bold text-xs bg-primary text-primary-foreground shadow-sm"
-              >
-                <CalendarPlus className="size-4" aria-hidden="true" />
-                Jadwalkan Absensi
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onOpenScheduleList}
-                className="h-9 px-3 gap-1.5 font-bold text-xs border-primary/30 text-primary hover:bg-primary/10"
-                title="Lihat Jadwal Mendatang"
-              >
-                <CalendarClock className="size-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Jadwal Mendatang</span>
-              </Button>
-            </div>
-          ) : null}
 
           <div className="flex items-center gap-2 lg:ml-auto">
             {scopeLabel ? (
