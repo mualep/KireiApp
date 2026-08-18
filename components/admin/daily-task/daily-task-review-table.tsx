@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Check, X, RefreshCw, Eye, Calendar, UserCheck, ChevronDown, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { Check, X, RefreshCw, Eye, Calendar, UserCheck, ChevronDown, ExternalLink, ListTodo, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface TaskRecord {
@@ -167,7 +168,27 @@ export function DailyTaskReviewTable({
     <div className="flex flex-col gap-6">
       {/* Toolbar / Filters */}
       <Card className="tracker-glass-panel rounded-xl border p-4 shadow-md shadow-primary/2">
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex flex-col gap-4">
+          {/* View Switcher Tabs */}
+          <div className="flex items-center justify-between border-b border-border/30 pb-3">
+            <div className="inline-flex items-center p-1 rounded-xl bg-muted/50 border border-border/50">
+              <Link
+                href="/admin/daily-task-review?view=daily"
+                className="h-8 px-4 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-primary text-primary-foreground shadow-sm"
+              >
+                <ListTodo className="size-3.5" />
+                Tampilan Harian (Review)
+              </Link>
+              <Link
+                href="/admin/daily-task-review?view=monthly"
+                className="h-8 px-4 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <FileSpreadsheet className="size-3.5" />
+                Tampilan Bulanan (Report Grid)
+              </Link>
+            </div>
+          </div>
+
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="grid flex-1 gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
               {/* Search */}

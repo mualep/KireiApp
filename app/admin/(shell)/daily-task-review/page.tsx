@@ -6,6 +6,8 @@ import { Settings, CalendarCheck } from "lucide-react";
 import { getCurrentStaffUser } from "@/lib/auth/staff";
 import { createClient } from "@/lib/supabase/server";
 import { DailyTaskReviewClientShell } from "@/components/admin/daily-task/daily-task-review-client-shell";
+import { DailyTaskMonthlyClientShell } from "@/components/admin/daily-task/daily-task-monthly-client-shell";
+import { getDailyTaskMonthlyReport } from "@/lib/daily-task/monthly-data";
 
 export const metadata: Metadata = {
   title: "Daily Task Review | KireiApp",
@@ -13,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; month?: string; view?: string }>;
 };
 
 export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
@@ -22,37 +24,75 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
     redirect("/admin/login");
   }
 
-  // 1. Calculate today's date in Asia/Jakarta (WIB) timezone
+  const resolvedParams = await searchParams;
+  const viewMode = resolvedParams.view || "daily";
+
+  // 1. If Monthly Report Grid View
+  if (viewMode === "monthly") {
+    const monthlyData = await getDailyTaskMonthlyReport({
+      monthParam: resolvedParams.month,
+    });
+
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4 py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <CalendarCheck className="size-8 text-primary shrink-0" />
+            <div className="flex flex-col gap-0.5">
+              <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl" translate="no">
+                Daily Task Review
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Tampilan rekapitulasi bulanan Employee Report seluruh pemain.
+              </p>
+            </div>
+          </div>
+          <Link href="/admin/daily-task-config">
+            <Button variant="default" className="h-10 px-4 font-bold flex items-center gap-2">
+              <Settings className="size-4" />
+              Konfigurasi Task
+            </Button>
+          </Link>
+        </div>
+
+        <DailyTaskMonthlyClientShell
+          data={monthlyData}
+          isMemberMode={false}
+          basePath="/admin/daily-task-review"
+        />
+      </div>
+    );
+  }
+
+  // 2. Daily Review View (Default)
   const todayWIB = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Jakarta",
   }).format(new Date());
 
-  const resolvedParams = await searchParams;
   const dateParam = resolvedParams.date || todayWIB;
-
   const supabase = await createClient();
 
-  // 2. Fetch all active members (tier = 'member' and is_deleted = false)
+  // Fetch all active members (tier = 'member' and is_deleted = false)
   const { data: members } = await supabase
     .from("users")
     .select("id, name")
     .eq("tier", "member")
     .eq("is_deleted", false);
 
-  // 3. Fetch worker profiles to map their shifts
+  // Fetch worker profiles to map their shifts
   const { data: profiles } = await supabase
     .from("worker_profiles")
     .select("user_id, shift");
 
   const shiftMap = new Map((profiles || []).map((p) => [p.user_id, p.shift]));
 
-  // 4. Fetch daily task submissions for the selected date
+  // Fetch daily task submissions for the selected date
   const { data: tasks } = await supabase
     .from("daily_tasks")
     .select("*")
     .eq("task_date", dateParam);
 
-  // 5. Fetch all users to map reviewer names
+  // Fetch all users to map reviewer names
   const { data: allUsers } = await supabase
     .from("users")
     .select("id, name");
@@ -72,7 +112,6 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
         reviewer_name: task.reviewed_by ? userMap.get(task.reviewed_by) || "System" : null,
       };
     } else {
-      // Placeholder task object for workers who haven't submitted yet
       return {
         id: `placeholder-${member.id}`,
         user_id: member.id,
@@ -101,7 +140,6 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
     }
   });
 
-  // Sort alphabetically by worker name by default
   mappedTasks.sort((a, b) => a.worker_name.localeCompare(b.worker_name));
 
   return (
