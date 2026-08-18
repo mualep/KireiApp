@@ -402,7 +402,7 @@ export function DailyTaskForm({
               id="buyer-name-input"
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}
-              placeholder="cth. JohnDoe / Order #1234"
+              placeholder="contoh: GILANG"
               disabled={isLocked || isPending}
             />
           </Field>
@@ -413,13 +413,38 @@ export function DailyTaskForm({
               id="task-description-input"
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
-              placeholder="cth. BDO 2 jam, Maple 3 jam 30 menit"
+              placeholder="isi nama game dan durasinya, contoh: BDO 2 jam - Maple 3 jam 30 menit"
               disabled={isLocked || isPending}
             />
           </Field>
         </div>
 
-        {/* Row 3: Jam SS Before | Jam SS After | Total Pengerjaan */}
+        {/* Row 3: Link SS Before | Link SS After */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Field>
+            <FieldLabel htmlFor="ss-before-url-input">Link SS Before (Image URL)</FieldLabel>
+            <Input
+              id="ss-before-url-input"
+              value={ssBeforeUrl}
+              onChange={(e) => setSsBeforeUrl(e.target.value)}
+              placeholder="contoh: https://imgur.com/... atau https://imgpile.com/..."
+              disabled={isLocked || isPending}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="ss-after-url-input">Link SS After (Image URL)</FieldLabel>
+            <Input
+              id="ss-after-url-input"
+              value={ssAfterUrl}
+              onChange={(e) => setSsAfterUrl(e.target.value)}
+              placeholder="contoh: https://imgur.com/... atau https://imgpile.com/..."
+              disabled={isLocked || isPending}
+            />
+          </Field>
+        </div>
+
+        {/* Row 4: Jam SS Before | Jam SS After | Total Pengerjaan */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Field>
             <FieldLabel htmlFor="ss-before-input">Jam SS Before</FieldLabel>
@@ -459,31 +484,6 @@ export function DailyTaskForm({
           </Field>
         </div>
 
-        {/* Row 4: Link SS Before | Link SS After */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Field>
-            <FieldLabel htmlFor="ss-before-url-input">Link SS Before (Image URL)</FieldLabel>
-            <Input
-              id="ss-before-url-input"
-              value={ssBeforeUrl}
-              onChange={(e) => setSsBeforeUrl(e.target.value)}
-              placeholder="cth. https://imgur.com/... atau https://imgpile.com/..."
-              disabled={isLocked || isPending}
-            />
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="ss-after-url-input">Link SS After (Image URL)</FieldLabel>
-            <Input
-              id="ss-after-url-input"
-              value={ssAfterUrl}
-              onChange={(e) => setSsAfterUrl(e.target.value)}
-              placeholder="cth. https://imgur.com/... atau https://imgpile.com/..."
-              disabled={isLocked || isPending}
-            />
-          </Field>
-        </div>
-
         {/* Row 5: Link Streaming | Problem / Kendala */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Field>
@@ -492,7 +492,7 @@ export function DailyTaskForm({
               id="stream-input"
               value={streamName}
               onChange={(e) => setStreamName(e.target.value)}
-              placeholder="cth. Link stream YouTube / Twitch"
+              placeholder="contoh: Link stream YouTube / Twitch"
               disabled={isLocked || isPending}
             />
           </Field>
@@ -503,7 +503,7 @@ export function DailyTaskForm({
               id="problem-notes-input"
               value={problemNotes}
               onChange={(e) => setProblemNotes(e.target.value)}
-              placeholder="cth. Server Maintenance / DC 15 menit"
+              placeholder="contoh: Server Maintenance / DC 15 menit"
               disabled={isLocked || isPending}
             />
           </Field>
