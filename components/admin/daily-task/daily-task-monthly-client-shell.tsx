@@ -7,6 +7,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -15,9 +23,6 @@ import {
   Search,
   FileSpreadsheet,
   ListTodo,
-  CheckCircle2,
-  Clock,
-  XCircle,
 } from "lucide-react";
 import type { MonthlyReportData, MonthlyTaskDTO } from "@/lib/daily-task/monthly-data";
 import { cn } from "@/lib/utils";
@@ -49,6 +54,12 @@ export function DailyTaskMonthlyClientShell({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [shiftFilter, setShiftFilter] = useState("all");
+
+  // State for interactive report dialog
+  const [selectedTaskData, setSelectedTaskData] = useState<{
+    task: MonthlyTaskDTO;
+    workerName: string;
+  } | null>(null);
 
   const { monthParam, year, month, monthName, totalDaysInMonth, rows } = data;
 
@@ -93,7 +104,7 @@ export function DailyTaskMonthlyClientShell({
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const workerMatch = row.worker_name.toLowerCase().includes(q);
-      
+
       // Search inside daily tasks for this worker
       const taskMatch = Object.values(row.days).some((task) => {
         if (!task) return false;
@@ -128,95 +139,37 @@ export function DailyTaskMonthlyClientShell({
     );
   };
 
-  const renderTaskCell = (task: MonthlyTaskDTO | null) => {
+  const renderTaskCell = (task: MonthlyTaskDTO | null, workerName: string) => {
     if (!task) {
-      return <span className="text-muted-foreground/30 italic text-[11px]">-</span>;
+      return <span className="text-muted-foreground/30 font-semibold text-xs text-center block">-</span>;
+    }
+
+    let badgeLabel = "Note";
+    let badgeStyle = "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400";
+
+    if (task.status === "pending_review") {
+      badgeLabel = "Pending";
+      badgeStyle = "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400";
+    } else if (task.status === "rejected") {
+      badgeLabel = "Rejected";
+      badgeStyle = "border-rose-500/40 bg-rose-500/15 text-rose-600 dark:text-rose-400";
+    } else if (task.status === "draft") {
+      badgeLabel = "Draft";
+      badgeStyle = "border-muted-foreground/40 bg-muted/40 text-muted-foreground";
     }
 
     return (
-      <div className="flex flex-col gap-2 w-full text-xs">
-        {/* Cell Header with Status Badge */}
-        <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-border/25">
-          <Badge
-            variant="outline"
-            className={cn(
-              "text-[10px] font-bold uppercase px-1.5 py-0 h-5",
-              task.status === "approved" && "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-              task.status === "rejected" && "border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400",
-              task.status === "pending_review" && "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-              task.status === "draft" && "border-muted-foreground/40 bg-muted/20 text-muted-foreground"
-            )}
-          >
-            {task.status === "pending_review" ? "Pending" : task.status}
-          </Badge>
-
-          {task.selected_games && task.selected_games.length > 0 ? (
-            <span className="text-[10px] font-semibold text-muted-foreground truncate max-w-[120px]">
-              {task.selected_games.join(", ")}
-            </span>
-          ) : null}
-        </div>
-
-        {/* Exact Multiline Format matching Google Sheet */}
-        <div className="flex flex-col gap-1 font-mono text-[11px] leading-relaxed">
-          <div>
-            <span className="text-muted-foreground font-bold font-sans text-[10px] uppercase block">
-              Note:
-            </span>
-            <span className="font-semibold text-foreground break-words whitespace-pre-wrap">
-              {task.task_description || "-"}
-            </span>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground font-bold font-sans text-[10px] uppercase block">
-              Buyer:
-            </span>
-            <span className="font-bold text-foreground">
-              {task.buyer_name || "-"}
-            </span>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground font-bold font-sans text-[10px] uppercase block">
-              Ss Before:
-            </span>
-            <div>{renderUrlLink(task.ss_before_url)}</div>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground font-bold font-sans text-[10px] uppercase block">
-              Ss After:
-            </span>
-            <div>{renderUrlLink(task.ss_after_url)}</div>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground font-bold font-sans text-[10px] uppercase block">
-              Jam yang dihabiskan:
-            </span>
-            <span className="font-bold text-foreground">
-              {formatMinutesToHours(task.process_duration_minutes)}
-            </span>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground font-bold font-sans text-[10px] uppercase block">
-              Stream :
-            </span>
-            <div>{renderUrlLink(task.stream_name)}</div>
-          </div>
-
-          <div>
-            <span className="text-muted-foreground font-bold font-sans text-[10px] uppercase block">
-              Problem:
-            </span>
-            <span className={cn("font-medium break-words", task.problem_notes ? "text-amber-500 font-semibold" : "text-muted-foreground/50")}>
-              {task.problem_notes || "-"}
-            </span>
-          </div>
-        </div>
-      </div>
+      <button
+        type="button"
+        onClick={() => setSelectedTaskData({ task, workerName })}
+        className={cn(
+          "inline-flex items-center justify-center px-2 py-1 rounded-md border text-[11px] font-extrabold uppercase tracking-wide transition-all hover:scale-105 active:scale-95 shadow-xs cursor-pointer",
+          badgeStyle
+        )}
+        title={`Klik untuk melihat laporan ${workerName} (${task.task_date})`}
+      >
+        {badgeLabel}
+      </button>
     );
   };
 
@@ -291,7 +244,7 @@ export function DailyTaskMonthlyClientShell({
             </div>
           </div>
 
-          {/* Search & Shift Filters (Only if multiple rows or admin mode) */}
+          {/* Search & Shift Filters */}
           {!isMemberMode ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-border/30 pt-3">
               <div role="group" className="relative flex items-center sm:col-span-2">
@@ -345,11 +298,11 @@ export function DailyTaskMonthlyClientShell({
             <thead>
               <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground font-bold">
                 {/* Sticky Left Column: Worker Name */}
-                <th className="sticky left-0 z-30 bg-muted/90 backdrop-blur-md p-3.5 w-48 min-w-[190px] border-r border-border/60 shadow-sm">
+                <th className="sticky left-0 z-30 bg-muted/90 backdrop-blur-md p-3.5 w-44 min-w-[170px] border-r border-border/60 shadow-sm">
                   Nama Pekerja / Shift
                 </th>
 
-                {/* 31 Day Columns */}
+                {/* 31 Day Columns (Compact 90px width) */}
                 {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((dayNum) => {
                   const dateObj = new Date(year, month - 1, dayNum);
                   const dayName = DAY_NAMES[dateObj.getDay()];
@@ -359,15 +312,15 @@ export function DailyTaskMonthlyClientShell({
                     <th
                       key={`col-${dayNum}`}
                       className={cn(
-                        "p-3 min-w-[280px] w-[280px] text-center border-r border-border/40 font-bold",
+                        "p-2.5 w-[90px] min-w-[90px] text-center border-r border-border/40 font-bold",
                         isSunday && "bg-rose-500/10 text-rose-500"
                       )}
                     >
                       <div className="flex flex-col items-center justify-center">
-                        <span className="text-foreground text-sm font-extrabold">
-                          Tgl {dayNum}
+                        <span className="text-foreground text-xs font-extrabold">
+                          {dayNum}
                         </span>
-                        <span className="text-[10px] uppercase font-semibold text-muted-foreground">
+                        <span className="text-[9px] uppercase font-semibold text-muted-foreground">
                           {dayName}
                         </span>
                       </div>
@@ -390,29 +343,29 @@ export function DailyTaskMonthlyClientShell({
                 filteredRows.map((row) => (
                   <tr key={row.user_id} className="hover:bg-muted/10 transition-colors">
                     {/* Sticky Left Cell: Worker Name */}
-                    <td className="sticky left-0 z-20 bg-card/95 backdrop-blur-md p-3.5 w-48 min-w-[190px] border-r border-border/60 shadow-sm align-top">
-                      <div className="flex flex-col gap-1.5">
-                        <span className="font-extrabold text-foreground text-sm" translate="no">
+                    <td className="sticky left-0 z-20 bg-card/95 backdrop-blur-md p-3.5 w-44 min-w-[170px] border-r border-border/60 shadow-sm align-middle">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-extrabold text-foreground text-xs" translate="no">
                           {row.worker_name}
                         </span>
                         <Badge
                           variant="outline"
-                          className="w-fit text-[10px] font-bold border-border bg-muted/30"
+                          className="w-fit text-[9px] font-bold border-border bg-muted/30 h-4 px-1.5"
                         >
                           Shift {row.shift.toUpperCase()}
                         </Badge>
                       </div>
                     </td>
 
-                    {/* 31 Day Cells */}
+                    {/* 31 Compact Day Cells */}
                     {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((dayNum) => {
                       const task = row.days[dayNum];
                       return (
                         <td
                           key={`cell-${row.user_id}-${dayNum}`}
-                          className="p-3 min-w-[280px] w-[280px] align-top border-r border-border/25 bg-card/30 hover:bg-card/75 transition-colors"
+                          className="p-2.5 w-[90px] min-w-[90px] text-center align-middle border-r border-border/25 bg-card/30 hover:bg-card/75 transition-colors"
                         >
-                          {renderTaskCell(task)}
+                          {renderTaskCell(task, row.worker_name)}
                         </td>
                       );
                     })}
@@ -423,6 +376,165 @@ export function DailyTaskMonthlyClientShell({
           </table>
         </div>
       </Card>
+
+      {/* Interactive Detail Report Modal / Dialog */}
+      {selectedTaskData && (
+        <Dialog
+          open={!!selectedTaskData}
+          onOpenChange={(open) => !open && setSelectedTaskData(null)}
+        >
+          <DialogContent className="sm:max-w-4xl md:max-w-5xl lg:max-w-6xl w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl border p-6 md:p-8">
+            <DialogHeader className="gap-1.5">
+              <DialogTitle>
+                Laporan Tugas (Employee Report): {selectedTaskData.workerName}
+              </DialogTitle>
+              <DialogDescription>
+                Pengumpulan untuk tanggal {selectedTaskData.task.task_date} pada Shift{" "}
+                {selectedTaskData.task.shift_label?.toUpperCase() || "A"}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* General Info / Employee Report Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 border-y border-border/20 my-4 text-sm">
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">
+                      Nama Buyer:
+                    </span>
+                    <span className="font-bold text-foreground">
+                      {selectedTaskData.task.buyer_name || "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">
+                      Status Laporan:
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "font-bold text-[11px] px-2.5 h-6 uppercase tracking-wider mt-0.5",
+                        selectedTaskData.task.status === "approved" && "border-green-500/35 bg-green-500/10 text-green-400",
+                        selectedTaskData.task.status === "rejected" && "border-red-500/35 bg-red-500/10 text-red-400",
+                        selectedTaskData.task.status === "pending_review" && "border-yellow-500/35 bg-yellow-500/10 text-yellow-400",
+                        selectedTaskData.task.status === "draft" && "border-gray-500/35 bg-gray-500/10 text-gray-400"
+                      )}
+                    >
+                      {selectedTaskData.task.status === "pending_review" ? "Pending" : selectedTaskData.task.status}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">
+                    Keterangan Task:
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {selectedTaskData.task.task_description || "-"}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">
+                    Link Streaming:
+                  </span>
+                  <span className="font-medium text-foreground break-all whitespace-normal block">
+                    {renderUrlLink(selectedTaskData.task.stream_name)}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">
+                    Problem / Kendala:
+                  </span>
+                  <span className="font-medium text-amber-500">
+                    {selectedTaskData.task.problem_notes || "-"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 border-t md:border-t-0 md:border-l border-border/20 pt-3 md:pt-0 md:pl-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">
+                      Jam SS Before:
+                    </span>
+                    <span className="font-bold text-foreground">
+                      {selectedTaskData.task.ss_before_time ? selectedTaskData.task.ss_before_time.slice(0, 5) : "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">
+                      Jam SS After:
+                    </span>
+                    <span className="font-bold text-foreground">
+                      {selectedTaskData.task.ss_after_time ? selectedTaskData.task.ss_after_time.slice(0, 5) : "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">
+                      Total Durasi:
+                    </span>
+                    <span className="font-bold text-foreground">
+                      {formatMinutesToHours(selectedTaskData.task.process_duration_minutes)}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">
+                    Link SS Before:
+                  </span>
+                  <span className="font-medium text-foreground break-all whitespace-normal block">
+                    {renderUrlLink(selectedTaskData.task.ss_before_url)}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">
+                    Link SS After:
+                  </span>
+                  <span className="font-medium text-foreground break-all whitespace-normal block">
+                    {renderUrlLink(selectedTaskData.task.ss_after_url)}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">
+                    Pilihan Game:
+                  </span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {!selectedTaskData.task.selected_games || selectedTaskData.task.selected_games.length === 0 ? (
+                      <span className="text-muted-foreground/50 italic text-xs">-</span>
+                    ) : (
+                      selectedTaskData.task.selected_games.map((g) => (
+                        <Badge
+                          key={g}
+                          variant="outline"
+                          className="font-semibold text-[10px] border-primary/20 bg-primary/5 text-primary"
+                        >
+                          {g}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Dialog Footer Actions */}
+            <DialogFooter className="mt-4 pt-4 border-t border-border/20">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedTaskData(null)}
+                className="font-bold h-10 px-6 ml-auto"
+              >
+                Tutup
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
