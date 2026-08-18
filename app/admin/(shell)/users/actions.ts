@@ -48,6 +48,7 @@ const createWorkerSchema = z.object({
 const editWorkerSchema = z.object({
   email: z.string().email().optional(),
   employeeRole: z.enum(workerRoles),
+  isTemporaryShift: z.boolean().optional().default(false),
   name: z.string().min(1),
   newPassword: z.string().min(6).optional().or(z.literal("")),
   shift: z.enum(workerShifts),
@@ -139,18 +140,18 @@ export async function editWorker(userId: string, payload: unknown) {
     if (!parsed.success) {
       return { ok: false, error: "Payload tidak valid: " + parsed.error.issues.map((i) => i.message).join(", ") };
     }
-    const { email, employeeRole, name, newPassword, shift } = parsed.data;
+    const { email, employeeRole, isTemporaryShift, name, newPassword, shift } = parsed.data;
 
     const tier = deriveTierFromRole(employeeRole);
     const shiftFields = getShiftFields(shift);
 
     const adminClient = createAdminClient();
 
-    // Check if shift changed (read-only, ok to use user client)
+    // Check if shift changed
     const supabase = await createClient();
     const { data: oldProfile } = await supabase
       .from("worker_profiles")
-      .select("shift")
+      .select("shift, temp_shift")
       .eq("user_id", userId)
       .single();
 
@@ -174,19 +175,35 @@ export async function editWorker(userId: string, payload: unknown) {
     if (userError) return { ok: false, error: userError.message };
 
     // Update worker_profiles via admin client (bypasses RLS)
-    // Do NOT update cuti_stock — managed exclusively in Records
-    const { error: profileError } = await adminClient
-      .from("worker_profiles")
-      .update({
-        employee_role: employeeRole,
-        shift,
-        ...shiftFields,
-      })
-      .eq("user_id", userId);
-    if (profileError) return { ok: false, error: profileError.message };
+    if (isTemporaryShift) {
+      // Temporary shift swap: set temp_shift & temp_shift_until (24h), keep base shift unchanged
+      const tempUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const { error: profileError } = await adminClient
+        .from("worker_profiles")
+        .update({
+          employee_role: employeeRole,
+          temp_shift: shift,
+          temp_shift_until: tempUntil,
+        })
+        .eq("user_id", userId);
+      if (profileError) return { ok: false, error: profileError.message };
+    } else {
+      // Permanent shift change: update base shift and clear temp_shift
+      const { error: profileError } = await adminClient
+        .from("worker_profiles")
+        .update({
+          employee_role: employeeRole,
+          shift,
+          temp_shift: null,
+          temp_shift_until: null,
+          ...shiftFields,
+        })
+        .eq("user_id", userId);
+      if (profileError) return { ok: false, error: profileError.message };
+    }
 
     // Reset shift status if shift changed
-    if (oldProfile && oldProfile.shift !== shift) {
+    if (oldProfile && (oldProfile.shift !== shift || oldProfile.temp_shift !== shift)) {
       await adminClient
         .from("worker_status")
         .update({

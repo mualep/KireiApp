@@ -33,7 +33,7 @@ export async function getUsersManagerList(): Promise<UsersManagerRowDTO[]> {
 
   const [usersRes, profilesRes, statusesRes, spsRes] = await Promise.all([
     supabase.from("users").select("id, name, email, tier, is_deleted").neq("tier", "owner"),
-    supabase.from("worker_profiles").select("user_id, employee_role, shift"),
+    supabase.from("worker_profiles").select("user_id, employee_role, shift, temp_shift, temp_shift_until"),
     supabase.from("worker_status").select("user_id, current_status"),
     supabase
       .from("worker_sp_logs")
@@ -52,9 +52,20 @@ export async function getUsersManagerList(): Promise<UsersManagerRowDTO[]> {
     spsCountMap.set(sp.user_id, (spsCountMap.get(sp.user_id) ?? 0) + 1);
   }
 
+  const nowIso = new Date().toISOString();
+
   return usersRes.data
     .map((u) => {
       const profile = profilesMap.get(u.id);
+      const isTempActive =
+        profile?.temp_shift &&
+        profile?.temp_shift_until &&
+        profile.temp_shift_until > nowIso;
+
+      const effectiveShift = isTempActive
+        ? (profile.temp_shift as WorkerShift)
+        : (profile?.shift as WorkerShift) ?? null;
+
       return {
         activeSpCount: spsCountMap.get(u.id) ?? 0,
         email: u.email,
@@ -62,7 +73,7 @@ export async function getUsersManagerList(): Promise<UsersManagerRowDTO[]> {
         id: u.id,
         isDeleted: u.is_deleted,
         name: u.name,
-        shift: (profile?.shift as WorkerShift) ?? null,
+        shift: effectiveShift,
         status: (statusMap.get(u.id) as WorkerStoredStatus) ?? null,
         tier: u.tier as StaffTier,
       };

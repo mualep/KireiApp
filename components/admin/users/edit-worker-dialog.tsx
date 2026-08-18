@@ -50,6 +50,10 @@ function shiftLabel(shift: string): string {
 export function EditWorkerDialog({ onOpenChange, open, row }: EditWorkerDialogProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedShift, setSelectedShift] = useState<string>(row.shift ?? "");
+  const [isTempShift, setIsTempShift] = useState(false);
+
+  const isShiftChanged = selectedShift !== "" && selectedShift !== (row.shift ?? "");
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -61,9 +65,10 @@ export function EditWorkerDialog({ onOpenChange, open, row }: EditWorkerDialogPr
     const payload = {
       email: (fd.get("email") as string) || undefined,
       employeeRole: fd.get("employeeRole"),
+      isTemporaryShift: isShiftChanged ? isTempShift : false,
       name: fd.get("name"),
       newPassword: newPassword || undefined,
-      shift: fd.get("shift"),
+      shift: selectedShift,
     };
 
     const res = await editWorker(row.id, payload);
@@ -151,7 +156,13 @@ export function EditWorkerDialog({ onOpenChange, open, row }: EditWorkerDialogPr
               <select
                 id="ew-shift"
                 name="shift"
-                defaultValue={row.shift ?? ""}
+                value={selectedShift}
+                onChange={(e) => {
+                  setSelectedShift(e.target.value);
+                  if (e.target.value === (row.shift ?? "")) {
+                    setIsTempShift(false);
+                  }
+                }}
                 required
                 className={selectCls()}
               >
@@ -161,6 +172,23 @@ export function EditWorkerDialog({ onOpenChange, open, row }: EditWorkerDialogPr
                 ))}
               </select>
             </div>
+
+            {/* Temporary Shift Swap Toggle */}
+            {isShiftChanged && (
+              <div className="col-span-2 flex items-center gap-2.5 p-3 rounded-xl border border-amber-500/35 bg-amber-500/10 text-amber-300 animate-in fade-in duration-200">
+                <input
+                  type="checkbox"
+                  id="ew-temp-shift"
+                  name="isTemporaryShift"
+                  checked={isTempShift}
+                  onChange={(e) => setIsTempShift(e.target.checked)}
+                  className="size-4 rounded border-amber-500 text-amber-500 accent-amber-500 cursor-pointer shrink-0"
+                />
+                <label htmlFor="ew-temp-shift" className="text-xs font-medium cursor-pointer leading-snug">
+                  <strong className="font-bold text-amber-200">Perubahan Sementara (Swap Shift):</strong> Shift baru hanya berlaku 24 jam. Shift utama (Shift {row.shift}) tidak akan tertimpa.
+                </label>
+              </div>
+            )}
           </div>
 
           <DialogFooter>

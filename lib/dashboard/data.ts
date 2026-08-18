@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { workerShiftDefinitions } from "@/lib/workers/constants";
 
 const WIB_OFFSET_MILLISECONDS = 7 * 60 * 60 * 1000;
 
@@ -96,7 +97,7 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
     supabase
       .from("worker_profiles")
       .select(
-        "user_id, shift, is_flexible, shift_start_hour, shift_start_min, shift_end_hour, shift_end_min",
+        "user_id, shift, is_flexible, shift_start_hour, shift_start_min, shift_end_hour, shift_end_min, temp_shift, temp_shift_until",
       ),
     supabase
       .from("worker_status")
@@ -165,19 +166,33 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
 
     let isLate = false;
 
+    const isTempActive =
+      profile?.temp_shift &&
+      profile?.temp_shift_until &&
+      new Date(profile.temp_shift_until).getTime() > now.getTime();
+
+    const tempDef = isTempActive
+      ? workerShiftDefinitions[profile.temp_shift as keyof typeof workerShiftDefinitions]
+      : null;
+
+    const isFlexible = tempDef ? tempDef.isFlexible : profile?.is_flexible;
+    const startHour = tempDef ? tempDef.startHour : profile?.shift_start_hour;
+    const startMin = tempDef ? tempDef.startMinute : profile?.shift_start_min;
+    const endHour = tempDef ? tempDef.endHour : profile?.shift_end_hour;
+    const endMin = tempDef ? tempDef.endMinute : profile?.shift_end_min;
+
     if (
       profile &&
-      !profile.is_flexible &&
-      profile.shift_start_hour !== null &&
-      profile.shift_start_min !== null &&
-      profile.shift_end_hour !== null &&
-      profile.shift_end_min !== null
+      !isFlexible &&
+      startHour !== null &&
+      startHour !== undefined &&
+      startMin !== null &&
+      startMin !== undefined &&
+      endHour !== null &&
+      endHour !== undefined &&
+      endMin !== null &&
+      endMin !== undefined
     ) {
-      const startHour = profile.shift_start_hour;
-      const startMin = profile.shift_start_min;
-      const endHour = profile.shift_end_hour;
-      const endMin = profile.shift_end_min;
-
       const shiftStartToday = makeWibDate(wibDateStr, startHour, startMin);
 
       let cycleDateStr = wibDateStr;
