@@ -23,6 +23,7 @@ export interface MonthlyReportRowDTO {
   worker_name: string;
   shift: string;
   days: Record<number, MonthlyTaskDTO | null>;
+  attendance: Record<number, string | null>;
 }
 
 export interface MonthlyReportData {
@@ -114,6 +115,18 @@ export async function getDailyTaskMonthlyReport(options: {
           .lte("task_date", monthEndStr)
       : { data: [] };
 
+  // 4. Fetch worker attendance for the month
+  const { data: attendanceRows } =
+    userIds.length > 0
+      ? await supabase
+          .from("worker_attendance")
+          .select("user_id, work_date, status, is_canceled")
+          .in("user_id", userIds)
+          .gte("work_date", monthStartStr)
+          .lte("work_date", monthEndStr)
+          .eq("is_canceled", false)
+      : { data: [] };
+
   // Group tasks by user_id -> dayNumber
   const taskGroupMap = new Map<string, Map<number, MonthlyTaskDTO>>();
   (tasks || []).forEach((t) => {
@@ -125,13 +138,28 @@ export async function getDailyTaskMonthlyReport(options: {
     taskGroupMap.get(t.user_id)!.set(dayNum, t as MonthlyTaskDTO);
   });
 
+  // Group attendance by user_id -> dayNumber
+  const attendanceGroupMap = new Map<string, Map<number, string>>();
+  (attendanceRows || []).forEach((a) => {
+    if (!a.work_date || !a.status) return;
+    const dayNum = Number(a.work_date.slice(8, 10));
+    if (!attendanceGroupMap.has(a.user_id)) {
+      attendanceGroupMap.set(a.user_id, new Map());
+    }
+    attendanceGroupMap.get(a.user_id)!.set(dayNum, a.status);
+  });
+
   // Build rows
   const rows: MonthlyReportRowDTO[] = (users || []).map((u) => {
     const userTaskMap = taskGroupMap.get(u.id);
+    const userAttMap = attendanceGroupMap.get(u.id);
+
     const daysRecord: Record<number, MonthlyTaskDTO | null> = {};
+    const attRecord: Record<number, string | null> = {};
 
     for (let day = 1; day <= totalDaysInMonth; day++) {
       daysRecord[day] = userTaskMap?.get(day) || null;
+      attRecord[day] = userAttMap?.get(day) || null;
     }
 
     return {
@@ -139,6 +167,7 @@ export async function getDailyTaskMonthlyReport(options: {
       worker_name: u.name,
       shift: shiftMap.get(u.id) || "flexible",
       days: daysRecord,
+      attendance: attRecord,
     };
   });
 

@@ -19,7 +19,7 @@ import {
   ChevronRight,
   ChevronDown,
   ExternalLink,
-  Calendar,
+  Calendar as CalendarIcon,
   Search,
   FileSpreadsheet,
   ListTodo,
@@ -33,7 +33,7 @@ interface DailyTaskMonthlyClientShellProps {
   basePath: string; // "/admin/daily-task-review" or "/admin/daily-task"
 }
 
-const DAY_NAMES = ["Ming", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+const DAY_NAMES_IND = ["Ming", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
 function formatMinutesToHours(minutes: number | null): string {
   if (typeof minutes !== "number" || minutes <= 0) return "-";
@@ -62,6 +62,20 @@ export function DailyTaskMonthlyClientShell({
   } | null>(null);
 
   const { monthParam, year, month, monthName, totalDaysInMonth, rows } = data;
+
+  // Calculate today WIB date number for member calendar today-ring
+  const todayWIB = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Jakarta",
+  }).format(new Date()); // YYYY-MM-DD
+
+  const currentYearMonth = todayWIB.slice(0, 7);
+  const isCurrentMonth = monthParam === currentYearMonth;
+  const todayDayNum = isCurrentMonth ? Number(todayWIB.slice(8, 10)) : -1;
+
+  // First day of week for member calendar padding (0 = Sun)
+  const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
+  const paddingDays = Array.from({ length: firstDayOfWeek }, (_, i) => i);
+  const calendarDays = Array.from({ length: totalDaysInMonth }, (_, i) => i + 1);
 
   // Month navigation helpers
   const handleMonthChange = (newMonthParam: string) => {
@@ -139,39 +153,84 @@ export function DailyTaskMonthlyClientShell({
     );
   };
 
-  const renderTaskCell = (task: MonthlyTaskDTO | null, workerName: string) => {
-    if (!task) {
-      return <span className="text-muted-foreground/30 font-semibold text-xs text-center block">-</span>;
+  const renderCellContent = (
+    task: MonthlyTaskDTO | null,
+    attStatus: string | null | undefined,
+    workerName: string
+  ) => {
+    if (task) {
+      let badgeLabel = "NOTE";
+      let badgeStyle =
+        "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400";
+
+      if (task.status === "pending_review") {
+        badgeLabel = "PEND";
+        badgeStyle =
+          "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400";
+      } else if (task.status === "rejected") {
+        badgeLabel = "REJ";
+        badgeStyle =
+          "border-rose-500/40 bg-rose-500/15 text-rose-600 dark:text-rose-400";
+      } else if (task.status === "draft") {
+        badgeLabel = "DRAFT";
+        badgeStyle =
+          "border-muted-foreground/40 bg-muted/40 text-muted-foreground";
+      }
+
+      return (
+        <button
+          type="button"
+          onClick={() => setSelectedTaskData({ task, workerName })}
+          className={cn(
+            "inline-flex items-center justify-center px-1.5 py-0.5 rounded border text-[10px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-xs cursor-pointer",
+            badgeStyle
+          )}
+          title={`Klik untuk melihat laporan ${workerName} (${task.task_date})`}
+        >
+          {badgeLabel}
+        </button>
+      );
     }
 
-    let badgeLabel = "Note";
-    let badgeStyle = "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400";
-
-    if (task.status === "pending_review") {
-      badgeLabel = "Pending";
-      badgeStyle = "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400";
-    } else if (task.status === "rejected") {
-      badgeLabel = "Rejected";
-      badgeStyle = "border-rose-500/40 bg-rose-500/15 text-rose-600 dark:text-rose-400";
-    } else if (task.status === "draft") {
-      badgeLabel = "Draft";
-      badgeStyle = "border-muted-foreground/40 bg-muted/40 text-muted-foreground";
+    // Fallback to Attendance Status if no daily task submitted
+    if (attStatus) {
+      switch (attStatus) {
+        case "hadir":
+          return <span className="font-extrabold text-xs text-emerald-500">H</span>;
+        case "cuti":
+          return <span className="font-extrabold text-xs text-sky-500">C</span>;
+        case "sakit":
+          return <span className="font-extrabold text-xs text-amber-500">S</span>;
+        case "pending":
+          return <span className="font-extrabold text-xs text-purple-500">P</span>;
+        case "alpha":
+          return <span className="font-extrabold text-xs text-rose-500">A</span>;
+        default:
+          return <span className="text-muted-foreground/30 font-semibold text-xs">-</span>;
+      }
     }
 
-    return (
-      <button
-        type="button"
-        onClick={() => setSelectedTaskData({ task, workerName })}
-        className={cn(
-          "inline-flex items-center justify-center px-2 py-1 rounded-md border text-[11px] font-extrabold uppercase tracking-wide transition-all hover:scale-105 active:scale-95 shadow-xs cursor-pointer",
-          badgeStyle
-        )}
-        title={`Klik untuk melihat laporan ${workerName} (${task.task_date})`}
-      >
-        {badgeLabel}
-      </button>
-    );
+    return <span className="text-muted-foreground/30 font-semibold text-xs">-</span>;
   };
+
+  const getAttendanceBackgroundClass = (attStatus: string | null | undefined) => {
+    switch (attStatus) {
+      case "hadir":
+        return "bg-emerald-500/15 border-emerald-500/35 text-emerald-600 dark:text-emerald-400";
+      case "cuti":
+        return "bg-sky-500/15 border-sky-500/35 text-sky-600 dark:text-sky-400";
+      case "sakit":
+        return "bg-amber-500/15 border-amber-500/35 text-amber-600 dark:text-amber-400";
+      case "pending":
+        return "bg-purple-500/15 border-purple-500/35 text-purple-600 dark:text-purple-400";
+      case "alpha":
+        return "bg-rose-500/15 border-rose-500/35 text-rose-600 dark:text-rose-400";
+      default:
+        return "bg-muted/20 border-border/30 text-muted-foreground";
+    }
+  };
+
+  const memberRow = rows[0] || null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -221,7 +280,7 @@ export function DailyTaskMonthlyClientShell({
               </Button>
 
               <div className="relative flex items-center">
-                <Calendar className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <CalendarIcon className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
                 <input
                   type="month"
                   value={monthParam}
@@ -244,7 +303,7 @@ export function DailyTaskMonthlyClientShell({
             </div>
           </div>
 
-          {/* Search & Shift Filters */}
+          {/* Search & Shift Filters (Admin Only) */}
           {!isMemberMode ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-border/30 pt-3">
               <div role="group" className="relative flex items-center sm:col-span-2">
@@ -278,104 +337,169 @@ export function DailyTaskMonthlyClientShell({
         </CardContent>
       </Card>
 
-      {/* Monthly Employee Report Matrix Table Card */}
-      <Card className="tracker-glass-panel rounded-2xl border shadow-xl shadow-primary/5 overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border/75 px-5 py-4 bg-muted/20">
-          <div className="flex items-center gap-2">
-            <FileSpreadsheet className="size-5 text-primary" />
-            <h2 className="font-bold text-foreground text-base">
-              Employee Report Grid — {monthName} {year}
-            </h2>
+      {/* ------------------------------------------------------------- */}
+      {/* MEMBER VIEW: 7-Column Calendar Grid                           */}
+      {/* ------------------------------------------------------------- */}
+      {isMemberMode ? (
+        <Card className="tracker-glass-panel rounded-2xl border shadow-xl shadow-primary/5">
+          <div className="flex flex-row items-center justify-between border-b border-border/75 px-6 py-4">
+            <div>
+              <h2 className="font-bold text-foreground text-base flex items-center gap-2">
+                <FileSpreadsheet className="size-5 text-primary" />
+                Kalender Laporan Bulanan — {monthName} {year}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Riwayat tugas harian dan status absensi Anda selama bulan berjalan
+              </p>
+            </div>
+
+            {/* Legend badges */}
+            <div className="hidden sm:flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-[0.65rem] text-emerald-600 dark:text-emerald-400 font-bold">
+                <span className="size-2 rounded-full bg-emerald-500" /> NOTE (Disetujui)
+              </span>
+              <span className="inline-flex items-center gap-1 text-[0.65rem] text-amber-600 dark:text-amber-400 font-bold">
+                <span className="size-2 rounded-full bg-amber-500" /> PEND (Pending)
+              </span>
+              <span className="inline-flex items-center gap-1 text-[0.65rem] text-rose-600 dark:text-rose-400 font-bold">
+                <span className="size-2 rounded-full bg-rose-500" /> A (Alpha)
+              </span>
+              <span className="inline-flex items-center gap-1 text-[0.65rem] text-sky-600 dark:text-sky-400 font-bold">
+                <span className="size-2 rounded-full bg-sky-500" /> C (Cuti)
+              </span>
+              <span className="inline-flex items-center gap-1 text-[0.65rem] text-amber-600 dark:text-amber-400 font-bold">
+                <span className="size-2 rounded-full bg-amber-500" /> S (Sakit)
+              </span>
+            </div>
           </div>
-          <span className="text-xs text-muted-foreground font-medium">
-            {filteredRows.length} {isMemberMode ? "Pemain" : "Pekerja Terdaftar"}
-          </span>
-        </div>
 
-        {/* Horizontally Scrollable Matrix Grid Table */}
-        <div className="overflow-x-auto max-w-full">
-          <table className="w-full text-left border-collapse text-xs border-spacing-0">
-            <thead>
-              <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground font-bold">
-                {/* Sticky Left Column: Worker Name */}
-                <th className="sticky left-0 z-30 bg-muted/90 backdrop-blur-md p-3.5 w-44 min-w-[170px] border-r border-border/60 shadow-sm">
-                  Nama Pekerja / Shift
-                </th>
+          <CardContent className="p-6">
+            {/* Grid Header Day Names */}
+            <div className="grid grid-cols-7 gap-2 text-center mb-3">
+              {DAY_NAMES_IND.map((d) => (
+                <span key={d} className="text-xs font-extrabold uppercase text-muted-foreground">
+                  {d}
+                </span>
+              ))}
+            </div>
 
-                {/* 31 Day Columns (Compact 90px width) */}
-                {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((dayNum) => {
-                  const dateObj = new Date(year, month - 1, dayNum);
-                  const dayName = DAY_NAMES[dateObj.getDay()];
-                  const isSunday = dateObj.getDay() === 0;
+            {/* Calendar Days 7-Col Grid */}
+            <div className="grid grid-cols-7 gap-2">
+              {paddingDays.map((p) => (
+                <div key={`pad-${p}`} className="h-16 rounded-xl bg-transparent" />
+              ))}
 
-                  return (
+              {calendarDays.map((dayNum) => {
+                const task = memberRow?.days[dayNum] || null;
+                const attStatus = memberRow?.attendance[dayNum] || null;
+                const isToday = dayNum === todayDayNum;
+
+                return (
+                  <div
+                    key={`mday-${dayNum}`}
+                    className={cn(
+                      "h-16 rounded-xl border relative flex flex-col items-center justify-center gap-1 text-xs font-semibold transition-all p-1",
+                      isToday && "ring-2 ring-primary ring-offset-1 ring-offset-background",
+                      getAttendanceBackgroundClass(attStatus)
+                    )}
+                  >
+                    <span className="text-xs font-bold leading-none">{dayNum}</span>
+                    <div className="flex items-center justify-center">
+                      {renderCellContent(task, attStatus, memberRow?.worker_name || "Pemain")}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        /* ------------------------------------------------------------- */
+        /* ADMIN VIEW: Ultra-Compact Table Grid (Matching Absensi Table)  */
+        /* ------------------------------------------------------------- */
+        <Card className="tracker-glass-panel rounded-2xl border shadow-xl shadow-primary/5 overflow-hidden">
+          <div className="flex items-center justify-between border-b border-border/75 px-5 py-4 bg-muted/20">
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="size-5 text-primary" />
+              <h2 className="font-bold text-foreground text-base">
+                Employee Report Grid — {monthName} {year}
+              </h2>
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">
+              {filteredRows.length} Pekerja Terdaftar
+            </span>
+          </div>
+
+          {/* Horizontally Scrollable Compact Matrix Table */}
+          <div className="overflow-x-auto max-w-full">
+            <table className="w-full text-left border-collapse text-xs border-spacing-0">
+              <thead>
+                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground font-bold">
+                  {/* Sticky Left Column: Worker Header */}
+                  <th className="sticky left-0 z-30 bg-muted/90 backdrop-blur-md p-3 w-48 min-w-[190px] border-r border-border/60 shadow-sm">
+                    Worker
+                  </th>
+
+                  {/* 31 Ultra-Compact Day Headers (1, 2, 3... 31) */}
+                  {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((dayNum) => (
                     <th
                       key={`col-${dayNum}`}
-                      className={cn(
-                        "p-2.5 w-[90px] min-w-[90px] text-center border-r border-border/40 font-bold",
-                        isSunday && "bg-rose-500/10 text-rose-500"
-                      )}
+                      className="w-12 min-w-[48px] p-2 text-center border-r border-border/40 font-bold"
                     >
-                      <div className="flex flex-col items-center justify-center">
-                        <span className="text-foreground text-xs font-extrabold">
-                          {dayNum}
-                        </span>
-                        <span className="text-[9px] uppercase font-semibold text-muted-foreground">
-                          {dayName}
-                        </span>
-                      </div>
+                      <span className="text-xs font-bold text-muted-foreground">{dayNum}</span>
                     </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/20 text-xs">
-              {filteredRows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={totalDaysInMonth + 1}
-                    className="p-12 text-center text-muted-foreground/60 italic"
-                  >
-                    Tidak ada data laporan tugas harian yang cocok.
-                  </td>
+                  ))}
                 </tr>
-              ) : (
-                filteredRows.map((row) => (
-                  <tr key={row.user_id} className="hover:bg-muted/10 transition-colors">
-                    {/* Sticky Left Cell: Worker Name */}
-                    <td className="sticky left-0 z-20 bg-card/95 backdrop-blur-md p-3.5 w-44 min-w-[170px] border-r border-border/60 shadow-sm align-middle">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-extrabold text-foreground text-xs" translate="no">
-                          {row.worker_name}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className="w-fit text-[9px] font-bold border-border bg-muted/30 h-4 px-1.5"
-                        >
-                          Shift {row.shift.toUpperCase()}
-                        </Badge>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-border/20 text-xs">
+                {filteredRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={totalDaysInMonth + 1}
+                      className="p-12 text-center text-muted-foreground/60 italic"
+                    >
+                      Tidak ada data laporan tugas harian yang cocok.
                     </td>
-
-                    {/* 31 Compact Day Cells */}
-                    {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((dayNum) => {
-                      const task = row.days[dayNum];
-                      return (
-                        <td
-                          key={`cell-${row.user_id}-${dayNum}`}
-                          className="p-2.5 w-[90px] min-w-[90px] text-center align-middle border-r border-border/25 bg-card/30 hover:bg-card/75 transition-colors"
-                        >
-                          {renderTaskCell(task, row.worker_name)}
-                        </td>
-                      );
-                    })}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                ) : (
+                  filteredRows.map((row) => (
+                    <tr key={row.user_id} className="hover:bg-muted/10 transition-colors">
+                      {/* Sticky Left Cell: Worker Name */}
+                      <td className="sticky left-0 z-20 bg-card/95 backdrop-blur-md p-3 w-48 min-w-[190px] border-r border-border/60 shadow-sm align-middle">
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <span className="font-extrabold text-foreground text-xs truncate" translate="no">
+                            {row.worker_name}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="w-fit text-[9px] font-bold border-border bg-muted/30 h-4 px-1.5"
+                          >
+                            Shift {row.shift.toUpperCase()}
+                          </Badge>
+                        </div>
+                      </td>
+
+                      {/* 31 Compact Day Cells */}
+                      {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((dayNum) => {
+                        const task = row.days[dayNum];
+                        const attStatus = row.attendance[dayNum];
+                        return (
+                          <td
+                            key={`cell-${row.user_id}-${dayNum}`}
+                            className="w-12 min-w-[48px] p-2 text-center align-middle border-r border-border/25 bg-card/30 hover:bg-card/75 transition-colors"
+                          >
+                            {renderCellContent(task, attStatus, row.worker_name)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* Interactive Detail Report Modal / Dialog */}
       {selectedTaskData && (
