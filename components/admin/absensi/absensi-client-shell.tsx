@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 
 import { AbsensiMonthGrid } from "@/components/admin/absensi/absensi-month-grid";
 import { AbsensiToolbar } from "@/components/admin/absensi/absensi-toolbar";
+import { ScheduleAttendanceModal } from "@/components/admin/absensi/schedule-attendance-modal";
+import { ScheduledAttendanceList } from "@/components/admin/absensi/scheduled-attendance-list";
 import type { AbsensiWorkerRowDTO } from "@/lib/absensi/data";
 import type {
   AbsensiFilters,
@@ -36,6 +38,15 @@ export function AbsensiClientShell({
   const [role, setRole] = useState<AbsensiFilters["role"]>(null);
   const [shift, setShift] = useState<string>("");
   const [sort, setSort] = useState<AbsensiSortOption>("name-asc");
+
+  // Future scheduling modal & list states
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [scheduleListOpen, setScheduleListOpen] = useState(false);
+
+  const workers = useMemo(
+    () => initialRows.map((r) => ({ id: r.userId, name: r.name })),
+    [initialRows]
+  );
 
   const localFilters: AbsensiFilters = useMemo(
     () => ({
@@ -88,6 +99,9 @@ export function AbsensiClientShell({
         roleTabs={roleTabs}
         scopeLabel={scopeLabel}
         visibleCount={numberFormatter.format(filteredRows.length)}
+        canManageScheduling={canCorrect}
+        onOpenScheduleModal={() => setScheduleModalOpen(true)}
+        onOpenScheduleList={() => setScheduleListOpen(true)}
       />
 
       <AbsensiMonthGrid
@@ -97,6 +111,20 @@ export function AbsensiClientShell({
         emptyTitle={emptyTitle}
         month={month}
         rows={filteredRows}
+      />
+
+      {/* Modal Penjadwalan Absensi Masa Depan */}
+      <ScheduleAttendanceModal
+        open={scheduleModalOpen}
+        onOpenChange={setScheduleModalOpen}
+        workers={workers}
+      />
+
+      {/* Dialog Daftar Penjadwalan Mendatang */}
+      <ScheduledAttendanceList
+        open={scheduleListOpen}
+        onOpenChange={setScheduleListOpen}
+        canManage={canCorrect}
       />
     </div>
   );

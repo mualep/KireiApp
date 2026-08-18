@@ -3,7 +3,14 @@
 import type React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, XIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  XIcon,
+  CalendarPlus,
+  CalendarClock,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +22,6 @@ import type {
   AbsensiRoleTab,
   AbsensiSortOption,
 } from "@/lib/absensi/filters";
-import type { WorkerShift } from "@/lib/workers";
 
 type AbsensiToolbarProps = {
   month: AbsensiMonthRange;
@@ -32,6 +38,9 @@ type AbsensiToolbarProps = {
   shift: string;
   sort: AbsensiSortOption;
   visibleCount: string;
+  canManageScheduling?: boolean;
+  onOpenScheduleModal?: () => void;
+  onOpenScheduleList?: () => void;
 };
 
 export function AbsensiToolbar({
@@ -49,6 +58,9 @@ export function AbsensiToolbar({
   shift,
   sort,
   visibleCount,
+  canManageScheduling = false,
+  onOpenScheduleModal,
+  onOpenScheduleList,
 }: AbsensiToolbarProps) {
   const pathname = usePathname();
 
@@ -142,6 +154,7 @@ export function AbsensiToolbar({
             </div>
           </div>
 
+          {/* Month Selector */}
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="icon-sm">
               <Link href={previousMonthHref} aria-label="Previous Month">
@@ -161,6 +174,31 @@ export function AbsensiToolbar({
               </Link>
             </Button>
           </div>
+
+          {/* Scheduling Actions (Admin/Owner) */}
+          {canManageScheduling ? (
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="default"
+                onClick={onOpenScheduleModal}
+                className="h-9 px-3 gap-1.5 font-bold text-xs bg-primary text-primary-foreground shadow-sm"
+              >
+                <CalendarPlus className="size-4" aria-hidden="true" />
+                Jadwalkan Absensi
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onOpenScheduleList}
+                className="h-9 px-3 gap-1.5 font-bold text-xs border-primary/30 text-primary hover:bg-primary/10"
+                title="Lihat Jadwal Mendatang"
+              >
+                <CalendarClock className="size-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Jadwal Mendatang</span>
+              </Button>
+            </div>
+          ) : null}
 
           <div className="flex items-center gap-2 lg:ml-auto">
             {scopeLabel ? (
