@@ -29,11 +29,14 @@ export interface MonthlySummary {
 
 export interface RecentActivity {
   action: string;
-  actor_name: string;
-  actor_tier: string;
+  actor_name: string | null;
+  actor_tier: string | null;
   created_at: string;
+  display_action: string;
+  display_subject: string;
   domain: string;
   id: string;
+  is_automated: boolean;
   payload: Record<string, unknown> | null;
   target_name: string | null;
 }
@@ -45,10 +48,10 @@ export interface UrgentAlert {
 }
 
 export interface HourlyActivityPoint {
-  hour: string; // "00:00", "01:00", ..., "23:00"
-  on: number;
   break: number;
+  hour: string; // "00:00", "01:00", ..., "23:00"
   off: number;
+  on: number;
 }
 
 export interface DashboardData {
@@ -68,10 +71,18 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
   const wibDateStr = `${wibYear}-${wibMonth}-${wibDay}`;
   const periodMonthStr = `${wibYear}-${wibMonth}-01`;
 
+  // Calculate current WIB hour (0-23)
+  const currentWibHourStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Jakarta",
+    hour: "numeric",
+    hour12: false,
+  }).format(now);
+  const currentWibHour = Number(currentWibHourStr);
+
   const supabase = await createClient();
 
   const [
-    { data: users },
+    { data: allUsers },
     { data: profiles },
     { data: statuses },
     { data: records },
@@ -81,8 +92,7 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
     supabase
       .from("users")
       .select("id, name, tier")
-      .eq("is_deleted", false)
-      .eq("tier", "member"),
+      .eq("is_deleted", false),
     supabase
       .from("worker_profiles")
       .select(
@@ -103,7 +113,13 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
       .eq("snapshot_date", wibDateStr),
   ]);
 
-  const activeUserMap = new Map((users || []).map((u) => [u.id, u.name]));
+  const globalUserMap = new Map(
+    (allUsers || []).map((u) => [u.id, { name: u.name, tier: u.tier }]),
+  );
+
+  const memberUsers = (allUsers || []).filter((u) => u.tier === "member");
+  const activeUserMap = new Map(memberUsers.map((u) => [u.id, u.name]));
+
   const profilesMap = new Map((profiles || []).map((p) => [p.user_id, p]));
   const statusMap = new Map((statuses || []).map((s) => [s.user_id, s]));
 
@@ -309,35 +325,63 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
     work_late_seconds: { sum: workLateSum, workers: workLateWorkers.size },
   };
 
-  const globalUserMap = new Map(
-    (users || []).map((u) => [u.id, { name: u.name, tier: u.tier }]),
-  );
-
-  const translateAction = (domain: string, action: string) => {
+  const formatActionDesc = (domain: string, action: string, isAutomated: boolean) => {
+    if (action === "cron.auto_alpha") return isAutomated ? "Otomatis ALPHA" : "Diubah ke ALPHA";
+    if (action === "cron.auto_off_shift") return isAutomated ? "Otomatis Clock-Off (Shift Selesai)" : "Clock-Off";
+    if (action === "cron.alpha_done_reset") return isAutomated ? "Otomatis Reset Alpha" : "Reset Alpha";
     if (domain === "auth" && action === "login") return "Login ke sistem";
     if (domain === "auth" && action === "logout") return "Logout dari sistem";
     if (domain === "daily_task" && action === "create") return "Submit Daily Task";
     if (domain === "daily_task" && action === "update") return "Update Daily Task";
     if (domain === "profile" && action === "update") return "Memperbarui Profil";
-    return action;
+    if (action === "tracker.start") return "Mulai Shift (ON)";
+    if (action === "tracker.stop") return "Akhiri Shift (OFF)";
+    if (action === "tracker.break_start") return "Mulai Istirahat (BREAK)";
+    if (action === "tracker.break_stop") return "Selesai Istirahat";
+    if (action === "absensi.create") return "Mencatat Kehadiran";
+    if (action === "absensi.update") return "Mengubah Data Absensi";
+    if (action === "absensi.delete") return "Menghapus Data Absensi";
+    if (action === "records.override") return "Override Record";
+
+    const cleaned = action.replace(/_/g, " ").replace(/\./g, ": ");
+    const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    return isAutomated ? `Otomatis ${capitalized}` : capitalized;
   };
 
   const recentActivity: RecentActivity[] = (auditLogs || []).map((log) => {
     const actor = log.actor_user_id ? globalUserMap.get(log.actor_user_id) : null;
     const target = log.target_user_id ? globalUserMap.get(log.target_user_id) : null;
+
+    const isAutomated = !actor;
+    let displaySubject = "System";
+    let displayTier = "system";
+
+    if (actor) {
+      displaySubject = actor.name;
+      displayTier = actor.tier;
+    } else if (target) {
+      displaySubject = target.name;
+      displayTier = target.tier;
+    }
+
+    const actionText = formatActionDesc(log.domain, log.action, isAutomated);
+
     return {
-      action: translateAction(log.domain, log.action),
-      actor_name: actor ? actor.name : "System",
-      actor_tier: actor ? actor.tier : "system",
+      action: actionText,
+      actor_name: actor ? actor.name : null,
+      actor_tier: displayTier,
       created_at: log.created_at,
+      display_action: actionText,
+      display_subject: displaySubject,
       domain: log.domain,
       id: log.id,
+      is_automated: isAutomated,
       payload: log.payload_json,
       target_name: target ? target.name : null,
     };
   });
 
-  // Map 24-hour activity snapshots
+  // Map 24-hour activity snapshots & STITCH LIVE CURRENT HOUR
   const snapshotMap = new Map(
     (snapshotRows || []).map((s) => [s.snapshot_hour, s.status_counts]),
   );
@@ -345,11 +389,23 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
   const hourly_activity: HourlyActivityPoint[] = Array.from({ length: 24 }, (_, h) => {
     const hourLabel = `${String(h).padStart(2, "0")}:00`;
     const counts = (snapshotMap.get(h) as Record<string, number> | undefined) || {};
+
+    let onVal = typeof counts.on === "number" ? counts.on : 0;
+    let breakVal = typeof counts.break === "number" ? counts.break : 0;
+    let offVal = typeof counts.off === "number" ? counts.off : 0;
+
+    // Stitch LIVE counts into the current WIB hour slot
+    if (h === currentWibHour) {
+      onVal = onCount;
+      breakVal = breakCount;
+      offVal = offCount;
+    }
+
     return {
+      break: breakVal,
       hour: hourLabel,
-      on: typeof counts.on === "number" ? counts.on : 0,
-      break: typeof counts.break === "number" ? counts.break : 0,
-      off: typeof counts.off === "number" ? counts.off : 0,
+      off: offVal,
+      on: onVal,
     };
   });
 

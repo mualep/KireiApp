@@ -11,7 +11,9 @@ import {
   AlertTriangle, 
   RefreshCw, 
   User,
-  TrendingUp
+  TrendingUp,
+  Activity,
+  Bot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -49,11 +51,14 @@ interface MonthlySummary {
 
 interface RecentActivity {
   id: string;
-  actor_name: string;
-  actor_tier: string;
+  actor_name: string | null;
+  actor_tier: string | null;
   target_name: string | null;
   domain: string;
   action: string;
+  is_automated?: boolean;
+  display_subject?: string;
+  display_action?: string;
   payload: Record<string, unknown> | null;
   created_at: string;
 }
@@ -256,40 +261,10 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
     return `${diffDay}h lalu`;
   }
 
-  function formatAction(domain: string, action: string): string {
-    if (domain === "auth" && action === "login") return "Login ke sistem";
-    if (domain === "auth" && action === "logout") return "Logout dari sistem";
-    if (domain === "daily_task" && action === "create") return "Submit Daily Task";
-    if (domain === "daily_task" && action === "update") return "Update Daily Task";
-    if (domain === "profile" && action === "update") return "Memperbarui Profil";
-
-    if (
-      action === "Login ke sistem" ||
-      action === "Logout dari sistem" ||
-      action === "Submit Daily Task" ||
-      action === "Update Daily Task" ||
-      action === "Memperbarui Profil"
-    ) {
-      return action;
+  function getAvatarClass(tier: string | null | undefined, isAutomated?: boolean): string {
+    if (isAutomated) {
+      return "bg-cyan-500/10 border-cyan-500/30 text-cyan-400";
     }
-
-    if (action === "tracker.start") return "Memulai Shift";
-    if (action === "tracker.stop") return "Mengakhiri Shift";
-    if (action === "tracker.break_start") return "Mulai Istirahat";
-    if (action === "tracker.break_stop") return "Selesai Istirahat";
-    if (action === "absensi.create") return "Mencatat Kehadiran";
-    if (action === "absensi.update") return "Mengubah Absensi";
-    if (action === "absensi.delete") return "Menghapus Absensi";
-    if (action === "records.override") return "Override Record";
-    if (action === "cron.auto_alpha") return "Absensi Alpha Otomatis";
-    if (action === "cron.auto_off_shift") return "Clock-Off Otomatis";
-    if (action === "cron.alpha_done_reset") return "Reset Status Alpha";
-
-    const cleaned = action.replace(/_/g, " ").replace(/\./g, ": ");
-    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-  }
-
-  function getAvatarClass(tier: string | null): string {
     const t = tier ? tier.toLowerCase() : "";
     if (t === "owner") {
       return "bg-red-500/10 border-red-500/30 text-red-400";
@@ -349,12 +324,15 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
   const alerts = data.urgent_alerts || [];
   const hourlyActivity = data.hourly_activity || [];
 
-  // Sort: LATE first, then ALPHA
+  // Sort alerts: LATE first (amber), then ALPHA (red)
   const sortedAlerts = [...alerts].sort((a, b) => {
     if (a.status === "LATE" && b.status === "ALPHA") return -1;
     if (a.status === "ALPHA" && b.status === "LATE") return 1;
     return a.name.localeCompare(b.name);
   });
+
+  const lateAlerts = sortedAlerts.filter((a) => a.status === "LATE");
+  const alphaAlerts = sortedAlerts.filter((a) => a.status === "ALPHA");
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8">
@@ -376,7 +354,56 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
         </Button>
       </div>
 
-      {/* 2. Top Status Cards */}
+      {/* 2. URGENT ALERTS SECTION (Moved to top below header, hidden if empty) */}
+      {sortedAlerts.length > 0 && (
+        <Card className="border border-red-500/30 bg-red-500/5 text-red-400 p-5 rounded-xl flex flex-col gap-4 shadow-md shadow-red-500/2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-bold text-sm">
+              <AlertTriangle className="size-4 text-red-500 shrink-0 animate-pulse" />
+              <span className="text-foreground">
+                PERINGATAN DARURAT: Terdeteksi <span className="text-red-400 font-extrabold">{sortedAlerts.length}</span> Masalah Kehadiran Hari Ini
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">Perlu tindakan cepat</span>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            {/* LATE Group */}
+            {lateAlerts.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-amber-400 w-16 shrink-0">LATE ({lateAlerts.length}):</span>
+                {lateAlerts.map((a) => (
+                  <Badge 
+                    key={a.user_id} 
+                    variant="outline" 
+                    className="font-sans font-bold text-[10px] px-2.5 h-6 uppercase tracking-wider border-amber-500/35 bg-amber-500/10 text-amber-400"
+                  >
+                    {a.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* ALPHA Group */}
+            {alphaAlerts.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-red-400 w-16 shrink-0">ALPHA ({alphaAlerts.length}):</span>
+                {alphaAlerts.map((a) => (
+                  <Badge 
+                    key={a.user_id} 
+                    variant="outline" 
+                    className="font-sans font-bold text-[10px] px-2.5 h-6 uppercase tracking-wider border-red-500/35 bg-red-500/10 text-red-400"
+                  >
+                    {a.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {/* 3. Top Worker Counter Grid */}
       <div className="flex flex-col lg:flex-row gap-6 w-full">
         {/* Left Side (1/4 width) */}
         <Card className="w-full lg:w-1/4 bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-6 flex flex-col justify-between min-h-[160px] hover:bg-white/5 hover:brightness-125 transition-all duration-300 group">
@@ -503,7 +530,61 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
         </div>
       </div>
 
-      {/* 2.5 24-Hour Activity Line Chart Section */}
+      {/* 4. RECENT ACTIVITY SECTION (Placed right below Worker Counter Grid) */}
+      <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
+        <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
+          <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+            <Activity className="size-5 text-primary" />
+            Aktivitas Terbaru
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Catatan aksi manual staff dan eksekusi otomatis sistem
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-4 max-h-[360px] overflow-y-auto pr-1">
+          {activity.length === 0 ? (
+            <div className="text-center text-muted-foreground/60 italic py-12 text-sm">
+              Tidak ada aktivitas terbaru.
+            </div>
+          ) : (
+            activity.map((item) => {
+              const subjectName = item.display_subject || item.actor_name || item.target_name || "System";
+              const isAutomated = item.is_automated || !item.actor_name;
+
+              return (
+                <div key={item.id} className="flex justify-between items-center gap-3 border-b border-border/10 pb-3 last:border-b-0 last:pb-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={cn(
+                      "size-8 rounded-full border flex items-center justify-center font-bold text-sm uppercase shrink-0 select-none",
+                      getAvatarClass(item.actor_tier, isAutomated)
+                    )}>
+                      {isAutomated ? (
+                        <Bot className="size-4 text-cyan-400" />
+                      ) : (
+                        subjectName.charAt(0)
+                      )}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium text-muted-foreground leading-snug">
+                        <span className="font-bold text-foreground">{subjectName}</span> &mdash;{" "}
+                        <span className={cn(isAutomated && "text-cyan-400/90 font-medium")}>
+                          {item.display_action || item.action}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-medium tabular-nums text-muted-foreground shrink-0 pl-2">
+                    {formatTimeAgo(item.created_at)}
+                  </span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </Card>
+
+      {/* 5. 24-HOUR ACTIVITY LINE CHART SECTION */}
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
         <div className="flex items-center justify-between border-b border-border/10 pb-4">
           <div className="flex flex-col gap-1">
@@ -512,11 +593,11 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
               Aktivitas Pekerja (24 Jam Terakhir WIB)
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              Grafik fluktuasi total pekerja aktif ON sepanjang hari (00:00 - 23:59 WIB)
+              Grafik fluktuasi total pekerja aktif ON sepanjang hari (jam berjalan disinkronkan secara real-time)
             </p>
           </div>
           <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-500 font-bold text-xs">
-            Live Snapshot
+            Live Sync
           </Badge>
         </div>
 
@@ -561,74 +642,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
         </div>
       </Card>
 
-      {/* 3. Recent Activity Section */}
-      <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
-        <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
-          <CardTitle className="text-lg font-bold text-foreground">Aktivitas Terbaru</CardTitle>
-        </div>
-
-        <div className="flex flex-col gap-4 max-h-[350px] overflow-y-auto pr-1">
-          {activity.length === 0 ? (
-            <div className="text-center text-muted-foreground/60 italic py-12 text-sm">
-              Tidak ada aktivitas terbaru.
-            </div>
-          ) : (
-            activity.map((item) => (
-              <div key={item.id} className="flex justify-between items-center gap-3 border-b border-border/10 pb-3 last:border-b-0 last:pb-0">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={cn(
-                    "size-8 rounded-full border flex items-center justify-center font-bold text-sm uppercase shrink-0 select-none",
-                    getAvatarClass(item.actor_tier)
-                  )}>
-                    {(item.actor_name || "S").charAt(0)}
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-medium text-muted-foreground leading-snug">
-                      <span className="font-bold text-foreground">{item.actor_name || "System"}</span> &mdash;{" "}
-                      {formatAction(item.domain, item.action)}
-                      {item.target_name ? (
-                        <>
-                          {" "}
-                          &mdash; <span className="font-bold text-foreground">{item.target_name}</span>
-                        </>
-                      ) : null}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[10px] font-medium tabular-nums text-muted-foreground shrink-0 pl-2">
-                  {formatTimeAgo(item.created_at)}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
-
-      {/* 4. Urgent Alerts Section */}
-      {sortedAlerts.length > 0 && (
-        <Card className="border border-red-500/30 bg-red-500/5 text-red-400 p-5 rounded-xl flex flex-col gap-3 shadow-md shadow-red-500/2">
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <AlertTriangle className="size-4 shrink-0" />
-            <span>PERINGATAN DARURAT: Terdeteksi {sortedAlerts.length} Masalah Kehadiran Hari Ini</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {sortedAlerts.map((a) => (
-              <Badge 
-                key={a.user_id} 
-                variant="outline" 
-                className={cn(
-                  "font-sans font-bold text-[10px] px-2.5 h-6 uppercase tracking-wider border-red-500/30 bg-red-500/10 text-red-400",
-                  a.status === "LATE" && "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                )}
-              >
-                {a.name} &mdash; {a.status}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* 5. Live Shift Progress Bars Section */}
+      {/* 6. LIVE SHIFT PROGRESS BARS SECTION */}
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
           <CardTitle className="text-lg font-bold text-foreground">Ringkasan Shift Aktif</CardTitle>
@@ -663,7 +677,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
         </div>
       </Card>
 
-      {/* 6. Monthly Summary Bento-Grid */}
+      {/* 7. MONTHLY SUMMARY BENTO GRID SECTION */}
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-6 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1.5 border-b border-border/10 pb-4">
           <CardTitle className="text-lg font-bold text-foreground">Ringkasan Bulanan</CardTitle>
@@ -804,13 +818,6 @@ function DashboardSkeleton() {
         </div>
       </div>
 
-      {/* Activity Line Chart skeleton */}
-      <div className="rounded-xl border border-border bg-card/45 p-6 h-[300px]">
-        <Skeleton className="h-6 w-56 rounded mb-2" />
-        <Skeleton className="h-4 w-80 rounded mb-6" />
-        <Skeleton className="h-48 w-full rounded-lg" />
-      </div>
-
       {/* Recent Activity skeleton */}
       <div className="rounded-xl border border-border bg-card/45 p-6 h-[350px]">
         <Skeleton className="h-6 w-40 rounded mb-4" />
@@ -826,6 +833,13 @@ function DashboardSkeleton() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Activity Line Chart skeleton */}
+      <div className="rounded-xl border border-border bg-card/45 p-6 h-[300px]">
+        <Skeleton className="h-6 w-56 rounded mb-2" />
+        <Skeleton className="h-4 w-80 rounded mb-6" />
+        <Skeleton className="h-48 w-full rounded-lg" />
       </div>
 
       {/* Active Shifts Overview skeleton */}
