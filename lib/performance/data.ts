@@ -212,6 +212,7 @@ export async function getMemberPerformanceData(
     const snapshot = (taskRow.checklist_snapshot || []) as Array<{
       game?: string;
       id: string;
+      phase?: string;
     }>;
     const answers = (taskRow.checklist_answers || {}) as Record<
       string,
@@ -221,12 +222,11 @@ export async function getMemberPerformanceData(
     let applicableItems = snapshot;
     if (Array.isArray(snapshot) && snapshot.length > 0) {
       applicableItems = snapshot.filter((item) => {
-        if (!item || !item.game) return false;
-        return (
-          item.game === "_before_work" ||
-          item.game === "_after_work" ||
-          selectedGames.includes(item.game)
-        );
+        if (!item) return false;
+        if (item.phase === "before_work" || item.game === "_before_work") return true;
+        if (item.phase === "after_work" || item.game === "_after_work") return true;
+        if (item.game && selectedGames.includes(item.game)) return true;
+        return false;
       });
     }
 

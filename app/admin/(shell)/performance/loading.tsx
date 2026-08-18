@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function AdminPerformanceLoading() {
   const calendarDaySkeletons = Array.from({ length: 31 }, (_, i) => i);
   const dayNameSkeletons = Array.from({ length: 7 }, (_, i) => i);
-  const recordCardSkeletons = Array.from({ length: 6 }, (_, i) => i);
+  const recordCardSkeletons = Array.from({ length: 7 }, (_, i) => i);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8" aria-label="Loading Performance">
@@ -96,7 +96,7 @@ export default function AdminPerformanceLoading() {
           <Skeleton className="h-4 w-32 rounded" />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
           {recordCardSkeletons.map((i) => (
             <Card key={`rcard-${i}`} className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
               <div className="flex items-center justify-between">

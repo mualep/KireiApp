@@ -6,14 +6,17 @@ import Link from "next/link";
 import {
   AlertCircleIcon,
   ArrowRightIcon,
+  BookAlertIcon,
   CalendarCheckIcon,
-  ClockIcon,
-  CoffeeIcon,
+  ClockAlertIcon,
+  ClockPlusIcon,
+  HeartOffIcon,
   ListTodoIcon,
+  MessageCircleWarningIcon,
   RefreshCw,
-  ShieldCheckIcon,
   UserCheckIcon,
-  ZapIcon,
+  UserPenIcon,
+  UtensilsIcon,
 } from "lucide-react";
 
 import { TrackerStatusBadge } from "@/components/admin/tracker/tracker-status-badge";
@@ -377,7 +380,7 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
         </Card>
       </div>
 
-      {/* 3. Monthly Records Summary Cards */}
+      {/* 3. Monthly Records Summary Cards (7 Cards Grid) */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -389,12 +392,12 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
           </span>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
           {/* Card 1: Work Late */}
           <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">Work Late</span>
-              <ClockIcon className="size-4 text-amber-500" />
+              <ClockAlertIcon className="size-4 text-amber-500" />
             </div>
             <div className="mt-2">
               <span className="font-heading text-2xl font-black text-foreground">
@@ -408,7 +411,7 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
           <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">Break Late</span>
-              <CoffeeIcon className="size-4 text-amber-500" />
+              <UtensilsIcon className="size-4 text-orange-500" />
             </div>
             <div className="mt-2">
               <span className="font-heading text-2xl font-black text-foreground">
@@ -418,11 +421,25 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
             </div>
           </Card>
 
-          {/* Card 3: Sakit */}
+          {/* Card 3: Alpha */}
+          <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">Alpha</span>
+              <BookAlertIcon className="size-4 text-rose-500" />
+            </div>
+            <div className="mt-2">
+              <span className="font-heading text-2xl font-black text-foreground">
+                {monthlyRecords.alphaCount} <span className="text-xs font-medium">Hari</span>
+              </span>
+              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Ketidakhadiran tanpa izin</p>
+            </div>
+          </Card>
+
+          {/* Card 4: Sakit */}
           <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">Sakit</span>
-              <AlertCircleIcon className="size-4 text-amber-500" />
+              <HeartOffIcon className="size-4 text-amber-500" />
             </div>
             <div className="mt-2">
               <span className="font-heading text-2xl font-black text-foreground">
@@ -432,11 +449,11 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
             </div>
           </Card>
 
-          {/* Card 4: Pending */}
+          {/* Card 5: Pending */}
           <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">Pending</span>
-              <ClockIcon className="size-4 text-purple-500" />
+              <MessageCircleWarningIcon className="size-4 text-purple-500" />
             </div>
             <div className="mt-2">
               <span className="font-heading text-2xl font-black text-foreground">
@@ -446,11 +463,11 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
             </div>
           </Card>
 
-          {/* Card 5: Cuti Stock */}
+          {/* Card 6: Sisa Stok Cuti */}
           <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">Sisa Stok Cuti</span>
-              <ShieldCheckIcon className="size-4 text-emerald-500" />
+              <UserPenIcon className="size-4 text-sky-500" />
             </div>
             <div className="mt-2">
               <span className="font-heading text-2xl font-black text-foreground">
@@ -460,11 +477,11 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
             </div>
           </Card>
 
-          {/* Card 6: Lembur */}
+          {/* Card 7: Lembur */}
           <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">Lembur</span>
-              <ZapIcon className="size-4 text-amber-500" />
+              <ClockPlusIcon className="size-4 text-amber-500" />
             </div>
             <div className="mt-2">
               <span className="font-heading text-2xl font-black text-foreground">

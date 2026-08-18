@@ -279,7 +279,7 @@ export function DailyTaskForm({
   // Group configurations by phase
   const beforeWorkItems = configs.filter((c) => c.phase === "before_work");
   const whileWorkItems = configs.filter(
-    (c) => c.phase === "while_work" && (c.game === "Lainnya" || selectedGames.includes(c.game))
+    (c) => c.phase === "while_work" && selectedGames.includes(c.game)
   );
   const afterWorkItems = configs.filter((c) => c.phase === "after_work");
 
