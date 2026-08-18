@@ -10,9 +10,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { 
   AlertTriangle, 
   RefreshCw, 
-  User
+  User,
+  TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 
 interface StatusCounts {
   total_workers: number;
@@ -54,11 +64,19 @@ interface UrgentAlert {
   status: "LATE" | "ALPHA";
 }
 
+interface HourlyActivityPoint {
+  hour: string;
+  on: number;
+  break: number;
+  off: number;
+}
+
 interface DashboardData {
   status_counts: StatusCounts;
   monthly_summary: MonthlySummary;
   recent_activity: RecentActivity[];
   urgent_alerts: UrgentAlert[];
+  hourly_activity?: HourlyActivityPoint[];
 }
 
 interface AdminDashboardClientProps {
@@ -245,7 +263,6 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
     if (domain === "daily_task" && action === "update") return "Update Daily Task";
     if (domain === "profile" && action === "update") return "Memperbarui Profil";
 
-    // If the API already mapped it, return it
     if (
       action === "Login ke sistem" ||
       action === "Logout dari sistem" ||
@@ -268,7 +285,6 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
     if (action === "cron.auto_off_shift") return "Clock-Off Otomatis";
     if (action === "cron.alpha_done_reset") return "Reset Status Alpha";
 
-    // Fallback format
     const cleaned = action.replace(/_/g, " ").replace(/\./g, ": ");
     return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   }
@@ -331,6 +347,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
 
   const activity = data.recent_activity || [];
   const alerts = data.urgent_alerts || [];
+  const hourlyActivity = data.hourly_activity || [];
 
   // Sort: LATE first, then ALPHA
   const sortedAlerts = [...alerts].sort((a, b) => {
@@ -338,8 +355,6 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
     if (a.status === "ALPHA" && b.status === "LATE") return 1;
     return a.name.localeCompare(b.name);
   });
-
-
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8">
@@ -488,6 +503,64 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
         </div>
       </div>
 
+      {/* 2.5 24-Hour Activity Line Chart Section */}
+      <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
+        <div className="flex items-center justify-between border-b border-border/10 pb-4">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+              <TrendingUp className="size-5 text-emerald-500" />
+              Aktivitas Pekerja (24 Jam Terakhir WIB)
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Grafik fluktuasi total pekerja aktif ON sepanjang hari (00:00 - 23:59 WIB)
+            </p>
+          </div>
+          <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-500 font-bold text-xs">
+            Live Snapshot
+          </Badge>
+        </div>
+
+        <div className="w-full h-64 min-h-[250px] pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={hourlyActivity} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis
+                dataKey="hour"
+                stroke="rgba(255,255,255,0.4)"
+                tick={{ fontSize: 11 }}
+                interval={1}
+              />
+              <YAxis
+                stroke="rgba(255,255,255,0.4)"
+                tick={{ fontSize: 11 }}
+                allowDecimals={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "rgba(15, 23, 42, 0.9)",
+                  borderColor: "rgba(255, 255, 255, 0.15)",
+                  borderRadius: "0.75rem",
+                  backdropFilter: "blur(12px)",
+                  color: "#fff",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                }}
+                formatter={(value: unknown) => [`${value} Pekerja ON`, "Status ON"]}
+                labelFormatter={(label) => `Jam ${label} WIB`}
+              />
+              <Line
+                type="monotone"
+                dataKey="on"
+                stroke="#22c55e"
+                strokeWidth={3}
+                dot={{ r: 4, fill: "#22c55e", strokeWidth: 2, stroke: "#0f172a" }}
+                activeDot={{ r: 6, stroke: "#22c55e", strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
       {/* 3. Recent Activity Section */}
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
@@ -631,7 +704,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
             <span className="text-[10px] text-muted-foreground leading-snug">Total keterlambatan istirahat</span>
           </div>
 
-          {/* Alpha Card (Bento Box Redesign) */}
+          {/* Alpha Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-red-500/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Alpha</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
@@ -648,7 +721,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
             <span className="text-[10px] text-muted-foreground leading-snug">Total absen alpha</span>
           </div>
 
-          {/* Sakit Card (Bento Box Redesign) */}
+          {/* Sakit Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-orange-500/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Sakit</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
@@ -665,7 +738,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
             <span className="text-[10px] text-muted-foreground leading-snug">Akumulasi hari izin sakit</span>
           </div>
 
-          {/* Pending Card (Bento Box Redesign) */}
+          {/* Pending Card */}
           <div className="p-4 rounded-xl border border-border/40 bg-card/30 hover:shadow-md transition-all flex flex-col gap-1.5 group hover:border-purple-500/20">
             <span className="text-muted-foreground text-xs uppercase font-bold tracking-wide">Pending</span>
             <div className="grid grid-cols-2 gap-2 mt-1">
@@ -729,6 +802,13 @@ function DashboardSkeleton() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Activity Line Chart skeleton */}
+      <div className="rounded-xl border border-border bg-card/45 p-6 h-[300px]">
+        <Skeleton className="h-6 w-56 rounded mb-2" />
+        <Skeleton className="h-4 w-80 rounded mb-6" />
+        <Skeleton className="h-48 w-full rounded-lg" />
       </div>
 
       {/* Recent Activity skeleton */}

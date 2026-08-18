@@ -44,7 +44,15 @@ export interface UrgentAlert {
   user_id: string;
 }
 
+export interface HourlyActivityPoint {
+  hour: string; // "00:00", "01:00", ..., "23:00"
+  on: number;
+  break: number;
+  off: number;
+}
+
 export interface DashboardData {
+  hourly_activity: HourlyActivityPoint[];
   monthly_summary: MonthlySummary;
   recent_activity: RecentActivity[];
   status_counts: StatusCounts;
@@ -68,6 +76,7 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
     { data: statuses },
     { data: records },
     { data: auditLogs },
+    { data: snapshotRows },
   ] = await Promise.all([
     supabase
       .from("users")
@@ -88,6 +97,10 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
       .select("id, actor_user_id, target_user_id, domain, action, payload_json, created_at")
       .order("created_at", { ascending: false })
       .limit(20),
+    supabase
+      .from("activity_snapshots")
+      .select("snapshot_hour, status_counts")
+      .eq("snapshot_date", wibDateStr),
   ]);
 
   const activeUserMap = new Map((users || []).map((u) => [u.id, u.name]));
@@ -324,7 +337,24 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
     };
   });
 
+  // Map 24-hour activity snapshots
+  const snapshotMap = new Map(
+    (snapshotRows || []).map((s) => [s.snapshot_hour, s.status_counts]),
+  );
+
+  const hourly_activity: HourlyActivityPoint[] = Array.from({ length: 24 }, (_, h) => {
+    const hourLabel = `${String(h).padStart(2, "0")}:00`;
+    const counts = (snapshotMap.get(h) as Record<string, number> | undefined) || {};
+    return {
+      hour: hourLabel,
+      on: typeof counts.on === "number" ? counts.on : 0,
+      break: typeof counts.break === "number" ? counts.break : 0,
+      off: typeof counts.off === "number" ? counts.off : 0,
+    };
+  });
+
   return {
+    hourly_activity,
     monthly_summary: monthlySummary,
     recent_activity: recentActivity,
     status_counts: statusCounts,
