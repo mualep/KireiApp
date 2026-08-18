@@ -36,8 +36,19 @@ const statusCellClasses: Record<AbsensiCellDTO["status"], string> = {
   sakit: "border-status-sakit/35 bg-status-sakit/10 text-status-sakit",
 };
 
+const statusHoverClasses: Record<AbsensiCellDTO["status"], string> = {
+  alpha: "hover:bg-status-alpha/25 hover:border-status-alpha/60 hover:brightness-125",
+  cuti: "hover:bg-status-cuti/25 hover:border-status-cuti/60 hover:brightness-125",
+  hadir: "hover:bg-status-on/25 hover:border-status-on/60 hover:brightness-125",
+  pending: "hover:bg-status-pending/25 hover:border-status-pending/60 hover:brightness-125",
+  sakit: "hover:bg-status-sakit/25 hover:border-status-sakit/60 hover:brightness-125",
+};
+
 const emptyCellClasses =
   "border-border/60 bg-background/30 text-muted-foreground/60";
+
+const emptyHoverClasses =
+  "hover:bg-muted/50 hover:text-foreground hover:border-border/80";
 
 export function AbsensiMonthGrid({
   canCorrect,
@@ -240,7 +251,8 @@ function AbsensiCell({
         return (
           <span
             className={cn(
-              "flex h-8 w-full items-center justify-center rounded-md border border-dashed border-primary/40 bg-primary/10 text-primary font-bold text-[0.75rem] tabular-nums opacity-85",
+              "flex h-8 w-full items-center justify-center rounded-md border px-1 font-mono font-black text-[0.75rem] tabular-nums opacity-75 select-none",
+              statusCellClasses[scheduled.status],
             )}
             title={`Jadwal Mendatang: ${scheduled.status.toUpperCase()} (${scheduled.targetDate})`}
             translate="no"
@@ -251,7 +263,7 @@ function AbsensiCell({
       }
       return (
         <span
-          className="flex h-8 w-full items-center justify-center rounded-md border border-border/60 bg-background/30 text-muted-foreground/40 text-sm font-mono font-black"
+          className="flex h-8 w-full items-center justify-center rounded-md border border-border/40 bg-background/20 text-muted-foreground/30 text-sm font-mono font-black"
           title="Belum ada absensi"
           translate="no"
         >
@@ -267,7 +279,9 @@ function AbsensiCell({
           type="button"
           aria-label={`Detail Jadwal ${row.name} tanggal ${day}`}
           className={cn(
-            "flex h-8 w-full items-center justify-center rounded-md border border-dashed border-primary/60 bg-primary/15 text-primary font-extrabold text-[0.75rem] tabular-nums transition-colors cursor-pointer hover:bg-primary/25 hover:border-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+            "flex h-8 w-full items-center justify-center rounded-md border px-1 font-mono font-extrabold text-[0.75rem] tabular-nums transition-all cursor-pointer opacity-75 hover:opacity-100 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+            statusCellClasses[scheduled.status],
+            statusHoverClasses[scheduled.status],
           )}
           title={`Klik untuk lihat/batalkan jadwal ${scheduled.status.toUpperCase()} (${day})`}
           onClick={() => {
@@ -284,7 +298,7 @@ function AbsensiCell({
       <button
         type="button"
         aria-label={`Jadwalkan ${row.name} tanggal ${day}`}
-        className="flex h-8 w-full items-center justify-center rounded-md border border-dashed border-transparent bg-background/20 text-muted-foreground/50 text-sm font-mono font-black transition-all cursor-pointer hover:border-primary/50 hover:bg-primary/10 hover:text-primary hover:opacity-100 opacity-40 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="flex h-8 w-full items-center justify-center rounded-md border border-border/30 bg-background/20 text-muted-foreground/35 text-sm font-mono font-black transition-all cursor-pointer opacity-50 hover:opacity-100 hover:bg-muted/40 hover:text-foreground hover:border-border/60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         title={`Klik untuk jadwalkan absensi masa depan (${day})`}
         onClick={() => {
           onOpenScheduleModal?.(row.userId, row.name, day);
@@ -329,7 +343,8 @@ function AbsensiCell({
       aria-label={`Correct ${row.name} Absensi on ${day}`}
       className={cn(
         cellClassName,
-        "cursor-pointer hover:bg-primary/10 hover:text-primary focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        "cursor-pointer transition-all focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        cell ? statusHoverClasses[cell.status] : emptyHoverClasses,
       )}
       title={title}
       onClick={() => {
