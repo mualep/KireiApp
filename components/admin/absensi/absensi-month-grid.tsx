@@ -251,7 +251,7 @@ function AbsensiCell({
         return (
           <span
             className={cn(
-              "flex h-8 w-full items-center justify-center rounded-md border px-1 font-mono font-black text-[0.75rem] tabular-nums opacity-75 select-none",
+              "flex h-8 w-full items-center justify-center rounded-md border px-1 font-mono font-black text-[0.75rem] tabular-nums opacity-40 select-none",
               statusCellClasses[scheduled.status],
             )}
             title={`Jadwal Mendatang: ${scheduled.status.toUpperCase()} (${scheduled.targetDate})`}
@@ -279,7 +279,7 @@ function AbsensiCell({
           type="button"
           aria-label={`Detail Jadwal ${row.name} tanggal ${day}`}
           className={cn(
-            "flex h-8 w-full items-center justify-center rounded-md border px-1 font-mono font-extrabold text-[0.75rem] tabular-nums transition-all cursor-pointer opacity-75 hover:opacity-100 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+            "flex h-8 w-full items-center justify-center rounded-md border px-1 font-mono font-extrabold text-[0.75rem] tabular-nums transition-all cursor-pointer opacity-40 hover:opacity-100 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
             statusCellClasses[scheduled.status],
             statusHoverClasses[scheduled.status],
           )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { CalendarClock, Trash2, Loader2 } from "lucide-react";
+import { CalendarClock, Trash2, Loader2, AlertTriangle } from "lucide-react";
 import type { ScheduledCellDTO } from "@/lib/absensi/data";
 
 interface ScheduledCellDetailDialogProps {
@@ -32,20 +32,16 @@ export function ScheduledCellDetailDialog({
   const router = useRouter();
   const { toast } = useToast();
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+
+  // Reset internal confirm state when modal closes or changes target
+  useEffect(() => {
+    setShowConfirmCancel(false);
+  }, [scheduled]);
 
   if (!scheduled) return null;
 
-  const handleCancel = async () => {
-    if (
-      !confirm(
-        `Batalkan penjadwalan ${scheduled.status.toUpperCase()} untuk ${scheduled.workerName}?${
-          scheduled.status === "cuti" ? " Stok cuti akan dikembalikan." : ""
-        }`
-      )
-    ) {
-      return;
-    }
-
+  const handleCancelExecution = async () => {
     try {
       setIsCancelling(true);
       const res = await fetch(`/api/absensi/schedule/${scheduled.id}/cancel`, {
@@ -65,6 +61,7 @@ export function ScheduledCellDetailDialog({
         className: "border-green-500/30 bg-green-500/10 text-green-500 backdrop-blur-md",
       });
 
+      setShowConfirmCancel(false);
       onOpenChange(false);
       router.refresh();
       onSuccess?.();
@@ -135,31 +132,71 @@ export function ScheduledCellDetailDialog({
               <span className="text-xs text-foreground leading-relaxed">&ldquo;{scheduled.notes}&rdquo;</span>
             </div>
           ) : null}
+
+          {/* Web Custom Confirmation Card */}
+          {showConfirmCancel && (
+            <div className="p-3.5 rounded-xl border border-red-500/35 bg-red-500/10 text-red-400 flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex items-center gap-2 font-bold text-xs text-red-300">
+                <AlertTriangle className="size-4 text-red-400 shrink-0" />
+                Konfirmasi Pembatalan
+              </div>
+              <p className="text-[11px] text-red-300/90 leading-snug">
+                Apakah Anda yakin ingin membatalkan penjadwalan <span className="font-extrabold uppercase text-white">{scheduled.status}</span> untuk <span className="font-extrabold text-white">{scheduled.workerName}</span> pada tanggal <span className="font-mono font-bold">{scheduled.targetDate}</span>?
+                {scheduled.status === "cuti" ? " 1 stok cuti akan dikembalikan secara otomatis." : ""}
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="mt-2 pt-2 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isCancelling}
-            className="h-9 px-4 font-bold text-xs"
-          >
-            Tutup
-          </Button>
+          {showConfirmCancel ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowConfirmCancel(false)}
+                disabled={isCancelling}
+                className="h-9 px-4 font-bold text-xs"
+              >
+                Kembali
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleCancelExecution}
+                disabled={isCancelling}
+                className="h-9 px-4 font-bold text-xs flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700"
+              >
+                {isCancelling ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                Ya, Batalkan Penjadwalan
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isCancelling}
+                className="h-9 px-4 font-bold text-xs"
+              >
+                Tutup
+              </Button>
 
-          {canManage ? (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleCancel}
-              disabled={isCancelling}
-              className="h-9 px-4 font-bold text-xs flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700"
-            >
-              {isCancelling ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-              Batalkan Penjadwalan
-            </Button>
-          ) : null}
+              {canManage ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowConfirmCancel(true)}
+                  disabled={isCancelling}
+                  className="h-9 px-4 font-bold text-xs flex items-center gap-1.5 bg-rose-600/90 hover:bg-rose-600"
+                >
+                  <Trash2 className="size-3.5" />
+                  Batalkan Penjadwalan
+                </Button>
+              ) : null}
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

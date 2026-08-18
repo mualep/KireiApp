@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { CalendarClock, Trash2, RefreshCw, Loader2 } from "lucide-react";
+import { CalendarClock, Trash2, RefreshCw, Loader2, AlertTriangle } from "lucide-react";
 import type { ScheduledAttendanceDTO } from "@/lib/scheduling/types";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +35,7 @@ export function ScheduledAttendanceList({
   const [schedules, setSchedules] = useState<ScheduledAttendanceDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
   const fetchSchedules = useCallback(async () => {
     try {
@@ -54,14 +55,11 @@ export function ScheduledAttendanceList({
   useEffect(() => {
     if (open) {
       void fetchSchedules();
+      setConfirmCancelId(null);
     }
   }, [open, fetchSchedules]);
 
-  const handleCancel = async (id: string, workerName: string, status: string) => {
-    if (!confirm(`Batalkan penjadwalan ${status.toUpperCase()} untuk ${workerName}?${status === 'cuti' ? ' Stok cuti akan dikembalikan.' : ''}`)) {
-      return;
-    }
-
+  const handleCancelExecution = async (id: string, workerName: string, status: string) => {
     try {
       setCancellingId(id);
       const res = await fetch(`/api/absensi/schedule/${id}/cancel`, {
@@ -81,6 +79,7 @@ export function ScheduledAttendanceList({
         className: "border-green-500/30 bg-green-500/10 text-green-500 backdrop-blur-md",
       });
 
+      setConfirmCancelId(null);
       await fetchSchedules();
       router.refresh();
       onScheduledChanged?.();
@@ -148,45 +147,80 @@ export function ScheduledAttendanceList({
             </div>
           ) : (
             <div className="flex flex-col gap-2.5">
-              {schedules.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-border/40 bg-card/40 hover:bg-card/75 transition-colors text-xs"
-                >
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-foreground" translate="no">
-                        {item.worker_name}
-                      </span>
-                      {getStatusBadge(item.status)}
-                      <span className="font-mono text-xs font-bold text-primary">
-                        {item.target_date}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground">
-                      Dijadwalkan oleh <span className="font-semibold text-foreground">{item.scheduler_name}</span>
-                      {item.notes ? ` — "${item.notes}"` : ""}
-                    </span>
-                  </div>
+              {schedules.map((item) => {
+                const isConfirming = confirmCancelId === item.id;
 
-                  {canManage ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={cancellingId === item.id}
-                      onClick={() => handleCancel(item.id, item.worker_name || "Pekerja", item.status)}
-                      className="h-8 px-2.5 text-[11px] font-bold text-rose-500 border-rose-500/25 hover:bg-rose-500/10 hover:text-rose-400 shrink-0"
-                    >
-                      {cancellingId === item.id ? (
-                        <Loader2 className="size-3 animate-spin mr-1" />
-                      ) : (
-                        <Trash2 className="size-3 mr-1" />
-                      )}
-                      Batalkan
-                    </Button>
-                  ) : null}
-                </div>
-              ))}
+                return (
+                  <div
+                    key={item.id}
+                    className="flex flex-col gap-2 p-3.5 rounded-xl border border-border/40 bg-card/40 hover:bg-card/75 transition-colors text-xs"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-foreground" translate="no">
+                            {item.worker_name}
+                          </span>
+                          {getStatusBadge(item.status)}
+                          <span className="font-mono text-xs font-bold text-primary">
+                            {item.target_date}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">
+                          Dijadwalkan oleh <span className="font-semibold text-foreground">{item.scheduler_name}</span>
+                          {item.notes ? ` — "${item.notes}"` : ""}
+                        </span>
+                      </div>
+
+                      {canManage && !isConfirming ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={cancellingId === item.id}
+                          onClick={() => setConfirmCancelId(item.id)}
+                          className="h-8 px-2.5 text-[11px] font-bold text-rose-500 border-rose-500/25 hover:bg-rose-500/10 hover:text-rose-400 shrink-0"
+                        >
+                          <Trash2 className="size-3 mr-1" />
+                          Batalkan
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    {/* Inline Web Custom Confirmation */}
+                    {isConfirming && (
+                      <div className="mt-1 p-3 rounded-lg border border-red-500/35 bg-red-500/10 text-red-300 flex items-center justify-between gap-3 animate-in fade-in duration-150">
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <AlertTriangle className="size-4 text-red-400 shrink-0" />
+                          <span>
+                            Batalkan jadwal <strong className="uppercase">{item.status}</strong>? {item.status === 'cuti' ? 'Stok cuti dikembalikan.' : ''}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setConfirmCancelId(null)}
+                            disabled={cancellingId === item.id}
+                            className="h-7 px-2 text-[11px]"
+                          >
+                            Batal
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleCancelExecution(item.id, item.worker_name || "Pekerja", item.status)}
+                            disabled={cancellingId === item.id}
+                            className="h-7 px-2 text-[11px] font-bold bg-rose-600 hover:bg-rose-700"
+                          >
+                            {cancellingId === item.id ? <Loader2 className="size-3 animate-spin mr-1" /> : null}
+                            Ya, Batalkan
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
