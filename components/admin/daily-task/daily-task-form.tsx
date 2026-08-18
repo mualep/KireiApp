@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,7 +61,6 @@ export function DailyTaskForm({
   // Local Client Date (YYYY-MM-DD)
   const [todayDate] = useState(() => {
     const d = new Date();
-    // SV-SE locale formats as exactly YYYY-MM-DD
     return d.toLocaleDateString("sv-SE");
   });
 
@@ -76,6 +75,11 @@ export function DailyTaskForm({
     initialWorkerStatus?.shift_active_label || "A"
   );
   const [streamName, setStreamName] = useState("");
+  const [buyerName, setBuyerName] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [problemNotes, setProblemNotes] = useState("");
+  const [ssBeforeUrl, setSsBeforeUrl] = useState("");
+  const [ssAfterUrl, setSsAfterUrl] = useState("");
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
   
   // Checklist answers mapping: { [configId]: { checked: boolean, proof: string } }
@@ -120,6 +124,11 @@ export function DailyTaskForm({
           
           if (task.shift_label) setShiftLabel(task.shift_label);
           if (task.stream_name) setStreamName(task.stream_name);
+          if (task.buyer_name) setBuyerName(task.buyer_name);
+          if (task.task_description) setTaskDescription(task.task_description);
+          if (task.problem_notes) setProblemNotes(task.problem_notes);
+          if (task.ss_before_url) setSsBeforeUrl(task.ss_before_url);
+          if (task.ss_after_url) setSsAfterUrl(task.ss_after_url);
           if (task.selected_games) setSelectedGames(task.selected_games);
           
           // Map stored answers
@@ -135,6 +144,13 @@ export function DailyTaskForm({
           setTaskId(null);
           setTaskStatus(null);
           setEditableUntil(null);
+          setStreamName("");
+          setBuyerName("");
+          setTaskDescription("");
+          setProblemNotes("");
+          setSsBeforeUrl("");
+          setSsAfterUrl("");
+          setSelectedGames([]);
           setSsBeforeTime("");
           setSsAfterTime("");
           setProcessDurationMinutes("");
@@ -237,6 +253,11 @@ export function DailyTaskForm({
           ss_before_time: ssBeforeTime || null,
           ss_after_time: ssAfterTime || null,
           process_duration_minutes: typeof processDurationMinutes === "number" ? processDurationMinutes : null,
+          buyer_name: buyerName || null,
+          task_description: taskDescription || null,
+          problem_notes: problemNotes || null,
+          ss_before_url: ssBeforeUrl || null,
+          ss_after_url: ssAfterUrl || null,
         };
 
         const endpoint = taskId ? `/api/daily-task/${taskId}` : "/api/daily-task/submit";
@@ -300,23 +321,20 @@ export function DailyTaskForm({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <Skeleton className="h-4 w-32 rounded" />
+              <Skeleton className="h-4 w-24 rounded" />
               <Skeleton className="h-10 w-full rounded-lg" />
             </div>
             <div className="flex flex-col gap-2">
-              <Skeleton className="h-4 w-40 rounded" />
-              <div className="flex flex-wrap gap-2.5 mt-1">
-                <Skeleton className="h-9 w-20 rounded-lg" />
-                <Skeleton className="h-9 w-24 rounded-lg" />
-                <Skeleton className="h-9 w-20 rounded-lg" />
-              </div>
+              <Skeleton className="h-4 w-24 rounded" />
+              <Skeleton className="h-10 w-full rounded-lg" />
             </div>
           </div>
         </div>
 
-        {/* Task lists skeletons */}
+        {/* Section skeleton */}
         <div className="flex flex-col gap-4">
-          {[1, 2, 3].map((i) => (
+          <Skeleton className="h-6 w-36 rounded-md" />
+          {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="rounded-xl border border-border/30 bg-card/20 p-5 flex flex-col md:flex-row gap-5 items-start md:items-center justify-between">
               <div className="flex items-start gap-4 flex-1 w-full">
                 <Skeleton className="size-5 rounded shrink-0 mt-0.5" />
@@ -350,8 +368,9 @@ export function DailyTaskForm({
         </div>
       ) : null}
 
-      {/* Main Form Fields */}
+      {/* Main Form Fields (Employee Report Format) */}
       <Card className="tracker-glass-panel rounded-xl border p-6 md:p-8 flex flex-col gap-6 shadow-xl shadow-primary/5">
+        {/* Row 1: Nama Player | Shift Kerja */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Field>
             <FieldLabel>Nama Player</FieldLabel>
@@ -375,44 +394,32 @@ export function DailyTaskForm({
           </Field>
         </div>
 
+        {/* Row 2: Nama Buyer | Keterangan Task */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Field>
-            <FieldLabel htmlFor="stream-input">Nama / Link Stream</FieldLabel>
+            <FieldLabel htmlFor="buyer-name-input">Nama Buyer</FieldLabel>
             <Input
-              id="stream-input"
-              value={streamName}
-              onChange={(e) => setStreamName(e.target.value)}
-              placeholder="cth. Link stream YouTube / Twitch"
+              id="buyer-name-input"
+              value={buyerName}
+              onChange={(e) => setBuyerName(e.target.value)}
+              placeholder="cth. JohnDoe / Order #1234"
               disabled={isLocked || isPending}
             />
           </Field>
 
           <Field>
-            <FieldLabel>Pilihan Game Hari Ini</FieldLabel>
-            <div className="flex flex-wrap gap-2.5 mt-1">
-              {games.map((game) => {
-                const active = selectedGames.includes(game);
-                return (
-                  <button
-                    key={game}
-                    type="button"
-                    onClick={() => handleGameToggle(game)}
-                    disabled={isLocked || isPending}
-                    className={cn(
-                      "h-9 px-4 rounded-lg border text-xs font-bold transition-all flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                      active
-                        ? "border-primary bg-primary/10 text-primary hover:bg-primary/15"
-                        : "border-input-border bg-input-bg text-muted-foreground hover:bg-input-bg/70"
-                    )}
-                  >
-                    {game}
-                  </button>
-                );
-              })}
-            </div>
+            <FieldLabel htmlFor="task-description-input">Keterangan Task</FieldLabel>
+            <Input
+              id="task-description-input"
+              value={taskDescription}
+              onChange={(e) => setTaskDescription(e.target.value)}
+              placeholder="cth. BDO 2 jam, Maple 3 jam 30 menit"
+              disabled={isLocked || isPending}
+            />
           </Field>
         </div>
 
+        {/* Row 3: Jam SS Before | Jam SS After | Total Pengerjaan */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Field>
             <FieldLabel htmlFor="ss-before-input">Jam SS Before</FieldLabel>
@@ -437,168 +444,323 @@ export function DailyTaskForm({
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="process-duration-input">Durasi Proses (Menit)</FieldLabel>
+            <FieldLabel htmlFor="duration-input">Total Pengerjaan</FieldLabel>
             <Input
-              id="process-duration-input"
-              type="text"
-              value={processDurationMinutes !== "" ? `${Math.floor(processDurationMinutes / 60)} jam ${processDurationMinutes % 60} menit` : ""}
-              placeholder="Dihitung otomatis"
-              disabled={isLocked || isPending}
+              id="duration-input"
+              value={
+                typeof processDurationMinutes === "number"
+                  ? `${processDurationMinutes} Menit (${Math.floor(processDurationMinutes / 60)}j ${processDurationMinutes % 60}m)`
+                  : "-"
+              }
               readOnly
+              disabled
+              className="bg-muted/40 font-bold"
             />
           </Field>
         </div>
+
+        {/* Row 4: Link SS Before | Link SS After */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Field>
+            <FieldLabel htmlFor="ss-before-url-input">Link SS Before (Image URL)</FieldLabel>
+            <Input
+              id="ss-before-url-input"
+              value={ssBeforeUrl}
+              onChange={(e) => setSsBeforeUrl(e.target.value)}
+              placeholder="cth. https://imgur.com/... atau https://imgpile.com/..."
+              disabled={isLocked || isPending}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="ss-after-url-input">Link SS After (Image URL)</FieldLabel>
+            <Input
+              id="ss-after-url-input"
+              value={ssAfterUrl}
+              onChange={(e) => setSsAfterUrl(e.target.value)}
+              placeholder="cth. https://imgur.com/... atau https://imgpile.com/..."
+              disabled={isLocked || isPending}
+            />
+          </Field>
+        </div>
+
+        {/* Row 5: Link Streaming | Problem / Kendala */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Field>
+            <FieldLabel htmlFor="stream-input">Link Streaming</FieldLabel>
+            <Input
+              id="stream-input"
+              value={streamName}
+              onChange={(e) => setStreamName(e.target.value)}
+              placeholder="cth. Link stream YouTube / Twitch"
+              disabled={isLocked || isPending}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="problem-notes-input">Problem / Kendala</FieldLabel>
+            <Input
+              id="problem-notes-input"
+              value={problemNotes}
+              onChange={(e) => setProblemNotes(e.target.value)}
+              placeholder="cth. Server Maintenance / DC 15 menit"
+              disabled={isLocked || isPending}
+            />
+          </Field>
+        </div>
+
+        {/* Row 6: Pilihan Game Hari Ini */}
+        <Field>
+          <FieldLabel>Pilihan Game Hari Ini</FieldLabel>
+          <div className="flex flex-wrap gap-2.5 mt-1">
+            {games.map((game) => {
+              const active = selectedGames.includes(game);
+              return (
+                <button
+                  key={game}
+                  type="button"
+                  onClick={() => handleGameToggle(game)}
+                  disabled={isLocked || isPending}
+                  className={cn(
+                    "h-9 px-4 rounded-lg border text-xs font-bold transition-all flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                    active
+                      ? "border-primary bg-primary/10 text-primary hover:bg-primary/15"
+                      : "border-input-border bg-input-bg text-muted-foreground hover:bg-input-bg/70"
+                  )}
+                >
+                  {game}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
       </Card>
 
-      {/* Phase Sections */}
-      <div className="flex flex-col gap-6">
-        {/* Phase: Before Work */}
-        {beforeWorkItems.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 gap-4">
-              {beforeWorkItems.map((item) => (
-                <ChecklistItemCard
-                  key={item.id}
-                  item={item}
-                  answer={checklistAnswers[item.id]}
-                  isLocked={isLocked || isPending}
-                  onCheckChange={(val) => handleCheckboxChange(item.id, val)}
-                  onProofChange={(val) => handleProofChange(item.id, val)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Phase: While Work */}
-        {whileWorkItems.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 gap-4">
-              {whileWorkItems.map((item) => (
-                <ChecklistItemCard
-                  key={item.id}
-                  item={item}
-                  answer={checklistAnswers[item.id]}
-                  isLocked={isLocked || isPending}
-                  onCheckChange={(val) => handleCheckboxChange(item.id, val)}
-                  onProofChange={(val) => handleProofChange(item.id, val)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Phase: After Work */}
-        {afterWorkItems.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 gap-4">
-              {afterWorkItems.map((item) => (
-                <ChecklistItemCard
-                  key={item.id}
-                  item={item}
-                  answer={checklistAnswers[item.id]}
-                  isLocked={isLocked || isPending}
-                  onCheckChange={(val) => handleCheckboxChange(item.id, val)}
-                  onProofChange={(val) => handleProofChange(item.id, val)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Submission Footer */}
-      {!isLocked && (
-        <div className="flex justify-end p-1">
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="h-11 px-8 font-bold bg-primary text-primary-foreground hover:bg-primary/95 transition-all shadow-md shadow-primary/20 flex items-center gap-2"
-          >
-            {isPending && <RefreshCw className="size-4 animate-spin" />}
-            {taskId ? "Perbarui Tugas Harian" : "Kirim Tugas Harian"}
-          </Button>
-        </div>
-      )}
-
-      {/* Quote Card placed at the bottom */}
-      {quote.text && (
-        <Card className="border border-primary/20 bg-primary/5 shadow-md rounded-xl overflow-hidden relative mt-8">
-          <div className="absolute right-4 top-4 text-primary/10 opacity-30 select-none pointer-events-none">
-            <Flame className="size-20" />
-          </div>
-          <CardContent className="p-6 relative z-10 flex flex-col gap-1.5">
-            <p className="font-serif italic text-base md:text-lg text-foreground/90 leading-relaxed">
-              &ldquo;{quote.text}&rdquo;
-            </p>
-            <p className="text-xs md:text-sm text-primary font-bold tracking-wide uppercase">
-              &mdash; {quote.author}
-            </p>
-          </CardContent>
-        </Card>
-      )}
-    </form>
-  );
-}
-
-interface ChecklistItemCardProps {
-  item: ConfigItem;
-  answer?: { checked: boolean; proof: string };
-  isLocked: boolean;
-  onCheckChange: (checked: boolean) => void;
-  onProofChange: (proof: string) => void;
-}
-
-function ChecklistItemCard({
-  item,
-  answer = { checked: false, proof: "" },
-  isLocked,
-  onCheckChange,
-  onProofChange,
-}: ChecklistItemCardProps) {
-  return (
-    <Card className="tracker-glass-panel rounded-xl border p-5 flex flex-col md:flex-row gap-5 items-start md:items-center justify-between transition-all hover:border-primary/20 hover:shadow-lg hover:shadow-primary/2">
-      <div className="flex items-start gap-4 flex-1">
-        <div className="mt-1 flex items-center justify-center">
-          <input
-            type="checkbox"
-            id={`check-${item.id}`}
-            checked={answer.checked}
-            onChange={(e) => onCheckChange(e.target.checked)}
-            disabled={isLocked}
-            className="size-5 shrink-0 rounded border-input-border bg-input-bg text-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor={`check-${item.id}`}
-            className={cn(
-              "text-sm font-bold leading-snug cursor-pointer select-none",
-              answer.checked ? "text-muted-foreground/60 line-through" : "text-foreground"
-            )}
-            translate="no"
-          >
-            {item.label}
-          </label>
-          {item.phase === "while_work" && (
-            <Badge variant="outline" className="h-5 text-[10px] w-fit font-semibold border-primary/20 bg-primary/5 text-primary">
-              {item.game}
+      {/* Before Work Section */}
+      {beforeWorkItems.length > 0 ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2 border-b border-border/30 pb-2">
+            <h3 className="font-heading text-lg font-bold text-foreground tracking-tight">
+              Before Work Checklist
+            </h3>
+            <Badge variant="outline" className="text-xs font-medium border-border/50">
+              {beforeWorkItems.length} item
             </Badge>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <div className="w-full md:w-80 shrink-0">
-        <Textarea
-          id={`proof-${item.id}`}
-          placeholder="Tautan bukti / Note hasil pengerjaan..."
-          value={answer.proof}
-          onChange={(e) => onProofChange(e.target.value)}
-          disabled={isLocked}
-          rows={2}
-          className="resize-none text-xs rounded-lg min-h-[56px] focus-visible:ring-primary/45"
-        />
+          <div className="grid grid-cols-1 gap-4">
+            {beforeWorkItems.map((item) => {
+              const ans = checklistAnswers[item.id] || { checked: false, proof: "" };
+              return (
+                <Card
+                  key={item.id}
+                  className={cn(
+                    "rounded-xl border p-5 transition-all",
+                    ans.checked
+                      ? "border-primary/40 bg-primary/5 shadow-sm"
+                      : "border-border/60 bg-card/40"
+                  )}
+                >
+                  <div className="flex flex-col md:flex-row gap-5 items-start md:items-center justify-between">
+                    <div className="flex items-start gap-4 flex-1">
+                      <input
+                        type="checkbox"
+                        id={`check-${item.id}`}
+                        checked={ans.checked}
+                        onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
+                        disabled={isLocked || isPending}
+                        className="size-5 rounded border-input text-primary focus:ring-primary mt-0.5 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <label
+                        htmlFor={`check-${item.id}`}
+                        className="text-sm font-semibold text-foreground leading-snug cursor-pointer select-none"
+                      >
+                        {item.label}
+                      </label>
+                    </div>
+
+                    <div className="w-full md:w-80 flex flex-col gap-1.5">
+                      <label htmlFor={`proof-${item.id}`} className="sr-only">
+                        Bukti Tautan
+                      </label>
+                      <Textarea
+                        id={`proof-${item.id}`}
+                        value={ans.proof}
+                        onChange={(e) => handleProofChange(item.id, e.target.value)}
+                        placeholder="Tautan bukti / catatan..."
+                        disabled={isLocked || isPending}
+                        rows={2}
+                        className="min-h-[56px] text-xs resize-none bg-background/50 focus-visible:bg-background"
+                      />
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {/* While Work Section */}
+      {whileWorkItems.length > 0 ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2 border-b border-border/30 pb-2">
+            <h3 className="font-heading text-lg font-bold text-foreground tracking-tight">
+              While Work Checklist
+            </h3>
+            <Badge variant="outline" className="text-xs font-medium border-border/50">
+              {whileWorkItems.length} item
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {whileWorkItems.map((item) => {
+              const ans = checklistAnswers[item.id] || { checked: false, proof: "" };
+              return (
+                <Card
+                  key={item.id}
+                  className={cn(
+                    "rounded-xl border p-5 transition-all",
+                    ans.checked
+                      ? "border-primary/40 bg-primary/5 shadow-sm"
+                      : "border-border/60 bg-card/40"
+                  )}
+                >
+                  <div className="flex flex-col md:flex-row gap-5 items-start md:items-center justify-between">
+                    <div className="flex items-start gap-4 flex-1">
+                      <input
+                        type="checkbox"
+                        id={`check-${item.id}`}
+                        checked={ans.checked}
+                        onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
+                        disabled={isLocked || isPending}
+                        className="size-5 rounded border-input text-primary focus:ring-primary mt-0.5 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                          {item.game}
+                        </span>
+                        <label
+                          htmlFor={`check-${item.id}`}
+                          className="text-sm font-semibold text-foreground leading-snug cursor-pointer select-none"
+                        >
+                          {item.label}
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="w-full md:w-80 flex flex-col gap-1.5">
+                      <label htmlFor={`proof-${item.id}`} className="sr-only">
+                        Bukti Tautan
+                      </label>
+                      <Textarea
+                        id={`proof-${item.id}`}
+                        value={ans.proof}
+                        onChange={(e) => handleProofChange(item.id, e.target.value)}
+                        placeholder="Tautan bukti / catatan..."
+                        disabled={isLocked || isPending}
+                        rows={2}
+                        className="min-h-[56px] text-xs resize-none bg-background/50 focus-visible:bg-background"
+                      />
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {/* After Work Section */}
+      {afterWorkItems.length > 0 ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2 border-b border-border/30 pb-2">
+            <h3 className="font-heading text-lg font-bold text-foreground tracking-tight">
+              After Work Checklist
+            </h3>
+            <Badge variant="outline" className="text-xs font-medium border-border/50">
+              {afterWorkItems.length} item
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {afterWorkItems.map((item) => {
+              const ans = checklistAnswers[item.id] || { checked: false, proof: "" };
+              return (
+                <Card
+                  key={item.id}
+                  className={cn(
+                    "rounded-xl border p-5 transition-all",
+                    ans.checked
+                      ? "border-primary/40 bg-primary/5 shadow-sm"
+                      : "border-border/60 bg-card/40"
+                  )}
+                >
+                  <div className="flex flex-col md:flex-row gap-5 items-start md:items-center justify-between">
+                    <div className="flex items-start gap-4 flex-1">
+                      <input
+                        type="checkbox"
+                        id={`check-${item.id}`}
+                        checked={ans.checked}
+                        onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
+                        disabled={isLocked || isPending}
+                        className="size-5 rounded border-input text-primary focus:ring-primary mt-0.5 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <label
+                        htmlFor={`check-${item.id}`}
+                        className="text-sm font-semibold text-foreground leading-snug cursor-pointer select-none"
+                      >
+                        {item.label}
+                      </label>
+                    </div>
+
+                    <div className="w-full md:w-80 flex flex-col gap-1.5">
+                      <label htmlFor={`proof-${item.id}`} className="sr-only">
+                        Bukti Tautan
+                      </label>
+                      <Textarea
+                        id={`proof-${item.id}`}
+                        value={ans.proof}
+                        onChange={(e) => handleProofChange(item.id, e.target.value)}
+                        placeholder="Tautan bukti / catatan..."
+                        disabled={isLocked || isPending}
+                        rows={2}
+                        className="min-h-[56px] text-xs resize-none bg-background/50 focus-visible:bg-background"
+                      />
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Submit Button & Quote Card */}
+      <div className="flex flex-col gap-4">
+        <Button
+          type="submit"
+          disabled={isLocked || isPending}
+          className="w-full h-12 text-base font-bold gap-2 shadow-lg shadow-primary/20"
+        >
+          {isPending ? (
+            <RefreshCw className="size-5 animate-spin" />
+          ) : (
+            <CheckCircle className="size-5" />
+          )}
+          {taskId ? "Perbarui Laporan Tugas Harian" : "Kirim Laporan Tugas Harian"}
+        </Button>
+
+        {quote.text ? (
+          <Card className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center gap-3">
+            <Flame className="size-5 text-primary shrink-0" />
+            <div className="text-xs">
+              <span className="font-semibold text-foreground">"{quote.text}"</span>
+              <span className="text-muted-foreground ml-1.5">— {quote.author}</span>
+            </div>
+          </Card>
+        ) : null}
       </div>
-    </Card>
+    </form>
   );
 }

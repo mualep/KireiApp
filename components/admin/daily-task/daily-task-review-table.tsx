@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Check, X, RefreshCw, Eye, Calendar, UserCheck, ChevronDown } from "lucide-react";
+import { Check, X, RefreshCw, Eye, Calendar, UserCheck, ChevronDown, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface TaskRecord {
@@ -34,6 +34,11 @@ export interface TaskRecord {
   ss_before_time: string | null;
   ss_after_time: string | null;
   process_duration_minutes: number | null;
+  buyer_name?: string | null;
+  task_description?: string | null;
+  problem_notes?: string | null;
+  ss_before_url?: string | null;
+  ss_after_url?: string | null;
 }
 
 interface DailyTaskReviewTableProps {
@@ -65,7 +70,10 @@ export function DailyTaskReviewTable({
     .filter((task) => {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
-        if (!task.worker_name.toLowerCase().includes(query)) {
+        const workerMatch = task.worker_name.toLowerCase().includes(query);
+        const buyerMatch = task.buyer_name?.toLowerCase().includes(query) ?? false;
+        const descMatch = task.task_description?.toLowerCase().includes(query) ?? false;
+        if (!workerMatch && !buyerMatch && !descMatch) {
           return false;
         }
       }
@@ -126,8 +134,8 @@ export function DailyTaskReviewTable({
     });
   };
 
-  function renderProofText(proof: string) {
-    if (!proof) return <span className="text-muted-foreground/45 italic">Tidak ada bukti</span>;
+  function renderProofText(proof: string | null | undefined) {
+    if (!proof || !proof.trim()) return <span className="text-muted-foreground/45 italic">-</span>;
 
     const trimmed = proof.trim();
     if (/^https?:\/\/\S+/i.test(trimmed)) {
@@ -138,7 +146,8 @@ export function DailyTaskReviewTable({
           rel="noopener noreferrer"
           className="text-primary hover:underline break-all font-medium inline-flex items-center gap-1.5"
         >
-          {trimmed}
+          <span>{trimmed}</span>
+          <ExternalLink className="size-3 shrink-0" />
         </a>
       );
     }
@@ -164,14 +173,14 @@ export function DailyTaskReviewTable({
               {/* Search */}
               <div role="group" className="flex flex-col">
                 <label htmlFor="review-search" className="sr-only">
-                  Cari Nama Pekerja
+                  Cari Nama / Buyer
                 </label>
                 <input
                   id="review-search"
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari nama pekerja..."
+                  placeholder="Cari pekerja / buyer..."
                   autoComplete="off"
                   className="w-full min-w-0 rounded-lg border border-input px-3 py-1.5 text-sm h-10 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 />
@@ -239,12 +248,13 @@ export function DailyTaskReviewTable({
       {/* Main Table Card */}
       <Card className="tracker-glass-panel rounded-xl border shadow-xl shadow-primary/5">
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[700px]">
+          <table className="w-full text-left border-collapse min-w-[850px]">
             <thead>
               <tr className="border-b border-border/30 bg-muted/20 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 <th className="px-5 py-4">Nama Pekerja</th>
                 <th className="px-5 py-4">Shift</th>
-                <th className="px-5 py-4">Game</th>
+                <th className="px-5 py-4">Buyer & Task</th>
+                <th className="px-5 py-4">Link Stream</th>
                 <th className="px-5 py-4">Submitted At</th>
                 <th className="px-5 py-4 text-center">Status</th>
                 <th className="px-5 py-4 text-right">Actions</th>
@@ -253,7 +263,7 @@ export function DailyTaskReviewTable({
             <tbody className="divide-y divide-border/20 text-sm">
               {filteredTasks.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-16 text-center text-muted-foreground/60 italic">
+                  <td colSpan={7} className="px-5 py-16 text-center text-muted-foreground/60 italic">
                     Tidak ada data pengumpulan tugas harian yang cocok dengan kriteria.
                   </td>
                 </tr>
@@ -270,18 +280,24 @@ export function DailyTaskReviewTable({
                           Shift {task.shift_label.toUpperCase()}
                         </Badge>
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-wrap gap-1.5">
-                          {task.selected_games.length === 0 ? (
-                            <span className="text-muted-foreground/45 italic text-xs">No Game</span>
-                          ) : (
-                            task.selected_games.map((g) => (
-                              <Badge key={g} variant="outline" className="font-semibold text-[10px] border-primary/20 bg-primary/5 text-primary">
-                                {g}
-                              </Badge>
-                            ))
-                          )}
+                      <td className="px-5 py-4 max-w-[200px]">
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className="font-semibold text-foreground truncate" title={task.buyer_name || undefined}>
+                            {task.buyer_name ? `Buyer: ${task.buyer_name}` : <span className="text-muted-foreground/50 italic text-xs">No Buyer</span>}
+                          </span>
+                          {task.task_description ? (
+                            <span className="text-xs text-muted-foreground truncate" title={task.task_description}>
+                              {task.task_description}
+                            </span>
+                          ) : null}
                         </div>
+                      </td>
+                      <td className="px-5 py-4 max-w-[180px]">
+                        {task.stream_name ? (
+                          renderProofText(task.stream_name)
+                        ) : (
+                          <span className="text-muted-foreground/45 italic text-xs">-</span>
+                        )}
                       </td>
                       <td className="px-5 py-4 tabular-nums text-muted-foreground">
                         {formatTime(task.submitted_at)}
@@ -330,42 +346,95 @@ export function DailyTaskReviewTable({
         <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
           <DialogContent className="sm:max-w-5xl md:max-w-6xl lg:max-w-7xl w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl border p-6 md:p-8">
             <DialogHeader className="gap-1.5">
-              <DialogTitle>Review Tugas Harian: {selectedTask.worker_name}</DialogTitle>
+              <DialogTitle>Review Laporan Tugas (Employee Report): {selectedTask.worker_name}</DialogTitle>
               <DialogDescription>
                 Pengumpulan untuk tanggal {selectedTask.task_date} pada Shift {selectedTask.shift_label.toUpperCase()}
               </DialogDescription>
             </DialogHeader>
 
-            {/* General Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 border-y border-border/20 my-4 text-sm">
+            {/* General Info / Employee Report Header Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 border-y border-border/20 my-4 text-sm">
               <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">Nama Buyer:</span>
+                    <span className="font-bold text-foreground">{selectedTask.buyer_name || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">Reviewer:</span>
+                    <span className="font-medium text-foreground flex items-center gap-1.5">
+                      <UserCheck className="size-4 text-primary shrink-0" />
+                      {selectedTask.reviewer_name || "-"}
+                    </span>
+                  </div>
+                </div>
+
                 <div>
-                  <span className="text-muted-foreground block text-xs">Stream Name / Link:</span>
-                  <span className="font-medium text-foreground break-all whitespace-normal overflow-hidden block">
-                    {selectedTask.stream_name ? renderProofText(selectedTask.stream_name) : "-"}
+                  <span className="text-muted-foreground block text-xs font-semibold">Keterangan Task:</span>
+                  <span className="font-medium text-foreground">{selectedTask.task_description || "-"}</span>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">Link Streaming:</span>
+                  <span className="font-medium text-foreground break-all whitespace-normal block">
+                    {renderProofText(selectedTask.stream_name)}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 border-t border-border/10 pt-2">
-                  <div>
-                    <span className="text-muted-foreground block text-xs">SS Before:</span>
-                    <span className="font-medium text-foreground">{selectedTask.ss_before_time ? selectedTask.ss_before_time.slice(0, 5) : "-"}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-xs">SS After:</span>
-                    <span className="font-medium text-foreground">{selectedTask.ss_after_time ? selectedTask.ss_after_time.slice(0, 5) : "-"}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block text-xs">Durasi Proses:</span>
-                    <span className="font-medium text-foreground">{typeof selectedTask.process_duration_minutes === "number" ? `${selectedTask.process_duration_minutes}m` : "-"}</span>
-                  </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">Problem / Kendala:</span>
+                  <span className="font-medium text-amber-500">{selectedTask.problem_notes || "-"}</span>
                 </div>
               </div>
-              <div>
-                <span className="text-muted-foreground block text-xs">Reviewer:</span>
-                <span className="font-medium text-foreground flex items-center gap-1.5">
-                  <UserCheck className="size-4 text-primary shrink-0" />
-                  {selectedTask.reviewer_name || "-"}
-                </span>
+
+              <div className="flex flex-col gap-3 border-t md:border-t-0 md:border-l border-border/20 pt-3 md:pt-0 md:pl-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">Jam SS Before:</span>
+                    <span className="font-bold text-foreground">{selectedTask.ss_before_time ? selectedTask.ss_before_time.slice(0, 5) : "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">Jam SS After:</span>
+                    <span className="font-bold text-foreground">{selectedTask.ss_after_time ? selectedTask.ss_after_time.slice(0, 5) : "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs font-semibold">Total Durasi:</span>
+                    <span className="font-bold text-foreground">
+                      {typeof selectedTask.process_duration_minutes === "number"
+                        ? `${selectedTask.process_duration_minutes}m`
+                        : "-"}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">Link SS Before:</span>
+                  <span className="font-medium text-foreground break-all whitespace-normal block">
+                    {renderProofText(selectedTask.ss_before_url)}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">Link SS After:</span>
+                  <span className="font-medium text-foreground break-all whitespace-normal block">
+                    {renderProofText(selectedTask.ss_after_url)}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-muted-foreground block text-xs font-semibold">Pilihan Game:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {selectedTask.selected_games.length === 0 ? (
+                      <span className="text-muted-foreground/50 italic text-xs">-</span>
+                    ) : (
+                      selectedTask.selected_games.map((g) => (
+                        <Badge key={g} variant="outline" className="font-semibold text-[10px] border-primary/20 bg-primary/5 text-primary">
+                          {g}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 

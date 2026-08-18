@@ -13,6 +13,11 @@ const submitTaskSchema = z.object({
   ss_before_time: z.string().trim().nullable().optional(),
   ss_after_time: z.string().trim().nullable().optional(),
   process_duration_minutes: z.number().int().nonnegative().nullable().optional(),
+  buyer_name: z.string().trim().nullable().optional(),
+  task_description: z.string().trim().nullable().optional(),
+  problem_notes: z.string().trim().nullable().optional(),
+  ss_before_url: z.string().trim().nullable().optional(),
+  ss_after_url: z.string().trim().nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -42,7 +47,12 @@ export async function POST(request: NextRequest) {
       checklist_answers,
       ss_before_time,
       ss_after_time,
-      process_duration_minutes
+      process_duration_minutes,
+      buyer_name,
+      task_description,
+      problem_notes,
+      ss_before_url,
+      ss_after_url,
     } = parsed.data;
 
     const supabase = await createClient();
@@ -90,6 +100,11 @@ export async function POST(request: NextRequest) {
         ss_before_time: ss_before_time || null,
         ss_after_time: ss_after_time || null,
         process_duration_minutes: typeof process_duration_minutes === "number" ? process_duration_minutes : null,
+        buyer_name: buyer_name || null,
+        task_description: task_description || null,
+        problem_notes: problem_notes || null,
+        ss_before_url: ss_before_url || null,
+        ss_after_url: ss_after_url || null,
       })
       .select("*")
       .single();

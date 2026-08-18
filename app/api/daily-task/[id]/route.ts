@@ -11,6 +11,11 @@ const updateTaskSchema = z.object({
   ss_before_time: z.string().trim().nullable().optional(),
   ss_after_time: z.string().trim().nullable().optional(),
   process_duration_minutes: z.number().int().nonnegative().nullable().optional(),
+  buyer_name: z.string().trim().nullable().optional(),
+  task_description: z.string().trim().nullable().optional(),
+  problem_notes: z.string().trim().nullable().optional(),
+  ss_before_url: z.string().trim().nullable().optional(),
+  ss_after_url: z.string().trim().nullable().optional(),
 });
 
 type RouteContext = {
