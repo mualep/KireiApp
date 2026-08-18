@@ -7,26 +7,26 @@ export default function AdminPerformanceLoading() {
   const recordCardSkeletons = Array.from({ length: 6 }, (_, i) => i);
 
   return (
-    <div className="flex flex-col gap-6 w-full" aria-label="Loading Performance">
+    <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8" aria-label="Loading Performance">
       {/* 1. Header Section Skeleton */}
-      <section className="tracker-glass-panel rounded-2xl border border-border/80 bg-card/60 p-6 shadow-sm backdrop-blur-xl">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col gap-2 min-w-0">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-6 w-32 rounded-full" />
-              <Skeleton className="h-6 w-20 rounded-full" />
-              <Skeleton className="h-6 w-36 rounded-full" />
-            </div>
-            <Skeleton className="h-9 w-64 rounded-lg" />
-            <Skeleton className="h-4 w-96 max-w-full rounded-md" />
+      <div className="flex flex-row items-center justify-between gap-4">
+        <div className="flex flex-col gap-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Skeleton className="h-6 w-32 rounded-full" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-6 w-36 rounded-full" />
           </div>
+          <Skeleton className="h-9 w-80 rounded-lg" />
+        </div>
 
-          <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="hidden sm:flex flex-col items-end gap-1">
             <Skeleton className="h-3 w-20 rounded" />
             <Skeleton className="h-8 w-24 rounded-full" />
           </div>
+          <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
         </div>
-      </section>
+      </div>
 
       {/* 2. Main Grid: Daily Task (5 cols) & Calendar (7 cols) Skeletons */}
       <div className="grid gap-6 lg:grid-cols-12">

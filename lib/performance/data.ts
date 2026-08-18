@@ -120,7 +120,7 @@ export async function getMemberPerformanceData(
       .eq("is_canceled", false),
     supabase
       .from("daily_tasks")
-      .select("id, status, checklist_snapshot, checklist_answers")
+      .select("id, status, selected_games, checklist_snapshot, checklist_answers")
       .eq("user_id", userId)
       .eq("task_date", todayWIB)
       .maybeSingle(),
@@ -144,7 +144,7 @@ export async function getMemberPerformanceData(
     shiftActiveDate: statusRow?.shift_active_date,
   });
 
-  // 4. Process Monthly Records (with Delta Overrides)
+  // 4. Process Monthly Records (using recordRow.cuti_stock_snapshot with delta overrides)
   const monthlyRecords: MemberMonthlyRecords = {
     alphaCount: Math.max(
       0,
@@ -156,7 +156,8 @@ export async function getMemberPerformanceData(
     ),
     cutiStock: Math.max(
       0,
-      (profileRow?.cuti_stock || 0) + (recordRow?.cuti_stock_delta || 0),
+      (recordRow?.cuti_stock_snapshot ?? profileRow?.cuti_stock ?? 0) +
+        (recordRow?.cuti_stock_delta || 0),
     ),
     lemburUnits: Math.max(
       0,
@@ -194,7 +195,7 @@ export async function getMemberPerformanceData(
     }
   }
 
-  // 6. Process Daily Task Progress
+  // 6. Process Daily Task Progress (Filter snapshot by selected_games + before/after work)
   let dailyTask: MemberDailyTaskProgress = {
     completedCount: 0,
     hasTaskToday: false,
@@ -205,22 +206,48 @@ export async function getMemberPerformanceData(
   };
 
   if (taskRow) {
+    const selectedGames = Array.isArray(taskRow.selected_games)
+      ? taskRow.selected_games
+      : [];
+    const snapshot = (taskRow.checklist_snapshot || []) as Array<{
+      game?: string;
+      id: string;
+    }>;
     const answers = (taskRow.checklist_answers || {}) as Record<
       string,
       { checked?: boolean }
     >;
-    const snapshot = (taskRow.checklist_snapshot || []) as Array<{ id: string }>;
+
+    let applicableItems = snapshot;
+    if (Array.isArray(snapshot) && snapshot.length > 0) {
+      applicableItems = snapshot.filter((item) => {
+        if (!item || !item.game) return false;
+        return (
+          item.game === "_before_work" ||
+          item.game === "_after_work" ||
+          selectedGames.includes(item.game)
+        );
+      });
+    }
 
     let completedCount = 0;
-    Object.values(answers).forEach((item) => {
-      if (item && item.checked === true) {
-        completedCount += 1;
-      }
-    });
+    if (applicableItems.length > 0) {
+      applicableItems.forEach((item) => {
+        if (answers[item.id]?.checked === true) {
+          completedCount += 1;
+        }
+      });
+    } else {
+      Object.values(answers).forEach((val) => {
+        if (val && val.checked === true) {
+          completedCount += 1;
+        }
+      });
+    }
 
     const totalCount =
-      Array.isArray(snapshot) && snapshot.length > 0
-        ? snapshot.length
+      applicableItems.length > 0
+        ? applicableItems.length
         : Object.keys(answers).length;
 
     const percentage =

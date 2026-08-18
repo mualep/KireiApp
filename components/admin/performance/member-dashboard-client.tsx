@@ -1,14 +1,16 @@
 "use client";
 
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   AlertCircleIcon,
   ArrowRightIcon,
   CalendarCheckIcon,
-  CheckCircle2Icon,
   ClockIcon,
   CoffeeIcon,
   ListTodoIcon,
+  RefreshCw,
   ShieldCheckIcon,
   UserCheckIcon,
   ZapIcon,
@@ -48,10 +50,27 @@ const INDONESIAN_MONTHS = [
 
 const DAY_NAMES = ["Ming", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
+function formatLemburMinutes(minutes: number): string {
+  if (minutes <= 0) return "0m";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
+}
+
 export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const handleRefresh = () => {
+    startTransition(() => {
+      router.refresh();
+    });
+  };
+
   const { user, profile, status, monthlyRecords, monthlyAttendance, dailyTask, todayWIB } = data;
 
-  // Format Duration helper
+  // Format Duration helper (seconds to min/hrs)
   const formatSecondsToMinutes = (seconds: number) => {
     if (seconds <= 0) return "0 m";
     const mins = Math.floor(seconds / 60);
@@ -76,52 +95,86 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
   const calendarDays = Array.from({ length: totalDaysInMonth }, (_, i) => i + 1);
   const paddingDays = Array.from({ length: firstDayOfWeek }, (_, i) => i);
 
+  const getTodayRingClass = (attStatus: string | undefined) => {
+    switch (attStatus) {
+      case "hadir":
+        return "ring-emerald-500";
+      case "cuti":
+        return "ring-sky-500";
+      case "sakit":
+        return "ring-amber-500";
+      case "pending":
+        return "ring-purple-500";
+      case "alpha":
+        return "ring-rose-500";
+      default:
+        return "ring-primary";
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-6 w-full">
-      {/* 1. Header & Greeting Section */}
-      <section className="tracker-glass-panel rounded-2xl border border-border/80 bg-card/60 p-6 shadow-sm backdrop-blur-xl">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col gap-1.5 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
+    <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8">
+      {/* 1. Header Section (Matches Admin Dashboard layout) */}
+      <div className="flex flex-row items-center justify-between gap-4">
+        <div className="flex flex-col gap-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <Badge
+              variant="outline"
+              className="h-6 border-primary/30 bg-primary/10 font-medium text-primary text-xs"
+            >
+              Member Dashboard
+            </Badge>
+            {profile.gid ? (
               <Badge
                 variant="outline"
-                className="h-6 border-primary/30 bg-primary/10 font-medium text-primary text-xs"
+                className="h-6 border-border bg-background/50 text-xs text-muted-foreground font-mono"
               >
-                Member Dashboard
+                {profile.gid}
               </Badge>
-              {profile.gid ? (
-                <Badge
-                  variant="outline"
-                  className="h-6 border-border bg-background/50 text-xs text-muted-foreground font-mono"
-                >
-                  {profile.gid}
-                </Badge>
-              ) : null}
-              <Badge
-                variant="outline"
-                className="h-6 border-border bg-background/50 text-xs text-muted-foreground"
-              >
-                Shift {profile.shift} • {profile.employeeRole}
-              </Badge>
-            </div>
-            <h1 className="font-heading text-3xl font-black tracking-tight text-foreground sm:text-4xl">
-              Halo, {user.name}!
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Pantau performa kerja harian, kelengkapan checklist, dan catatan absensi bulanan Anda di sini.
-            </p>
+            ) : null}
+            <Badge
+              variant="outline"
+              className="h-6 border-border bg-background/50 text-xs text-muted-foreground"
+            >
+              Shift {profile.shift} • {profile.employeeRole}
+            </Badge>
           </div>
 
-          <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+            Halo <span translate="no" className="text-primary capitalize">{user.name.toLowerCase()}</span>, selamat bekerja!
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="hidden sm:flex flex-col items-end gap-1">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
               Status Terkini
             </span>
             <TrackerStatusBadge status={status.displayStatus} prominent />
           </div>
-        </div>
-      </section>
 
-      {/* 2. Main Grid: Daily Task Progress Ring & Calendar / Summary */}
+          <Button
+            onClick={handleRefresh}
+            variant="default"
+            disabled={isPending}
+            size="icon-lg"
+            className="h-10 w-10 shrink-0"
+            title="Refresh Data"
+          >
+            <RefreshCw className={cn("size-4", isPending && "animate-spin")} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile status badge fallback */}
+      <div className="flex sm:hidden items-center justify-between border-b pb-3 border-border/50">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Status Terkini
+        </span>
+        <TrackerStatusBadge status={status.displayStatus} prominent />
+      </div>
+
+      {/* 2. Main Grid: Daily Task Progress Ring & Calendar */}
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Daily Task Progress Widget (5 cols) */}
         <Card className="tracker-glass-panel rounded-2xl border border-border/80 bg-card/60 shadow-sm backdrop-blur-xl lg:col-span-5 flex flex-col justify-between">
@@ -129,10 +182,10 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
             <div>
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <ListTodoIcon className="size-5 text-primary" />
-                Daily Checklist Hari Ini
+                Daily Checklist Player
               </CardTitle>
               <CardDescription className="text-xs mt-1">
-                Progress pengisian tugas harian Anda
+                Progress pengisian tugas harian Anda hari ini
               </CardDescription>
             </div>
             {dailyTask.status ? (
@@ -251,16 +304,19 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
             {/* Legend badges */}
             <div className="hidden sm:flex items-center gap-1.5 flex-wrap">
               <span className="inline-flex items-center gap-1 text-[0.65rem] text-emerald-600 dark:text-emerald-400 font-medium">
-                <span className="size-2 rounded-full bg-emerald-500" /> Hadir
+                <span className="size-2 rounded-full bg-emerald-500" /> H (Hadir)
               </span>
               <span className="inline-flex items-center gap-1 text-[0.65rem] text-sky-600 dark:text-sky-400 font-medium">
-                <span className="size-2 rounded-full bg-sky-500" /> Cuti
+                <span className="size-2 rounded-full bg-sky-500" /> C (Cuti)
               </span>
               <span className="inline-flex items-center gap-1 text-[0.65rem] text-amber-600 dark:text-amber-400 font-medium">
-                <span className="size-2 rounded-full bg-amber-500" /> Sakit
+                <span className="size-2 rounded-full bg-amber-500" /> S (Sakit)
+              </span>
+              <span className="inline-flex items-center gap-1 text-[0.65rem] text-purple-600 dark:text-purple-400 font-medium">
+                <span className="size-2 rounded-full bg-purple-500" /> P (Pending)
               </span>
               <span className="inline-flex items-center gap-1 text-[0.65rem] text-rose-600 dark:text-rose-400 font-medium">
-                <span className="size-2 rounded-full bg-rose-500" /> Alpha
+                <span className="size-2 rounded-full bg-rose-500" /> A (Alpha)
               </span>
             </div>
           </CardHeader>
@@ -292,7 +348,7 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
                     key={dateStr}
                     className={cn(
                       "flex flex-col items-center justify-center h-10 rounded-lg border text-xs font-semibold transition-all relative",
-                      isToday && "ring-2 ring-primary ring-offset-1 ring-offset-background",
+                      isToday && cn("ring-2 ring-offset-1 ring-offset-background", getTodayRingClass(attStatus)),
                       attStatus === "hadir" && "bg-emerald-500/15 border-emerald-500/35 text-emerald-600 dark:text-emerald-400 font-bold",
                       attStatus === "cuti" && "bg-sky-500/15 border-sky-500/35 text-sky-600 dark:text-sky-400 font-bold",
                       attStatus === "sakit" && "bg-amber-500/15 border-amber-500/35 text-amber-600 dark:text-amber-400 font-bold",
@@ -309,8 +365,8 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
                   >
                     <span>{dayNum}</span>
                     {attStatus ? (
-                      <span className="text-[0.55rem] font-bold uppercase tracking-tighter opacity-90 leading-none">
-                        {attStatus.slice(0, 3)}
+                      <span className="text-[0.6rem] font-bold uppercase tracking-tighter opacity-90 leading-none">
+                        {attStatus.charAt(0).toUpperCase()}
                       </span>
                     ) : null}
                   </div>
@@ -366,7 +422,7 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
           <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">Sakit</span>
-              <AlertCircleIcon className="size-4 text-sky-500" />
+              <AlertCircleIcon className="size-4 text-amber-500" />
             </div>
             <div className="mt-2">
               <span className="font-heading text-2xl font-black text-foreground">
@@ -408,13 +464,13 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
           <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">Lembur</span>
-              <ZapIcon className="size-4 text-primary" />
+              <ZapIcon className="size-4 text-amber-500" />
             </div>
             <div className="mt-2">
               <span className="font-heading text-2xl font-black text-foreground">
-                {monthlyRecords.lemburUnits} <span className="text-xs font-medium">Unit</span>
+                {formatLemburMinutes(monthlyRecords.lemburUnits)}
               </span>
-              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Total jam lembur disetujui</p>
+              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Akumulasi jam lembur</p>
             </div>
           </Card>
         </div>
