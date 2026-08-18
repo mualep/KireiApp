@@ -1,10 +1,11 @@
 import {
-  ActivityIcon,
-  AlertTriangleIcon,
-  BriefcaseBusinessIcon,
-  ClockIcon,
-  HeartPulseIcon,
-  HourglassIcon,
+  BookAlertIcon,
+  ClockAlertIcon,
+  ClockPlusIcon,
+  HeartOffIcon,
+  MessageCircleWarningIcon,
+  UserPenIcon,
+  UtensilsIcon,
 } from "lucide-react";
 
 import {
@@ -14,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { RecordsRowDTO } from "@/lib/records/data";
-import { formatRecordsSummaryDuration } from "@/lib/records/helpers";
 import { cn } from "@/lib/utils";
 
 type RecordsSummaryCardsProps = {
@@ -23,19 +23,38 @@ type RecordsSummaryCardsProps = {
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
 
+function formatDurationNoSpace(seconds: number): string {
+  if (seconds <= 0) return "0m";
+  const mins = Math.floor(seconds / 60);
+  const hours = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  if (hours === 0) return `${remMins}m`;
+  return remMins === 0 ? `${hours}h` : `${hours}h ${remMins}m`;
+}
+
+function formatLemburMinutes(minutes: number): string {
+  if (minutes <= 0) return "0m";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
+}
+
 export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
   const totals = rows.reduce(
     (summary, row) => ({
-      alphaWorkers: summary.alphaWorkers + (row.alphaCount.value > 0 ? 1 : 0),
+      alphaDays: summary.alphaDays + row.alphaCount.value,
       breakLateSeconds: summary.breakLateSeconds + row.breakLateSeconds.value,
+      cutiDays: summary.cutiDays + (row.cutiStockSnapshot.value || 0),
       lembur: summary.lembur + row.lemburUnits.value,
       pending: summary.pending + row.pendingDays.value,
       sakit: summary.sakit + row.sakitDays.value,
       workLateSeconds: summary.workLateSeconds + row.workLateSeconds.value,
     }),
     {
-      alphaWorkers: 0,
+      alphaDays: 0,
       breakLateSeconds: 0,
+      cutiDays: 0,
       lembur: 0,
       pending: 0,
       sakit: 0,
@@ -45,65 +64,65 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
 
   const cards = [
     {
-      icon: ClockIcon,
+      icon: ClockAlertIcon,
       label: "Total Work Late",
-      toneClass: "border-status-break/30 bg-status-break/10 text-status-break",
-      value: formatRecordsSummaryDuration(totals.workLateSeconds),
+      toneClass: "border-status-break/35 bg-status-break/10 text-status-break",
+      value: formatDurationNoSpace(totals.workLateSeconds),
     },
     {
-      icon: ActivityIcon,
+      icon: UtensilsIcon,
       label: "Total Break Late",
-      toneClass: "border-status-sakit/30 bg-status-sakit/10 text-status-sakit",
-      value: formatRecordsSummaryDuration(totals.breakLateSeconds),
+      toneClass: "border-status-sakit/35 bg-status-sakit/10 text-status-sakit",
+      value: formatDurationNoSpace(totals.breakLateSeconds),
     },
     {
-      icon: AlertTriangleIcon,
+      icon: BookAlertIcon,
       label: "Total Alpha",
-      toneClass: "border-status-alpha/30 bg-status-alpha/10 text-status-alpha",
-      value: `${numberFormatter.format(totals.alphaWorkers)} orang`,
+      toneClass: "border-status-alpha/35 bg-status-alpha/10 text-status-alpha",
+      value: `${numberFormatter.format(totals.alphaDays)} Hari`,
     },
     {
-      icon: HeartPulseIcon,
+      icon: HeartOffIcon,
       label: "Total Sakit",
-      toneClass: "border-status-sakit/30 bg-status-sakit/10 text-status-sakit",
-      value: `${numberFormatter.format(totals.sakit)} d`,
+      toneClass: "border-status-sakit/35 bg-status-sakit/10 text-status-sakit",
+      value: `${numberFormatter.format(totals.sakit)} Hari`,
     },
     {
-      icon: HourglassIcon,
+      icon: MessageCircleWarningIcon,
       label: "Total Pending",
-      toneClass: "border-status-pending/30 bg-status-pending/10 text-status-pending",
-      value: `${numberFormatter.format(totals.pending)} d`,
+      toneClass: "border-status-pending/35 bg-status-pending/10 text-status-pending",
+      value: `${numberFormatter.format(totals.pending)} Hari`,
     },
     {
-      icon: BriefcaseBusinessIcon,
+      icon: UserPenIcon,
+      label: "Total Cuti",
+      toneClass: "border-status-cuti/35 bg-status-cuti/10 text-status-cuti",
+      value: `${numberFormatter.format(totals.cutiDays)} Hari`,
+    },
+    {
+      icon: ClockPlusIcon,
       label: "Total Lembur",
       toneClass: "border-status-break/35 bg-status-break/10 text-status-break",
       value: formatLemburMinutes(totals.lembur),
     },
   ];
 
-  function formatLemburMinutes(minutes: number): string {
-    if (minutes <= 0) return "0m";
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours === 0) return `${mins}m`;
-    return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
-  }
-
   return (
     <section
       aria-label="Records monthly summary"
-      className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
+      className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7"
     >
       {cards.map((card) => {
         const Icon = card.icon;
 
         return (
           <Card key={card.label} size="sm" className="tracker-glass-panel rounded-xl border">
-            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3">
+            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3 p-4">
               <div>
-                <CardDescription>{card.label}</CardDescription>
-                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums">
+                <CardDescription className="text-xs font-semibold text-muted-foreground">
+                  {card.label}
+                </CardDescription>
+                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums text-foreground">
                   {card.value}
                 </CardTitle>
               </div>

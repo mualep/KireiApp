@@ -51,13 +51,13 @@ export default function RecordsLoading() {
         </CardContent>
       </Card>
 
-      {/* High-Fidelity RecordsSummaryCards Skeleton (6 Cards) */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
+      {/* High-Fidelity RecordsSummaryCards Skeleton (7 Cards) */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+        {Array.from({ length: 7 }).map((_, i) => (
           <Card key={i} size="sm" className="tracker-glass-panel rounded-xl border p-4">
             <div className="flex items-center justify-between">
-              <Skeleton className="h-4 w-24 rounded bg-muted/70" />
-              <Skeleton className="h-4 w-4 rounded-full bg-muted/60" />
+              <Skeleton className="h-4 w-20 rounded bg-muted/70" />
+              <Skeleton className="h-9 w-9 rounded-lg bg-muted/60" />
             </div>
             <div className="mt-3">
               <Skeleton className="h-7 w-16 rounded bg-muted/90" />

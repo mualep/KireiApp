@@ -53,6 +53,15 @@ const INDONESIAN_MONTHS = [
 
 const DAY_NAMES = ["Ming", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
+function formatDurationNoSpace(seconds: number): string {
+  if (seconds <= 0) return "0m";
+  const mins = Math.floor(seconds / 60);
+  const hours = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  if (hours === 0) return `${remMins}m`;
+  return remMins === 0 ? `${hours}h` : `${hours}h ${remMins}m`;
+}
+
 function formatLemburMinutes(minutes: number): string {
   if (minutes <= 0) return "0m";
   const hours = Math.floor(minutes / 60);
@@ -72,18 +81,6 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
   };
 
   const { user, profile, status, monthlyRecords, monthlyAttendance, dailyTask, todayWIB } = data;
-
-  // Format Duration helper (seconds to min/hrs)
-  const formatSecondsToMinutes = (seconds: number) => {
-    if (seconds <= 0) return "0 m";
-    const mins = Math.floor(seconds / 60);
-    const hrs = Math.floor(mins / 60);
-    const remMins = mins % 60;
-    if (hrs > 0) {
-      return `${hrs} j ${remMins} m`;
-    }
-    return `${mins} m`;
-  };
 
   // Calendar calculations
   const [yearStr, monthStr, dayStr] = todayWIB.split("-");
@@ -380,7 +377,7 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
         </Card>
       </div>
 
-      {/* 3. Monthly Records Summary Cards (7 Cards Grid) */}
+      {/* 3. Monthly Records Summary Cards (Unified 7-Card Grid matching Admin Records) */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -392,103 +389,124 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
           </span>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
           {/* Card 1: Work Late */}
-          <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">Work Late</span>
-              <ClockAlertIcon className="size-4 text-amber-500" />
-            </div>
-            <div className="mt-2">
-              <span className="font-heading text-2xl font-black text-foreground">
-                {formatSecondsToMinutes(monthlyRecords.workLateSeconds)}
+          <Card className="tracker-glass-panel rounded-xl border">
+            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3 p-4">
+              <div>
+                <CardDescription className="text-xs font-semibold text-muted-foreground">
+                  Work Late
+                </CardDescription>
+                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums text-foreground">
+                  {formatDurationNoSpace(monthlyRecords.workLateSeconds)}
+                </CardTitle>
+              </div>
+              <span className="flex size-9 items-center justify-center rounded-lg border border-status-break/35 bg-status-break/10 text-status-break">
+                <ClockAlertIcon aria-hidden="true" className="size-4" />
               </span>
-              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Keterlambatan masuk shift</p>
-            </div>
+            </CardHeader>
           </Card>
 
           {/* Card 2: Break Late */}
-          <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">Break Late</span>
-              <UtensilsIcon className="size-4 text-orange-500" />
-            </div>
-            <div className="mt-2">
-              <span className="font-heading text-2xl font-black text-foreground">
-                {formatSecondsToMinutes(monthlyRecords.breakLateSeconds)}
+          <Card className="tracker-glass-panel rounded-xl border">
+            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3 p-4">
+              <div>
+                <CardDescription className="text-xs font-semibold text-muted-foreground">
+                  Break Late
+                </CardDescription>
+                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums text-foreground">
+                  {formatDurationNoSpace(monthlyRecords.breakLateSeconds)}
+                </CardTitle>
+              </div>
+              <span className="flex size-9 items-center justify-center rounded-lg border border-status-sakit/35 bg-status-sakit/10 text-status-sakit">
+                <UtensilsIcon aria-hidden="true" className="size-4" />
               </span>
-              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Kelebihan waktu istirahat</p>
-            </div>
+            </CardHeader>
           </Card>
 
           {/* Card 3: Alpha */}
-          <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">Alpha</span>
-              <BookAlertIcon className="size-4 text-rose-500" />
-            </div>
-            <div className="mt-2">
-              <span className="font-heading text-2xl font-black text-foreground">
-                {monthlyRecords.alphaCount} <span className="text-xs font-medium">Hari</span>
+          <Card className="tracker-glass-panel rounded-xl border">
+            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3 p-4">
+              <div>
+                <CardDescription className="text-xs font-semibold text-muted-foreground">
+                  Alpha
+                </CardDescription>
+                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums text-foreground">
+                  {monthlyRecords.alphaCount} <span className="text-xs font-medium">Hari</span>
+                </CardTitle>
+              </div>
+              <span className="flex size-9 items-center justify-center rounded-lg border border-status-alpha/35 bg-status-alpha/10 text-status-alpha">
+                <BookAlertIcon aria-hidden="true" className="size-4" />
               </span>
-              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Ketidakhadiran tanpa izin</p>
-            </div>
+            </CardHeader>
           </Card>
 
           {/* Card 4: Sakit */}
-          <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">Sakit</span>
-              <HeartOffIcon className="size-4 text-amber-500" />
-            </div>
-            <div className="mt-2">
-              <span className="font-heading text-2xl font-black text-foreground">
-                {monthlyRecords.sakitDays} <span className="text-xs font-medium">Hari</span>
+          <Card className="tracker-glass-panel rounded-xl border">
+            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3 p-4">
+              <div>
+                <CardDescription className="text-xs font-semibold text-muted-foreground">
+                  Sakit
+                </CardDescription>
+                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums text-foreground">
+                  {monthlyRecords.sakitDays} <span className="text-xs font-medium">Hari</span>
+                </CardTitle>
+              </div>
+              <span className="flex size-9 items-center justify-center rounded-lg border border-status-sakit/35 bg-status-sakit/10 text-status-sakit">
+                <HeartOffIcon aria-hidden="true" className="size-4" />
               </span>
-              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Izin sakit terdata</p>
-            </div>
+            </CardHeader>
           </Card>
 
           {/* Card 5: Pending */}
-          <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">Pending</span>
-              <MessageCircleWarningIcon className="size-4 text-purple-500" />
-            </div>
-            <div className="mt-2">
-              <span className="font-heading text-2xl font-black text-foreground">
-                {monthlyRecords.pendingDays} <span className="text-xs font-medium">Hari</span>
+          <Card className="tracker-glass-panel rounded-xl border">
+            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3 p-4">
+              <div>
+                <CardDescription className="text-xs font-semibold text-muted-foreground">
+                  Pending
+                </CardDescription>
+                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums text-foreground">
+                  {monthlyRecords.pendingDays} <span className="text-xs font-medium">Hari</span>
+                </CardTitle>
+              </div>
+              <span className="flex size-9 items-center justify-center rounded-lg border border-status-pending/35 bg-status-pending/10 text-status-pending">
+                <MessageCircleWarningIcon aria-hidden="true" className="size-4" />
               </span>
-              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Menunggu verifikasi</p>
-            </div>
+            </CardHeader>
           </Card>
 
           {/* Card 6: Sisa Stok Cuti */}
-          <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">Sisa Stok Cuti</span>
-              <UserPenIcon className="size-4 text-sky-500" />
-            </div>
-            <div className="mt-2">
-              <span className="font-heading text-2xl font-black text-foreground">
-                {monthlyRecords.cutiStock} <span className="text-xs font-medium">Hari</span>
+          <Card className="tracker-glass-panel rounded-xl border">
+            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3 p-4">
+              <div>
+                <CardDescription className="text-xs font-semibold text-muted-foreground">
+                  Sisa Stok Cuti
+                </CardDescription>
+                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums text-foreground">
+                  {monthlyRecords.cutiStock} <span className="text-xs font-medium">Hari</span>
+                </CardTitle>
+              </div>
+              <span className="flex size-9 items-center justify-center rounded-lg border border-status-cuti/35 bg-status-cuti/10 text-status-cuti">
+                <UserPenIcon aria-hidden="true" className="size-4" />
               </span>
-              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Hak kuota cuti tersedia</p>
-            </div>
+            </CardHeader>
           </Card>
 
           {/* Card 7: Lembur */}
-          <Card className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">Lembur</span>
-              <ClockPlusIcon className="size-4 text-amber-500" />
-            </div>
-            <div className="mt-2">
-              <span className="font-heading text-2xl font-black text-foreground">
-                {formatLemburMinutes(monthlyRecords.lemburUnits)}
+          <Card className="tracker-glass-panel rounded-xl border">
+            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-3 p-4">
+              <div>
+                <CardDescription className="text-xs font-semibold text-muted-foreground">
+                  Lembur
+                </CardDescription>
+                <CardTitle className="mt-1 font-sans text-xl font-black tabular-nums text-foreground">
+                  {formatLemburMinutes(monthlyRecords.lemburUnits)}
+                </CardTitle>
+              </div>
+              <span className="flex size-9 items-center justify-center rounded-lg border border-status-break/35 bg-status-break/10 text-status-break">
+                <ClockPlusIcon aria-hidden="true" className="size-4" />
               </span>
-              <p className="text-[0.7rem] text-muted-foreground mt-0.5">Akumulasi jam lembur</p>
-            </div>
+            </CardHeader>
           </Card>
         </div>
       </section>

@@ -96,16 +96,15 @@ export default function AdminPerformanceLoading() {
           <Skeleton className="h-4 w-32 rounded" />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
           {recordCardSkeletons.map((i) => (
-            <Card key={`rcard-${i}`} className="tracker-glass-panel rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm backdrop-blur-xl">
+            <Card key={`rcard-${i}`} className="tracker-glass-panel rounded-xl border p-4">
               <div className="flex items-center justify-between">
-                <Skeleton className="h-3 w-20 rounded" />
-                <Skeleton className="size-4 rounded-full" />
+                <Skeleton className="h-4 w-20 rounded bg-muted/70" />
+                <Skeleton className="h-9 w-9 rounded-lg bg-muted/60" />
               </div>
-              <div className="mt-3 flex flex-col gap-1">
-                <Skeleton className="h-8 w-16 rounded-md" />
-                <Skeleton className="h-3 w-24 rounded" />
+              <div className="mt-3">
+                <Skeleton className="h-7 w-16 rounded bg-muted/90" />
               </div>
             </Card>
           ))}
