@@ -12,8 +12,7 @@ import {
   RefreshCw, 
   User,
   TrendingUp,
-  Activity,
-  Bot
+  Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -261,10 +260,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
     return `${diffDay}h lalu`;
   }
 
-  function getAvatarClass(tier: string | null | undefined, isAutomated?: boolean): string {
-    if (isAutomated) {
-      return "bg-cyan-500/10 border-cyan-500/30 text-cyan-400";
-    }
+  function getAvatarClass(tier: string | null | undefined): string {
     const t = tier ? tier.toLowerCase() : "";
     if (t === "owner") {
       return "bg-red-500/10 border-red-500/30 text-red-400";
@@ -354,7 +350,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
         </Button>
       </div>
 
-      {/* 2. URGENT ALERTS SECTION (Moved to top below header, hidden if empty) */}
+      {/* 2. URGENT ALERTS SECTION (Hidden if empty) */}
       {sortedAlerts.length > 0 && (
         <Card className="border border-red-500/30 bg-red-500/5 text-red-400 p-5 rounded-xl flex flex-col gap-4 shadow-md shadow-red-500/2">
           <div className="flex items-center justify-between">
@@ -530,7 +526,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
         </div>
       </div>
 
-      {/* 4. RECENT ACTIVITY SECTION (Placed right below Worker Counter Grid) */}
+      {/* 4. RECENT ACTIVITY SECTION */}
       <Card className="tracker-glass-panel rounded-xl border p-6 flex flex-col gap-5 shadow-xl shadow-primary/2">
         <div className="flex flex-col gap-1 border-b border-border/10 pb-4">
           <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -550,25 +546,21 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
           ) : (
             activity.map((item) => {
               const subjectName = item.display_subject || item.actor_name || item.target_name || "System";
-              const isAutomated = item.is_automated || !item.actor_name;
+              const avatarInitial = subjectName.charAt(0);
 
               return (
                 <div key={item.id} className="flex justify-between items-center gap-3 border-b border-border/10 pb-3 last:border-b-0 last:pb-0">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       "size-8 rounded-full border flex items-center justify-center font-bold text-sm uppercase shrink-0 select-none",
-                      getAvatarClass(item.actor_tier, isAutomated)
+                      getAvatarClass(item.actor_tier)
                     )}>
-                      {isAutomated ? (
-                        <Bot className="size-4 text-cyan-400" />
-                      ) : (
-                        subjectName.charAt(0)
-                      )}
+                      {avatarInitial}
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-medium text-muted-foreground leading-snug">
                         <span className="font-bold text-foreground">{subjectName}</span> &mdash;{" "}
-                        <span className={cn(isAutomated && "text-cyan-400/90 font-medium")}>
+                        <span className="text-foreground/90 font-medium">
                           {item.display_action || item.action}
                         </span>
                       </span>

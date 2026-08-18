@@ -325,53 +325,82 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
     work_late_seconds: { sum: workLateSum, workers: workLateWorkers.size },
   };
 
-  const formatActionDesc = (domain: string, action: string, isAutomated: boolean) => {
-    if (action === "cron.auto_alpha") return isAutomated ? "Otomatis ALPHA" : "Diubah ke ALPHA";
-    if (action === "cron.auto_off_shift") return isAutomated ? "Otomatis Clock-Off (Shift Selesai)" : "Clock-Off";
-    if (action === "cron.alpha_done_reset") return isAutomated ? "Otomatis Reset Alpha" : "Reset Alpha";
+  const formatWibTime = (isoString: string): string => {
+    if (!isoString) return "";
+    try {
+      const d = new Date(isoString);
+      const timeStr = new Intl.DateTimeFormat("id-ID", {
+        timeZone: "Asia/Jakarta",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(d);
+      return timeStr.replace(":", ".");
+    } catch {
+      return "";
+    }
+  };
+
+  const formatBaseActionText = (domain: string, action: string) => {
+    if (action === "cron.auto_alpha") return "ALPHA";
+    if (action === "cron.auto_off_shift") return "Clock-Off (Shift Selesai)";
+    if (action === "cron.alpha_done_reset") return "Reset Alpha";
     if (domain === "auth" && action === "login") return "Login ke sistem";
     if (domain === "auth" && action === "logout") return "Logout dari sistem";
     if (domain === "daily_task" && action === "create") return "Submit Daily Task";
     if (domain === "daily_task" && action === "update") return "Update Daily Task";
     if (domain === "profile" && action === "update") return "Memperbarui Profil";
-    if (action === "tracker.start") return "Mulai Shift (ON)";
-    if (action === "tracker.stop") return "Akhiri Shift (OFF)";
-    if (action === "tracker.break_start") return "Mulai Istirahat (BREAK)";
-    if (action === "tracker.break_stop") return "Selesai Istirahat";
+    if (action === "tracker.start") return "Tracker: start";
+    if (action === "tracker.stop") return "Tracker: stop";
+    if (action === "tracker.break_start") return "Tracker: break start";
+    if (action === "tracker.break_stop") return "Tracker: break stop";
     if (action === "absensi.create") return "Mencatat Kehadiran";
     if (action === "absensi.update") return "Mengubah Data Absensi";
     if (action === "absensi.delete") return "Menghapus Data Absensi";
     if (action === "records.override") return "Override Record";
 
     const cleaned = action.replace(/_/g, " ").replace(/\./g, ": ");
-    const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-    return isAutomated ? `Otomatis ${capitalized}` : capitalized;
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   };
 
   const recentActivity: RecentActivity[] = (auditLogs || []).map((log) => {
     const actor = log.actor_user_id ? globalUserMap.get(log.actor_user_id) : null;
     const target = log.target_user_id ? globalUserMap.get(log.target_user_id) : null;
 
+    const timeWib = formatWibTime(log.created_at);
+    const baseAction = formatBaseActionText(log.domain, log.action);
+
     const isAutomated = !actor;
     let displaySubject = "System";
     let displayTier = "system";
+    let displayAction = "";
 
     if (actor) {
+      // Manual Action: Subject is Actor, Tier is Actor
       displaySubject = actor.name;
       displayTier = actor.tier;
+      const targetNameUpper = target ? target.name.toUpperCase() : "";
+      displayAction = targetNameUpper
+        ? `${baseAction} ${targetNameUpper} ${timeWib}`.trim()
+        : `${baseAction} ${timeWib}`.trim();
     } else if (target) {
+      // Automated Action: Subject is Target, Tier is Target
       displaySubject = target.name;
       displayTier = target.tier;
+      displayAction = `Otomatis ${baseAction} ${timeWib}`.trim();
+    } else {
+      // System fallback
+      displaySubject = "System";
+      displayTier = "system";
+      displayAction = `Otomatis ${baseAction} ${timeWib}`.trim();
     }
 
-    const actionText = formatActionDesc(log.domain, log.action, isAutomated);
-
     return {
-      action: actionText,
+      action: displayAction,
       actor_name: actor ? actor.name : null,
       actor_tier: displayTier,
       created_at: log.created_at,
-      display_action: actionText,
+      display_action: displayAction,
       display_subject: displaySubject,
       domain: log.domain,
       id: log.id,
