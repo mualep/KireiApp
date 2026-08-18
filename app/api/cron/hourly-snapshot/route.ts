@@ -1,18 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(request: NextRequest) {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+async function handleCronRequest(request: NextRequest) {
   try {
     // 1. Validate Cron Secret if set in environment
-    const authHeader = request.headers.get("authorization");
-    const urlSecret = request.nextUrl.searchParams.get("secret");
-    const cronSecret = process.env.CRON_SECRET;
+    const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+    const urlSecret =
+      request.nextUrl.searchParams.get("secret") ||
+      request.nextUrl.searchParams.get("key");
 
-    if (cronSecret) {
-      const isHeaderValid = authHeader === `Bearer ${cronSecret}`;
-      const isUrlValid = urlSecret === cronSecret;
+    const expectedSecret = process.env.CRON_SECRET;
 
-      if (!isHeaderValid && !isUrlValid) {
+    if (expectedSecret) {
+      const cleanExpected = expectedSecret.trim();
+      const cleanHeader = authHeader?.replace(/^Bearer\s+/i, "").trim();
+      const cleanUrl = urlSecret?.trim();
+
+      const isValidHeader = cleanHeader === cleanExpected;
+      const isValidUrl = cleanUrl === cleanExpected;
+
+      if (!isValidHeader && !isValidUrl) {
         return NextResponse.json(
           {
             success: false,
@@ -37,9 +48,15 @@ export async function GET(request: NextRequest) {
     }).format(now); // 0-23
     const hourNum = Number(hourStr);
 
-    const supabase = await createClient();
+    // 3. Use Admin Client for automated background cron (bypasses RLS without requiring browser cookies)
+    let supabase;
+    try {
+      supabase = createAdminClient();
+    } catch {
+      supabase = await createClient();
+    }
 
-    // 3. Fetch active member worker statuses
+    // 4. Fetch active member worker statuses
     const { data: memberUsers, error: userError } = await supabase
       .from("users")
       .select("id")
@@ -53,7 +70,7 @@ export async function GET(request: NextRequest) {
           error: `Failed to query users table: ${userError.message}`,
           details: userError,
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
 
@@ -74,11 +91,11 @@ export async function GET(request: NextRequest) {
           error: `Failed to query worker_status table: ${statusError.message}`,
           details: statusError,
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
 
-    // 4. Group worker counts by current_status
+    // 5. Group worker counts by current_status
     const statusCounts: Record<string, number> = {
       on: 0,
       break: 0,
@@ -95,7 +112,7 @@ export async function GET(request: NextRequest) {
       statusCounts[statusKey] = (statusCounts[statusKey] || 0) + 1;
     });
 
-    // 5. Upsert snapshot into activity_snapshots table
+    // 6. Upsert snapshot into activity_snapshots table
     const { data, error: upsertError } = await supabase
       .from("activity_snapshots")
       .upsert(
@@ -115,9 +132,8 @@ export async function GET(request: NextRequest) {
           success: false,
           error: `Failed to upsert activity_snapshots: ${upsertError.message}`,
           details: upsertError,
-          hint: "Ensure 20260818020000_activity_snapshots.sql migration is applied to production database.",
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
 
@@ -140,4 +156,16 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request: NextRequest) {
+  return handleCronRequest(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleCronRequest(request);
+}
+
+export async function HEAD(request: NextRequest) {
+  return handleCronRequest(request);
 }
