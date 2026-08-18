@@ -47,10 +47,15 @@ export async function POST(request: NextRequest) {
     const adminClient = createAdminClient();
     const now = new Date();
 
-    // ✅ Satu RPC call atomik — menggantikan N+1 queries per worker
-    // Stored procedure app_private.execute_cron_state_machine() menangani semua
-    // state transitions (AUTO_ALPHA, AUTO_OFF_SHIFT, BREAK_LATE, SAKIT_TO_PENDING, dll.)
-    // dalam satu SQL transaction tanpa round-trips ke Node.js
+    // Step 0: Apply any due scheduled_attendance (target_date <= today WIB)
+    const { data: appliedCount, error: scheduleError } = await adminClient.rpc("cron_apply_scheduled_attendance");
+    if (scheduleError) {
+      console.error("Cron apply_scheduled failed:", scheduleError.message);
+    } else if (typeof appliedCount === "number" && appliedCount > 0) {
+      console.log(`Cron applied ${appliedCount} scheduled attendance entries.`);
+    }
+
+    // Step 1: Execute main cron state machine
     const { error: cronError } = await adminClient.rpc("execute_cron_state_machine", {
       p_now: now.toISOString(),
     });
@@ -60,7 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cron execution failed" }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, applied_schedules: appliedCount ?? 0 });
   } catch (error) {
     console.error("Cron execution failed:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
