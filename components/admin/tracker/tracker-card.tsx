@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useOptimistic } from "react";
 import { OctagonX } from "lucide-react";
 import { TrackerActionControls } from "@/components/admin/tracker/tracker-action-controls";
 import { TrackerStatusBadge } from "@/components/admin/tracker/tracker-status-badge";
@@ -50,17 +50,22 @@ export const TrackerCard = memo(function TrackerCard({
   card,
   canApplyTrackerActions,
 }: TrackerCardProps) {
-  const roleShiftLabel = getFullRoleShiftLabel(card);
-  const compactRoleShiftLabel = getCompactRoleShiftLabel(card);
-  const shiftTimeLabel = getShiftTimeLabel(card);
-  const recordBadges = getTrackerRecordBadges(card);
+  const [optCard, setOptCard] = useOptimistic<TrackerCardDTO, Partial<TrackerCardDTO>>(
+    card,
+    (state, update) => ({ ...state, ...update }),
+  );
+
+  const roleShiftLabel = getFullRoleShiftLabel(optCard);
+  const compactRoleShiftLabel = getCompactRoleShiftLabel(optCard);
+  const shiftTimeLabel = getShiftTimeLabel(optCard);
+  const recordBadges = getTrackerRecordBadges(optCard);
 
   return (
     <Card
       size="sm"
       className={cn(
-        "tracker-worker-card tracker-glass-panel tracker-card-tone tracker-card-contrast relative gap-0 overflow-hidden rounded-xl border py-0",
-        cardToneClasses[card.displayStatus],
+        "tracker-worker-card tracker-glass-panel tracker-card-tone tracker-card-contrast relative gap-0 overflow-hidden rounded-xl border py-0 transition-colors duration-200",
+        cardToneClasses[optCard.displayStatus],
       )}
     >
       <CardHeader className="tracker-card-header relative z-10 p-2">
@@ -73,15 +78,15 @@ export const TrackerCard = memo(function TrackerCard({
             <CardTitle
               className={cn(
                 "tracker-worker-name min-w-0 truncate font-bold leading-tight flex items-center gap-1.5",
-                card.activeSpCount === 1 && "text-status-break",
-                card.activeSpCount === 2 && "text-status-sakit",
-                card.activeSpCount >= 3 && "text-status-alpha",
-                card.activeSpCount === 0 && "text-foreground",
+                optCard.activeSpCount === 1 && "text-status-break",
+                optCard.activeSpCount === 2 && "text-status-sakit",
+                optCard.activeSpCount >= 3 && "text-status-alpha",
+                optCard.activeSpCount === 0 && "text-foreground",
               )}
               translate="no"
             >
-              <span>{card.name}</span>
-              {card.activeSpCount > 0 && (
+              <span>{optCard.name}</span>
+              {optCard.activeSpCount > 0 && (
                 <OctagonX className="size-3.5 shrink-0" aria-hidden="true" />
               )}
             </CardTitle>
@@ -90,7 +95,7 @@ export const TrackerCard = memo(function TrackerCard({
                 variant="outline"
                 className={cn(
                   "tracker-role-shift-badge h-6 max-w-[14rem] rounded-sm border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground",
-                  card.isTemporaryShift && "border-amber-500/50 bg-amber-500/15 text-amber-300 font-bold",
+                  optCard.isTemporaryShift && "border-amber-500/50 bg-amber-500/15 text-amber-300 font-bold",
                 )}
                 translate="no"
               >
@@ -112,7 +117,7 @@ export const TrackerCard = memo(function TrackerCard({
             </div>
           </div>
           <div className="shrink-0 pt-0.5 pr-1">
-            <TrackerStatusBadge status={card.displayStatus} prominent />
+            <TrackerStatusBadge status={optCard.displayStatus} prominent />
           </div>
         </div>
       </CardHeader>
@@ -126,7 +131,7 @@ export const TrackerCard = memo(function TrackerCard({
           <RecordBadge
             color="var(--status-cuti)"
             label="Cuti"
-            value={`${card.cutiStock}x`}
+            value={`${optCard.cutiStock}x`}
           />
           {recordBadges.map((badge) => (
             <RecordBadge
@@ -146,8 +151,9 @@ export const TrackerCard = memo(function TrackerCard({
             data-slot="tracker-card-actions"
           >
             <TrackerControlZone
-              card={card}
+              card={optCard}
               canApplyTrackerActions={canApplyTrackerActions}
+              setOptCard={setOptCard}
             />
           </div>
 
@@ -245,15 +251,17 @@ function RecordBadge({
 function TrackerControlZone({
   card,
   canApplyTrackerActions,
+  setOptCard,
 }: {
   card: TrackerCardDTO;
   canApplyTrackerActions: boolean;
+  setOptCard?: (update: Partial<TrackerCardDTO>) => void;
 }) {
   if (!canApplyTrackerActions) {
     return null;
   }
 
-  return <TrackerActionControls key={`${card.userId}:${card.version}`} card={card} />;
+  return <TrackerActionControls key={`${card.userId}:${card.version}`} card={card} setOptCard={setOptCard} />;
 }
 
 function getFullRoleShiftLabel(card: TrackerCardDTO): string {

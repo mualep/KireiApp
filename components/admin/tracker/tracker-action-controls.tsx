@@ -67,6 +67,7 @@ import { useNow } from "@/hooks/use-now";
 
 type TrackerActionControlsProps = {
   card: TrackerCardDTO;
+  setOptCard?: (update: Partial<TrackerCardDTO>) => void;
 };
 
 type ControlTone =
@@ -125,6 +126,7 @@ const genericFailure: ApplyTrackerActionResult = {
 
 export const TrackerActionControls = memo(function TrackerActionControls({
   card,
+  setOptCard,
 }: TrackerActionControlsProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -179,6 +181,26 @@ export const TrackerActionControls = memo(function TrackerActionControls({
       return;
     }
 
+    // Apply Instant Optimistic UI Update (< 1ms)
+    if (setOptCard) {
+      const nowIso = new Date().toISOString();
+      if (action === "START") {
+        setOptCard({ displayStatus: "ON", storedStatus: "on", shiftStartedAt: nowIso });
+      } else if (action === "ISTIRAHAT") {
+        setOptCard({ displayStatus: "BREAK", storedStatus: "break", breakTimerRunning: true, breakStartedAt: nowIso });
+      } else if (action === "LANJUT") {
+        setOptCard({ displayStatus: "ON", storedStatus: "on", breakTimerRunning: false, breakStartedAt: null });
+      } else if (action === "SELESAI") {
+        setOptCard({ displayStatus: "OFF", storedStatus: "off", shiftStartedAt: null, breakStartedAt: null, breakTimerRunning: false, isTemporaryShift: false });
+      } else if (action === "CUTI") {
+        setOptCard({ displayStatus: "CUTI", storedStatus: "cuti" });
+      } else if (action === "IZIN") {
+        setOptCard({ displayStatus: "PENDING", storedStatus: "pending" });
+      } else if (action === "SAKIT") {
+        setOptCard({ displayStatus: "SAKIT", storedStatus: "sakit" });
+      }
+    }
+
     setPendingAction(action);
 
     startTransition(async () => {
@@ -214,6 +236,9 @@ export const TrackerActionControls = memo(function TrackerActionControls({
   }
 
   function executeCancelStart() {
+    if (setOptCard) {
+      setOptCard({ displayStatus: "OFF", storedStatus: "off", shiftStartedAt: null });
+    }
     setPendingAction("CANCEL_START");
 
     startTransition(async () => {
@@ -250,6 +275,9 @@ export const TrackerActionControls = memo(function TrackerActionControls({
   }
 
   function executeTerimaAlpha() {
+    if (setOptCard) {
+      setOptCard({ displayStatus: "ALPHA", storedStatus: "off", alphaDone: true });
+    }
     setPendingAction("TERIMA_ALPHA");
 
     startTransition(async () => {
@@ -437,7 +465,7 @@ export const TrackerActionControls = memo(function TrackerActionControls({
   }
 
   return (
-    <div className={cn("tracker-action-stack flex flex-col gap-2.5 transition-opacity", isPending && "opacity-75 cursor-wait")}>
+    <div className="tracker-action-stack flex flex-col gap-2.5">
       {isBreakCard
         ? (() => {
             const remaining = getBreakRemainingSeconds({
