@@ -120,10 +120,10 @@ export async function getDailyTaskMonthlyReport(options: {
     userIds.length > 0
       ? await supabase
           .from("worker_attendance")
-          .select("user_id, work_date, status, is_canceled")
+          .select("user_id, attendance_date, status, is_canceled")
           .in("user_id", userIds)
-          .gte("work_date", monthStartStr)
-          .lte("work_date", monthEndStr)
+          .gte("attendance_date", monthStartStr)
+          .lte("attendance_date", monthEndStr)
           .eq("is_canceled", false)
       : { data: [] };
 
@@ -140,9 +140,9 @@ export async function getDailyTaskMonthlyReport(options: {
 
   // Group attendance by user_id -> dayNumber
   const attendanceGroupMap = new Map<string, Map<number, string>>();
-  (attendanceRows || []).forEach((a) => {
-    if (!a.work_date || !a.status) return;
-    const dayNum = Number(a.work_date.slice(8, 10));
+  (attendanceRows || []).forEach((a: any) => {
+    if (!a.attendance_date || !a.status) return;
+    const dayNum = Number(a.attendance_date.slice(8, 10));
     if (!attendanceGroupMap.has(a.user_id)) {
       attendanceGroupMap.set(a.user_id, new Map());
     }

@@ -457,9 +457,9 @@ function getMatchingTrackerAttendance(
   }
 
   const expectedSourceActions = {
-    cuti: ["tracker.cuti", "absensi.correct_cuti"],
-    pending: ["tracker.izin", "absensi.correct_pending"],
-    sakit: ["tracker.sakit", "absensi.correct_sakit"],
+    cuti: ["cuti", "tracker.cuti", "absensi.correct_cuti"],
+    pending: ["izin", "pending", "tracker.izin", "absensi.correct_pending"],
+    sakit: ["sakit", "tracker.sakit", "absensi.correct_sakit"],
   }[storedStatus];
 
   if (!expectedSourceActions) {

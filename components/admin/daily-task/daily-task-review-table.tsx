@@ -480,7 +480,6 @@ export function DailyTaskReviewTable({
                       {phaseItems.map((item) => {
                         if (
                           phase === "while_work" &&
-                          item.game !== "Lainnya" &&
                           !selectedTask.selected_games.includes(item.game)
                         ) {
                           return null;

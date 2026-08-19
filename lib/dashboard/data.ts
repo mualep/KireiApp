@@ -366,9 +366,13 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
     if (domain === "daily_task" && action === "update") return "Update Daily Task";
     if (domain === "profile" && action === "update") return "Memperbarui Profil";
     if (action === "tracker.start") return "Tracker: start";
-    if (action === "tracker.stop") return "Tracker: stop";
-    if (action === "tracker.break_start") return "Tracker: break start";
-    if (action === "tracker.break_stop") return "Tracker: break stop";
+    if (action === "tracker.stop" || action === "tracker.selesai") return "Tracker: selesai";
+    if (action === "tracker.break_start" || action === "tracker.istirahat") return "Tracker: istirahat";
+    if (action === "tracker.break_stop" || action === "tracker.lanjut") return "Tracker: lanjut";
+    if (action === "tracker.cuti") return "Tracker: cuti";
+    if (action === "tracker.izin") return "Tracker: izin";
+    if (action === "tracker.sakit") return "Tracker: sakit";
+    if (action === "tracker.cancel_start") return "Tracker: batal start";
     if (action === "absensi.create") return "Mencatat Kehadiran";
     if (action === "absensi.update") return "Mengubah Data Absensi";
     if (action === "absensi.delete") return "Menghapus Data Absensi";
@@ -396,18 +400,18 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
       displayTier = actor.tier;
       const targetNameUpper = target ? target.name.toUpperCase() : "";
       displayAction = targetNameUpper
-        ? `${baseAction} ${targetNameUpper} ${timeWib}`.trim()
-        : `${baseAction} ${timeWib}`.trim();
+        ? `${baseAction} ${targetNameUpper} - ${timeWib}`.trim()
+        : `${baseAction} - ${timeWib}`.trim();
     } else if (target) {
       // Automated Action: Subject is Target, Tier is Target
       displaySubject = target.name;
       displayTier = target.tier;
-      displayAction = `Otomatis ${baseAction} ${timeWib}`.trim();
+      displayAction = `Otomatis ${baseAction} - ${timeWib}`.trim();
     } else {
       // System fallback
       displaySubject = "System";
       displayTier = "system";
-      displayAction = `Otomatis ${baseAction} ${timeWib}`.trim();
+      displayAction = `Otomatis ${baseAction} - ${timeWib}`.trim();
     }
 
     return {

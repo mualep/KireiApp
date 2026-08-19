@@ -285,7 +285,7 @@ export const TrackerActionControls = memo(function TrackerActionControls({
   }
 
   function runTrackerCorrection(action: TrackerCorrectionAction) {
-    if (isPending || !card.activeTrackerAttendanceId) {
+    if (isPending) {
       return;
     }
 
@@ -785,11 +785,19 @@ function getActiveControlGroups(
     ];
   }
 
-  if (
-    card.activeTrackerAttendanceId &&
-    card.storedStatus === "cuti" &&
-    card.isTrackerCorrectionAvailable
-  ) {
+  if (card.storedStatus === "cuti") {
+    if (card.isExpiredAbsenceCloseAvailable && !card.activeTrackerAttendanceId) {
+      return withAbsenceMaterializationGroup(card, [
+        [
+          {
+            expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
+            icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+            label: "SELESAIKAN STATUS",
+            tone: "danger",
+          },
+        ],
+      ]);
+    }
     return withAbsenceMaterializationGroup(card, [
       [
         {
@@ -802,27 +810,19 @@ function getActiveControlGroups(
     ]);
   }
 
-  if (
-    card.storedStatus === "cuti" &&
-    card.isExpiredAbsenceCloseAvailable
-  ) {
-    return withAbsenceMaterializationGroup(card, [
-      [
-        {
-          expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
-          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
-          label: "SELESAIKAN STATUS",
-          tone: "danger",
-        },
-      ],
-    ]);
-  }
-
-  if (
-    card.activeTrackerAttendanceId &&
-    card.storedStatus === "sakit" &&
-    card.isTrackerCorrectionAvailable
-  ) {
+  if (card.storedStatus === "sakit") {
+    if (card.isExpiredAbsenceCloseAvailable && !card.activeTrackerAttendanceId) {
+      return withAbsenceMaterializationGroup(card, [
+        [
+          {
+            expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
+            icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+            label: "SELESAIKAN STATUS",
+            tone: "danger",
+          },
+        ],
+      ]);
+    }
     return withAbsenceMaterializationGroup(card, [
       [
         {
@@ -835,49 +835,25 @@ function getActiveControlGroups(
     ]);
   }
 
-  if (
-    card.storedStatus === "sakit" &&
-    card.isExpiredAbsenceCloseAvailable
-  ) {
-    return withAbsenceMaterializationGroup(card, [
-      [
-        {
-          expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
-          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
-          label: "SELESAIKAN STATUS",
-          tone: "danger",
-        },
-      ],
-    ]);
-  }
-
-  if (
-    card.activeTrackerAttendanceId &&
-    card.storedStatus === "pending" &&
-    card.isTrackerCorrectionAvailable
-  ) {
+  if (card.storedStatus === "pending") {
+    if (card.isExpiredAbsenceCloseAvailable && !card.activeTrackerAttendanceId) {
+      return withAbsenceMaterializationGroup(card, [
+        [
+          {
+            expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
+            icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
+            label: "SELESAIKAN STATUS",
+            tone: "danger",
+          },
+        ],
+      ]);
+    }
     return withAbsenceMaterializationGroup(card, [
       [
         {
           correctionAction: "CANCEL_IZIN",
           icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
           label: "BATAL PENDING",
-          tone: "danger",
-        },
-      ],
-    ]);
-  }
-
-  if (
-    card.storedStatus === "pending" &&
-    card.isExpiredAbsenceCloseAvailable
-  ) {
-    return withAbsenceMaterializationGroup(card, [
-      [
-        {
-          expiredAbsenceCloseAction: "CLOSE_EXPIRED_ABSENCE",
-          icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
-          label: "SELESAIKAN STATUS",
           tone: "danger",
         },
       ],

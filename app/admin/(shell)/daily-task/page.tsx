@@ -66,7 +66,8 @@ export default async function DailyTaskPage({ searchParams }: PageProps) {
   const { data: configs } = await supabase
     .from("daily_task_config")
     .select("id, game, phase, sort_order, label")
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
 
   // Fetch worker status to pre-populate shift
   const { data: workerStatus } = await supabase

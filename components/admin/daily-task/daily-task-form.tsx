@@ -244,12 +244,22 @@ export function DailyTaskForm({
 
     startTransition(async () => {
       try {
+        const validConfigIds = new Set([
+          ...configs.filter((c) => c.phase === "before_work").map((c) => c.id),
+          ...configs.filter((c) => c.phase === "while_work" && selectedGames.includes(c.game)).map((c) => c.id),
+          ...configs.filter((c) => c.phase === "after_work").map((c) => c.id),
+        ]);
+
+        const cleanChecklistAnswers = Object.fromEntries(
+          Object.entries(checklistAnswers).filter(([configId]) => validConfigIds.has(configId))
+        );
+
         const payload = {
           task_date: todayDate,
           shift_label: shiftLabel,
           stream_name: streamName || null,
           selected_games: selectedGames,
-          checklist_answers: checklistAnswers,
+          checklist_answers: cleanChecklistAnswers,
           ss_before_time: ssBeforeTime || null,
           ss_after_time: ssAfterTime || null,
           process_duration_minutes: typeof processDurationMinutes === "number" ? processDurationMinutes : null,
