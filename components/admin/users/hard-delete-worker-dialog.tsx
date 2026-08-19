@@ -104,7 +104,7 @@ export function HardDeleteWorkerDialog({
           <div className="p-3.5 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 flex flex-col gap-1.5">
             <span className="font-extrabold uppercase tracking-wide text-red-300">PERINGATAN FATAL:</span>
             <p className="text-[11px] leading-relaxed">
-              Aksi ini akan menghapus pekerja <strong className="text-foreground text-xs font-bold">{row.name}</strong> (`{row.email}`) dan <strong className="underline">SELURUH data historisnya</strong> (Tracker, Absensi, Daily Task, Records, SP) secara permanen melalui CASCADE deletion. Data yang terhapus <strong className="text-red-300 font-extrabold">TIDAK DAPAT DIKEMBALIKAN</strong>.
+              Aksi ini akan menghapus pekerja <strong className="text-foreground text-xs font-bold">{row.name}</strong> ({row.email}) dan SELURUH data historisnya secara permanen. Data yang terhapus <strong className="text-red-300 font-extrabold">TIDAK DAPAT DIKEMBALIKAN!</strong>
             </p>
           </div>
 
