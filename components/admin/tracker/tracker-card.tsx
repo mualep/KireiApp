@@ -263,7 +263,7 @@ function getFullRoleShiftLabel(card: TrackerCardDTO): string {
     return `${role} • Flexible`;
   }
 
-  return card.isTemporaryShift ? `${role}-${card.shift} (Temp)` : `${role}-${card.shift}`;
+  return card.isTemporaryShift ? `${role} - ${card.shift} (Sementara)` : `${role} - ${card.shift}`;
 }
 
 function getCompactRoleShiftLabel(card: TrackerCardDTO): string {
@@ -273,7 +273,7 @@ function getCompactRoleShiftLabel(card: TrackerCardDTO): string {
     return `${role} • Flexible`;
   }
 
-  return card.isTemporaryShift ? `${role}-${card.shift} (Temp)` : `${role}-${card.shift}`;
+  return card.isTemporaryShift ? `${role} - ${card.shift} (Sementara)` : `${role} - ${card.shift}`;
 }
 
 function getShiftTimeLabel(card: TrackerCardDTO): string | null {

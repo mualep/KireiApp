@@ -508,7 +508,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
             className="bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-4 flex flex-col justify-between hover:bg-white/5 hover:brightness-125 transition-all duration-300 cursor-pointer group"
           >
             <span className="text-[11px] font-bold uppercase tracking-wider text-white">PENDING</span>
-            <span className="text-3xl font-extrabold text-orange-500 tabular-nums">
+            <span className="text-3xl font-extrabold text-purple-500 tabular-nums">
               {counts.pending}
             </span>
           </Link>
@@ -584,9 +584,6 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
               <TrendingUp className="size-5 text-emerald-500" />
               Aktivitas Pekerja (24 Jam Terakhir WIB)
             </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Grafik fluktuasi total pekerja aktif ON sepanjang hari (jam berjalan disinkronkan secara real-time)
-            </p>
           </div>
           <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-500 font-bold text-xs">
             Live Sync

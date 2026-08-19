@@ -80,7 +80,23 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
   }).format(now);
   const currentWibHour = Number(currentWibHourStr);
 
+  const parseIsoDate = (isoDate: string) => {
+    const [year, month, day] = isoDate.split("-").map(Number);
+    return { day, month, year };
+  };
+
+  const addDays = (isoDate: string, days: number): string => {
+    const { day, month, year } = parseIsoDate(isoDate);
+    const d = new Date(Date.UTC(year, month - 1, day + days));
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const dayStr = String(d.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${dayStr}`;
+  };
+
   const supabase = await createClient();
+
+  const yesterdayWibStr = addDays(wibDateStr, -1);
 
   const [
     { data: allUsers },
@@ -110,8 +126,8 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
       .limit(20),
     supabase
       .from("activity_snapshots")
-      .select("snapshot_hour, status_counts")
-      .eq("snapshot_date", wibDateStr),
+      .select("snapshot_date, snapshot_hour, status_counts")
+      .in("snapshot_date", [wibDateStr, yesterdayWibStr]),
   ]);
 
   const globalUserMap = new Map(
@@ -123,20 +139,6 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
 
   const profilesMap = new Map((profiles || []).map((p) => [p.user_id, p]));
   const statusMap = new Map((statuses || []).map((s) => [s.user_id, s]));
-
-  const parseIsoDate = (isoDate: string) => {
-    const [year, month, day] = isoDate.split("-").map(Number);
-    return { day, month, year };
-  };
-
-  const addDays = (isoDate: string, days: number): string => {
-    const { day, month, year } = parseIsoDate(isoDate);
-    const d = new Date(Date.UTC(year, month - 1, day + days));
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-    const dayStr = String(d.getUTCDate()).padStart(2, "0");
-    return `${y}-${m}-${dayStr}`;
-  };
 
   const makeWibDate = (isoDate: string, hour: number, minute: number, dayOffset = 0): Date => {
     const { day, month, year } = parseIsoDate(isoDate);
@@ -429,21 +431,32 @@ export async function getDashboardSummaryData(): Promise<DashboardData> {
     };
   });
 
-  // Map 24-hour activity snapshots & STITCH LIVE CURRENT HOUR
+  // Map 24-hour rolling activity snapshots & STITCH LIVE CURRENT HOUR
   const snapshotMap = new Map(
-    (snapshotRows || []).map((s) => [s.snapshot_hour, s.status_counts]),
+    (snapshotRows || []).map((s) => [`${s.snapshot_date}:${s.snapshot_hour}`, s.status_counts]),
   );
 
-  const hourly_activity: HourlyActivityPoint[] = Array.from({ length: 24 }, (_, h) => {
-    const hourLabel = `${String(h).padStart(2, "0")}:00`;
-    const counts = (snapshotMap.get(h) as Record<string, number> | undefined) || {};
+  const currentWibTimestampMs = makeWibDate(wibDateStr, currentWibHour, 0).getTime();
+
+  const hourly_activity: HourlyActivityPoint[] = Array.from({ length: 24 }, (_, step) => {
+    const pointMs = currentWibTimestampMs - (23 - step) * 3600 * 1000;
+    const pointDate = new Date(pointMs + WIB_OFFSET_MILLISECONDS);
+    const y = pointDate.getUTCFullYear();
+    const m = String(pointDate.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(pointDate.getUTCDate()).padStart(2, "0");
+    const dateKey = `${y}-${m}-${d}`;
+    const hourVal = pointDate.getUTCHours();
+    const hourLabel = `${String(hourVal).padStart(2, "0")}:00`;
+    const compositeKey = `${dateKey}:${hourVal}`;
+
+    const counts = (snapshotMap.get(compositeKey) as Record<string, number> | undefined) || {};
 
     let onVal = typeof counts.on === "number" ? counts.on : 0;
     let breakVal = typeof counts.break === "number" ? counts.break : 0;
     let offVal = typeof counts.off === "number" ? counts.off : 0;
 
-    // Stitch LIVE counts into the current WIB hour slot
-    if (h === currentWibHour) {
+    // Stitch LIVE counts into the current WIB hour slot (the last point)
+    if (step === 23) {
       onVal = onCount;
       breakVal = breakCount;
       offVal = offCount;
