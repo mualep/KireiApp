@@ -847,7 +847,7 @@ function getActiveControlGroups(
           correctionAction: "CANCEL_CUTI",
           icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
           label: "BATAL CUTI",
-          tone: "danger",
+          tone: card.isTrackerCorrectionAvailable ? "danger" : "muted",
         },
       ],
     ]);
@@ -872,7 +872,7 @@ function getActiveControlGroups(
           correctionAction: "CANCEL_SAKIT",
           icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
           label: "BATAL SAKIT",
-          tone: "danger",
+          tone: card.isTrackerCorrectionAvailable ? "danger" : "muted",
         },
       ],
     ]);
@@ -897,7 +897,7 @@ function getActiveControlGroups(
           correctionAction: "CANCEL_IZIN",
           icon: <SquareIcon data-icon="inline-start" aria-hidden="true" />,
           label: "BATAL PENDING",
-          tone: "danger",
+          tone: card.isTrackerCorrectionAvailable ? "danger" : "muted",
         },
       ],
     ]);
