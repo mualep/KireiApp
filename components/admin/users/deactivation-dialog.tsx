@@ -48,24 +48,24 @@ export function DeactivationDialog({ onOpenChange, open, row }: DeactivationDial
       <DialogContent className="tracker-glass-panel">
         <DialogHeader>
           <DialogTitle>
-            {isDeactivating ? "Pecat / Nonaktifkan Worker" : "Aktifkan Kembali Worker"}
+            {isDeactivating ? "Nonaktifkan Pekerja" : "Aktifkan Kembali Pekerja"}
           </DialogTitle>
           <DialogDescription className="mt-2">
             {isDeactivating ? (
               <>
-                Anda yakin ingin memberhentikan{" "}
-                <strong className="text-foreground">{row.name}</strong>? Mereka tidak akan
+                Anda yakin ingin menonaktifkan pekerja{" "}
+                <strong className="text-foreground">{row.name}</strong>? Pekerja ini tidak akan
                 bisa login atau menggunakan tracker lagi.
                 <br />
                 <span className="text-xs text-muted-foreground mt-1 block">
-                  Catatan: Data rekaman tetap diarsipkan (soft-delete, sesuai kebijakan KireiApp V1).
+                  Catatan: Seluruh data historis operasional tetap diarsipkan secara utuh di database.
                 </span>
               </>
             ) : (
               <>
-                Anda yakin ingin mengaktifkan kembali{" "}
-                <strong className="text-foreground">{row.name}</strong>? Mereka akan mendapatkan
-                akses ke sistem lagi.
+                Anda yakin ingin mengaktifkan kembali pekerja{" "}
+                <strong className="text-foreground">{row.name}</strong>? Pekerja ini akan mendapatkan
+                akses ke sistem kembali.
               </>
             )}
           </DialogDescription>
@@ -95,12 +95,12 @@ export function DeactivationDialog({ onOpenChange, open, row }: DeactivationDial
               {isDeactivating ? (
                 <>
                   <UserXIcon className="size-4 mr-1.5" />
-                  {loading ? "Memproses…" : "Ya, Pecat"}
+                  {loading ? "Memproses…" : "Ya, Nonaktifkan"}
                 </>
               ) : (
                 <>
                   <UserPlusIcon className="size-4 mr-1.5" />
-                  {loading ? "Memproses…" : "Ya, Aktifkan"}
+                  {loading ? "Memproses…" : "Ya, Aktifkan Kembali"}
                 </>
               )}
             </Button>
