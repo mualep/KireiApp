@@ -43,6 +43,11 @@ const ownerAdminNavItems: AdminShellNavItem[] = [
     label: "Content",
     icon: "content",
   },
+  {
+    href: "/admin/rules",
+    label: "Enterprise Rules",
+    icon: "rules",
+  },
 ];
 
 const memberNavItems: AdminShellNavItem[] = [
@@ -55,6 +60,11 @@ const memberNavItems: AdminShellNavItem[] = [
     href: "/admin/daily-task",
     label: "Daily Task",
     icon: "dailyTask",
+  },
+  {
+    href: "/admin/rules",
+    label: "Enterprise Rules",
+    icon: "rules",
   },
 ];
 

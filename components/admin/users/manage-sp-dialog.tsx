@@ -49,7 +49,7 @@ export function ManageSpDialog({ onOpenChange, open, row }: ManageSpDialogProps)
     const reason = fd.get("reason") as string;
 
     const expiresDate = new Date();
-    expiresDate.setDate(expiresDate.getDate() + 90);
+    expiresDate.setDate(expiresDate.getDate() + 180);
 
     const res = await issueSp(row.id, reason, expiresDate.toISOString());
     if (res.ok) {

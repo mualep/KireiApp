@@ -5,6 +5,7 @@ import {
   LayoutDashboardIcon,
   IdCardIcon,
   NewspaperIcon,
+  ScrollTextIcon,
   SidebarCloseIcon,
   SidebarOpenIcon,
   UserRoundIcon,
@@ -22,7 +23,8 @@ export type AdminNavIconKey =
   | "records"
   | "tracker"
   | "users"
-  | "dailyTask";
+  | "dailyTask"
+  | "rules";
 
 type AdminNavIconProps = {
   "aria-hidden"?: true;
@@ -40,6 +42,7 @@ const adminNavIcons: Record<AdminNavIconKey, LucideIcon> = {
   tracker: IdCardIcon,
   users: UserCogIcon,
   dailyTask: CalendarCheckIcon,
+  rules: ScrollTextIcon,
 };
 
 export function AdminNavIcon({

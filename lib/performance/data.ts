@@ -32,7 +32,16 @@ export type MemberDailyTaskProgress = {
   totalCount: number;
 };
 
+export type MemberActiveSp = {
+  createdAt: string;
+  expiresAt: string;
+  id: string;
+  reason: string;
+  spLevel: number;
+};
+
 export type MemberPerformanceData = {
+  activeSp: MemberActiveSp | null;
   dailyTask: MemberDailyTaskProgress;
   monthlyAttendance: MemberAttendanceMap;
   monthlyRecords: MemberMonthlyRecords;
@@ -85,6 +94,7 @@ export async function getMemberPerformanceData(
     { data: recordRow },
     { data: attendanceRows },
     { data: taskRow },
+    { data: spRow },
   ] = await Promise.all([
     supabase
       .from("users")
@@ -123,6 +133,15 @@ export async function getMemberPerformanceData(
       .select("id, status, selected_games, checklist_snapshot, checklist_answers")
       .eq("user_id", userId)
       .eq("task_date", todayWIB)
+      .maybeSingle(),
+    supabase
+      .from("worker_sp_logs")
+      .select("id, sp_level, reason, expires_at, created_at, revoked_at")
+      .eq("user_id", userId)
+      .is("revoked_at", null)
+      .gt("expires_at", now.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle(),
   ]);
 
@@ -263,7 +282,18 @@ export async function getMemberPerformanceData(
     };
   }
 
+  const activeSp: MemberActiveSp | null = spRow
+    ? {
+        createdAt: spRow.created_at,
+        expiresAt: spRow.expires_at,
+        id: spRow.id,
+        reason: spRow.reason,
+        spLevel: spRow.sp_level,
+      }
+    : null;
+
   return {
+    activeSp,
     dailyTask,
     monthlyAttendance,
     monthlyRecords,

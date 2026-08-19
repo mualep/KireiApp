@@ -14,6 +14,7 @@ import {
   ListTodoIcon,
   MessageCircleWarningIcon,
   RefreshCw,
+  TriangleAlertIcon,
   UserCheckIcon,
   UserPenIcon,
   UtensilsIcon,
@@ -173,6 +174,44 @@ export function MemberDashboardClient({ data }: MemberDashboardClientProps) {
         </span>
         <TrackerStatusBadge status={status.displayStatus} prominent />
       </div>
+
+      {/* Active SP Banner (if any) */}
+      {data.activeSp ? (
+        <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md backdrop-blur-md">
+          <div className="flex items-start gap-3.5">
+            <div className="size-10 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-500 flex items-center justify-center shrink-0">
+              <TriangleAlertIcon className="size-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-rose-600 dark:text-rose-400 text-sm">
+                  Peringatan Kedisiplinan: Surat Peringatan (SP {data.activeSp.spLevel})
+                </span>
+                <Badge variant="destructive" className="text-[10px] uppercase font-bold tracking-wider">
+                  Aktif
+                </Badge>
+              </div>
+              <p className="text-xs text-foreground/90 leading-relaxed">
+                <span className="font-semibold text-muted-foreground">Alasan: </span>
+                {data.activeSp.reason}
+              </p>
+            </div>
+          </div>
+          <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-rose-500/20 shrink-0">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+              Berlaku Hingga
+            </span>
+            <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
+              {new Intl.DateTimeFormat("id-ID", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                timeZone: "Asia/Jakarta",
+              }).format(new Date(data.activeSp.expiresAt))}
+            </span>
+          </div>
+        </div>
+      ) : null}
 
       {/* 2. Main Grid: Daily Task Progress Ring & Calendar */}
       <div className="grid gap-6 lg:grid-cols-12">
