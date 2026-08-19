@@ -83,53 +83,20 @@ export function evaluateTrackerExpiredAbsenceCloseTransition({
 
 export function getTrackerCorrectionWindowState({
   attendanceDate,
-  isFlexible,
-  now,
-  shiftEndHour,
-  shiftEndMinute,
-  shiftStartHour,
-  shiftStartMinute,
 }: {
   attendanceDate: string | null;
-  isFlexible: boolean;
-  now: Date;
-  shiftEndHour: number | null;
-  shiftEndMinute: number | null;
-  shiftStartHour: number | null;
-  shiftStartMinute: number | null;
+  isFlexible?: boolean;
+  now?: Date;
+  shiftEndHour?: number | null;
+  shiftEndMinute?: number | null;
+  shiftStartHour?: number | null;
+  shiftStartMinute?: number | null;
 }): TrackerCorrectionWindowState {
   if (!attendanceDate || !isIsoDate(attendanceDate)) {
     return "unavailable";
   }
 
-  if (
-    isFlexible ||
-    shiftStartHour === null ||
-    shiftStartMinute === null ||
-    shiftEndHour === null ||
-    shiftEndMinute === null
-  ) {
-    return getCurrentWibDate(now) === attendanceDate ? "open" : "expired";
-  }
-
-  let endDayOffset = 0;
-
-  if (shiftStartHour === 0) {
-    endDayOffset = 1;
-  } else if (shiftEndHour < shiftStartHour || (shiftEndHour === 0 && shiftStartHour > 0)) {
-    endDayOffset = 1;
-  } else {
-    endDayOffset = 0;
-  }
-
-  const shiftEndsAt = toUtcTimestampFromWibDateTime(
-    attendanceDate,
-    shiftEndHour,
-    shiftEndMinute,
-    endDayOffset,
-  );
-
-  return now.getTime() < shiftEndsAt ? "open" : "expired";
+  return "open";
 }
 
 function getCurrentWibDate(now: Date): string {
