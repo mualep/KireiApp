@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type React from "react";
 import {
   HourglassIcon,
+  Loader2,
   PauseCircleIcon,
   PlayIcon,
   RefreshCwIcon,
@@ -436,7 +437,7 @@ export const TrackerActionControls = memo(function TrackerActionControls({
   }
 
   return (
-    <div className="tracker-action-stack flex flex-col gap-2.5">
+    <div className={cn("tracker-action-stack flex flex-col gap-2.5 transition-opacity", isPending && "opacity-75 cursor-wait")}>
       {isBreakCard
         ? (() => {
             const remaining = getBreakRemainingSeconds({
@@ -448,20 +449,34 @@ export const TrackerActionControls = memo(function TrackerActionControls({
             const timerColorClass = getBreakTimerColorClass(remaining);
 
             return (
-              <div className="rounded-lg border border-status-break/25 bg-status-break/8 px-3 py-3.5 flex items-center justify-center gap-2.5">
-                <TimerIcon
-                  className={cn("size-6 shrink-0", timerColorClass)}
-                  data-icon="inline-start"
-                  aria-hidden="true"
-                />
-                <div
-                  className={cn(
-                    "tracker-break-timer-large font-black",
-                    timerColorClass,
-                  )}
-                >
-                  {formatBreakRemainingSeconds(remaining)}
-                </div>
+              <div
+                className={cn(
+                  "rounded-lg border border-status-break/25 bg-status-break/8 px-3 py-3.5 flex items-center justify-center gap-2.5 transition-all",
+                  isPending && "animate-pulse border-amber-500/50 bg-amber-500/10 text-amber-400"
+                )}
+              >
+                {isPending ? (
+                  <div className="flex items-center gap-2 text-amber-400 font-extrabold text-sm uppercase tracking-wider">
+                    <Loader2 className="size-5 animate-spin shrink-0 text-amber-400" />
+                    <span>Memproses...</span>
+                  </div>
+                ) : (
+                  <>
+                    <TimerIcon
+                      className={cn("size-6 shrink-0", timerColorClass)}
+                      data-icon="inline-start"
+                      aria-hidden="true"
+                    />
+                    <div
+                      className={cn(
+                        "tracker-break-timer-large font-black",
+                        timerColorClass,
+                      )}
+                    >
+                      {formatBreakRemainingSeconds(remaining)}
+                    </div>
+                  </>
+                )}
               </div>
             );
           })()
