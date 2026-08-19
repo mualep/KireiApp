@@ -22,7 +22,7 @@ export interface MonthlyReportRowDTO {
   user_id: string;
   worker_name: string;
   shift: string;
-  days: Record<number, MonthlyTaskDTO | null>;
+  days: Record<number, MonthlyTaskDTO[]>;
   attendance: Record<number, string | null>;
 }
 
@@ -127,15 +127,19 @@ export async function getDailyTaskMonthlyReport(options: {
           .eq("is_canceled", false)
       : { data: [] };
 
-  // Group tasks by user_id -> dayNumber
-  const taskGroupMap = new Map<string, Map<number, MonthlyTaskDTO>>();
+  // Group tasks by user_id -> dayNumber -> MonthlyTaskDTO[]
+  const taskGroupMap = new Map<string, Map<number, MonthlyTaskDTO[]>>();
   (tasks || []).forEach((t) => {
     if (!t.task_date) return;
     const dayNum = Number(t.task_date.slice(8, 10));
     if (!taskGroupMap.has(t.user_id)) {
       taskGroupMap.set(t.user_id, new Map());
     }
-    taskGroupMap.get(t.user_id)!.set(dayNum, t as MonthlyTaskDTO);
+    const dayMap = taskGroupMap.get(t.user_id)!;
+    if (!dayMap.has(dayNum)) {
+      dayMap.set(dayNum, []);
+    }
+    dayMap.get(dayNum)!.push(t as MonthlyTaskDTO);
   });
 
   // Group attendance by user_id -> dayNumber
@@ -154,11 +158,11 @@ export async function getDailyTaskMonthlyReport(options: {
     const userTaskMap = taskGroupMap.get(u.id);
     const userAttMap = attendanceGroupMap.get(u.id);
 
-    const daysRecord: Record<number, MonthlyTaskDTO | null> = {};
+    const daysRecord: Record<number, MonthlyTaskDTO[]> = {};
     const attRecord: Record<number, string | null> = {};
 
     for (let day = 1; day <= totalDaysInMonth; day++) {
-      daysRecord[day] = userTaskMap?.get(day) || null;
+      daysRecord[day] = userTaskMap?.get(day) || [];
       attRecord[day] = userAttMap?.get(day) || null;
     }
 

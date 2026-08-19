@@ -391,10 +391,10 @@ export function DailyTaskForm({
           </div>
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={handleCreateNewReport}
-            className="border-green-500/40 text-green-500 hover:bg-green-500/20 font-bold"
+            className="bg-green-600 text-white hover:bg-green-700 font-bold shadow-md h-9"
           >
             Buat Laporan Baru
           </Button>
@@ -598,7 +598,9 @@ export function DailyTaskForm({
                   className={cn(
                     "rounded-xl border p-5 transition-all",
                     ans.checked
-                      ? "border-primary/40 bg-primary/5 shadow-sm"
+                      ? "border-emerald-500/40 bg-emerald-500/5 shadow-sm"
+                      : taskId !== null
+                      ? "border-red-500/40 bg-red-500/5"
                       : "border-border/60 bg-card/40"
                   )}
                 >
@@ -610,7 +612,10 @@ export function DailyTaskForm({
                         checked={ans.checked}
                         onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
                         disabled={isLocked || isPending}
-                        className="size-5 rounded border-input text-primary focus:ring-primary mt-0.5 cursor-pointer disabled:cursor-not-allowed"
+                        className={cn(
+                          "size-5 rounded border-input mt-0.5 cursor-pointer disabled:cursor-not-allowed",
+                          ans.checked ? "text-emerald-500 focus:ring-emerald-500 accent-emerald-500" : "text-primary focus:ring-primary"
+                        )}
                       />
                       <label
                         htmlFor={`check-${item.id}`}
@@ -663,7 +668,9 @@ export function DailyTaskForm({
                   className={cn(
                     "rounded-xl border p-5 transition-all",
                     ans.checked
-                      ? "border-primary/40 bg-primary/5 shadow-sm"
+                      ? "border-emerald-500/40 bg-emerald-500/5 shadow-sm"
+                      : taskId !== null
+                      ? "border-red-500/40 bg-red-500/5"
                       : "border-border/60 bg-card/40"
                   )}
                 >
@@ -675,7 +682,10 @@ export function DailyTaskForm({
                         checked={ans.checked}
                         onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
                         disabled={isLocked || isPending}
-                        className="size-5 rounded border-input text-primary focus:ring-primary mt-0.5 cursor-pointer disabled:cursor-not-allowed"
+                        className={cn(
+                          "size-5 rounded border-input mt-0.5 cursor-pointer disabled:cursor-not-allowed",
+                          ans.checked ? "text-emerald-500 focus:ring-emerald-500 accent-emerald-500" : "text-primary focus:ring-primary"
+                        )}
                       />
                       <div className="flex flex-col gap-1">
                         <span className="text-xs font-bold text-primary uppercase tracking-wider">
@@ -733,7 +743,9 @@ export function DailyTaskForm({
                   className={cn(
                     "rounded-xl border p-5 transition-all",
                     ans.checked
-                      ? "border-primary/40 bg-primary/5 shadow-sm"
+                      ? "border-emerald-500/40 bg-emerald-500/5 shadow-sm"
+                      : taskId !== null
+                      ? "border-red-500/40 bg-red-500/5"
                       : "border-border/60 bg-card/40"
                   )}
                 >
@@ -745,7 +757,10 @@ export function DailyTaskForm({
                         checked={ans.checked}
                         onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
                         disabled={isLocked || isPending}
-                        className="size-5 rounded border-input text-primary focus:ring-primary mt-0.5 cursor-pointer disabled:cursor-not-allowed"
+                        className={cn(
+                          "size-5 rounded border-input mt-0.5 cursor-pointer disabled:cursor-not-allowed",
+                          ans.checked ? "text-emerald-500 focus:ring-emerald-500 accent-emerald-500" : "text-primary focus:ring-primary"
+                        )}
                       />
                       <label
                         htmlFor={`check-${item.id}`}

@@ -120,12 +120,13 @@ export function DailyTaskMonthlyClientShell({
       const workerMatch = row.worker_name.toLowerCase().includes(q);
 
       // Search inside daily tasks for this worker
-      const taskMatch = Object.values(row.days).some((task) => {
-        if (!task) return false;
-        return (
-          task.buyer_name?.toLowerCase().includes(q) ||
-          task.task_description?.toLowerCase().includes(q) ||
-          task.problem_notes?.toLowerCase().includes(q)
+      const taskMatch = Object.values(row.days).some((taskList) => {
+        if (!taskList || taskList.length === 0) return false;
+        return taskList.some(
+          (task) =>
+            task.buyer_name?.toLowerCase().includes(q) ||
+            task.task_description?.toLowerCase().includes(q) ||
+            task.problem_notes?.toLowerCase().includes(q)
         );
       });
 
@@ -173,41 +174,48 @@ export function DailyTaskMonthlyClientShell({
   };
 
   const renderCellContent = (
-    task: MonthlyTaskDTO | null,
+    tasks: MonthlyTaskDTO[] | undefined,
     attStatus: string | null | undefined,
     workerName: string
   ) => {
-    if (task) {
-      let badgeLabel = "NOTE";
-      let badgeStyle =
-        "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400";
-
-      if (task.status === "pending_review") {
-        badgeLabel = "PEND";
-        badgeStyle =
-          "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400";
-      } else if (task.status === "rejected") {
-        badgeLabel = "REJ";
-        badgeStyle =
-          "border-rose-500/40 bg-rose-500/15 text-rose-600 dark:text-rose-400";
-      } else if (task.status === "draft") {
-        badgeLabel = "DRAFT";
-        badgeStyle =
-          "border-muted-foreground/40 bg-muted/40 text-muted-foreground";
-      }
-
+    if (tasks && tasks.length > 0) {
       return (
-        <button
-          type="button"
-          onClick={() => setSelectedTaskData({ task, workerName })}
-          className={cn(
-            "inline-flex items-center justify-center px-1.5 py-0.5 rounded border text-[10px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-xs cursor-pointer",
-            badgeStyle
-          )}
-          title={`Klik untuk melihat laporan ${workerName} (${task.task_date})`}
-        >
-          {badgeLabel}
-        </button>
+        <div className="flex flex-col gap-1 items-center justify-center">
+          {tasks.map((task) => {
+            let badgeLabel = "NOTE";
+            let badgeStyle =
+              "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400";
+
+            if (task.status === "pending_review") {
+              badgeLabel = "PEND";
+              badgeStyle =
+                "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400";
+            } else if (task.status === "rejected") {
+              badgeLabel = "REJ";
+              badgeStyle =
+                "border-rose-500/40 bg-rose-500/15 text-rose-600 dark:text-rose-400";
+            } else if (task.status === "draft") {
+              badgeLabel = "DRAFT";
+              badgeStyle =
+                "border-muted-foreground/40 bg-muted/40 text-muted-foreground";
+            }
+
+            return (
+              <button
+                key={task.id}
+                type="button"
+                onClick={() => setSelectedTaskData({ task, workerName })}
+                className={cn(
+                  "inline-flex items-center justify-center px-1.5 py-0.5 rounded border text-[10px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-xs cursor-pointer",
+                  badgeStyle
+                )}
+                title={`Klik untuk melihat laporan ${workerName} (${task.task_date})`}
+              >
+                {badgeLabel}
+              </button>
+            );
+          })}
+        </div>
       );
     }
 
@@ -409,7 +417,7 @@ export function DailyTaskMonthlyClientShell({
               ))}
 
               {calendarDays.map((dayNum) => {
-                const task = memberRow?.days[dayNum] || null;
+                const tasks = memberRow?.days[dayNum] || [];
                 const attStatus = memberRow?.attendance[dayNum] || null;
                 const isToday = dayNum === todayDayNum;
 
@@ -424,7 +432,7 @@ export function DailyTaskMonthlyClientShell({
                   >
                     <span className="text-xs font-bold leading-none">{dayNum}</span>
                     <div className="flex items-center justify-center">
-                      {renderCellContent(task, attStatus, memberRow?.worker_name || "Pemain")}
+                      {renderCellContent(tasks, attStatus, memberRow?.worker_name || "Pemain")}
                     </div>
                   </div>
                 );
@@ -500,14 +508,14 @@ export function DailyTaskMonthlyClientShell({
 
                       {/* 31 Compact Day Cells */}
                       {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((dayNum) => {
-                        const task = row.days[dayNum];
+                        const tasks = row.days[dayNum] || [];
                         const attStatus = row.attendance[dayNum];
                         return (
                           <td
                             key={`cell-${row.user_id}-${dayNum}`}
                             className="w-12 min-w-[48px] p-2 text-center align-middle border-r border-border/25 bg-card/30 hover:bg-card/75 transition-colors"
                           >
-                            {renderCellContent(task, attStatus, row.worker_name)}
+                            {renderCellContent(tasks, attStatus, row.worker_name)}
                           </td>
                         );
                       })}

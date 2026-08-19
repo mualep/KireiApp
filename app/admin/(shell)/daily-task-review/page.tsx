@@ -98,45 +98,52 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
     .select("id, name");
 
   const userMap = new Map((allUsers || []).map((u) => [u.id, u.name]));
-  const taskMap = new Map((tasks || []).map((t) => [t.user_id, t]));
+  const tasksByUserId = new Map<string, typeof tasks>();
+  for (const t of tasks || []) {
+    const list = tasksByUserId.get(t.user_id) || [];
+    list.push(t);
+    tasksByUserId.set(t.user_id, list);
+  }
 
-  const mappedTasks = (members || []).map((member) => {
-    const task = taskMap.get(member.id);
+  const mappedTasks = (members || []).flatMap((member) => {
+    const userTasks = tasksByUserId.get(member.id);
     const shift = shiftMap.get(member.id) || "flexible";
 
-    if (task) {
-      return {
+    if (userTasks && userTasks.length > 0) {
+      return userTasks.map((task) => ({
         ...task,
         worker_name: member.name,
         shift_label: task.shift_label || shift,
         reviewer_name: task.reviewed_by ? userMap.get(task.reviewed_by) || "System" : null,
-      };
+      }));
     } else {
-      return {
-        id: `placeholder-${member.id}`,
-        user_id: member.id,
-        worker_name: member.name,
-        task_date: dateParam,
-        shift_label: shift,
-        stream_name: null,
-        selected_games: [] as string[],
-        checklist_snapshot: [] as Array<{
-          id: string;
-          game: string;
-          phase: "before_work" | "while_work" | "after_work";
-          sort_order: number;
-          label: string;
-        }>,
-        checklist_answers: {} as Record<string, { checked: boolean; proof: string }>,
-        status: "belum_mengisi" as const,
-        reviewed_by: null,
-        reviewer_name: null,
-        reviewed_at: null,
-        submitted_at: null,
-        ss_before_time: null,
-        ss_after_time: null,
-        process_duration_minutes: null,
-      };
+      return [
+        {
+          id: `placeholder-${member.id}`,
+          user_id: member.id,
+          worker_name: member.name,
+          task_date: dateParam,
+          shift_label: shift,
+          stream_name: null,
+          selected_games: [] as string[],
+          checklist_snapshot: [] as Array<{
+            id: string;
+            game: string;
+            phase: "before_work" | "while_work" | "after_work";
+            sort_order: number;
+            label: string;
+          }>,
+          checklist_answers: {} as Record<string, { checked: boolean; proof: string }>,
+          status: "belum_mengisi" as const,
+          reviewed_by: null,
+          reviewer_name: null,
+          reviewed_at: null,
+          submitted_at: null,
+          ss_before_time: null,
+          ss_after_time: null,
+          process_duration_minutes: null,
+        },
+      ];
     }
   });
 
