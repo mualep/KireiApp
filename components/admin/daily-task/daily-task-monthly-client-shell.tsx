@@ -137,19 +137,38 @@ export function DailyTaskMonthlyClientShell({
 
   const renderUrlLink = (url: string | null | undefined, fallbackText = "-") => {
     if (!url || !url.trim()) return <span className="text-muted-foreground/45 italic">{fallbackText}</span>;
-    const trimmed = url.trim();
-    const href = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+    const tokens = url.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return <span className="text-muted-foreground/45 italic">{fallbackText}</span>;
 
     return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-primary hover:underline font-medium inline-flex items-center gap-1 break-all"
-      >
-        <span>{trimmed}</span>
-        <ExternalLink className="size-3 shrink-0" />
-      </a>
+      <div className="flex flex-col gap-1">
+        {tokens.map((token, idx) => {
+          const isUrl = /^https?:\/\/\S+/i.test(token) || (token.includes(".") && !token.includes(" "));
+          const href = /^https?:\/\//i.test(token) ? token : `https://${token}`;
+
+          if (isUrl) {
+            return (
+              <a
+                key={idx}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium inline-flex items-center gap-1 break-all"
+              >
+                <span>{token}</span>
+                <ExternalLink className="size-3 shrink-0" />
+              </a>
+            );
+          }
+
+          return (
+            <span key={idx} className="text-foreground/90 break-all">
+              {token}
+            </span>
+          );
+        })}
+      </div>
     );
   };
 

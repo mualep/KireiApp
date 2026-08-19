@@ -363,13 +363,41 @@ export function DailyTaskForm({
     );
   }
 
+  const handleCreateNewReport = () => {
+    setTaskId(null);
+    setTaskStatus(null);
+    setEditableUntil(null);
+    setStreamName("");
+    setBuyerName("");
+    setTaskDescription("");
+    setSsBeforeUrl("");
+    setSsAfterUrl("");
+    setSsBeforeTime("");
+    setSsAfterTime("");
+    setProcessDurationMinutes("");
+    setProblemNotes("");
+    setSelectedGames([]);
+    setChecklistAnswers({});
+  };
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
       {/* Locked status banner */}
       {taskStatus === "approved" ? (
-        <div className="flex items-center gap-3 p-4 rounded-xl border border-green-500/30 bg-green-500/10 text-green-500 text-sm font-bold shadow-md shadow-green-500/5">
-          <CheckCircle className="size-5 shrink-0" />
-          <span>Tugas telah disetujui.</span>
+        <div className="flex items-center justify-between gap-3 p-4 rounded-xl border border-green-500/30 bg-green-500/10 text-green-500 text-sm font-bold shadow-md shadow-green-500/5">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="size-5 shrink-0" />
+            <span>Tugas telah disetujui.</span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCreateNewReport}
+            className="border-green-500/40 text-green-500 hover:bg-green-500/20 font-bold"
+          >
+            Buat Laporan Baru
+          </Button>
         </div>
       ) : isLocked ? (
         <div className="flex items-center gap-3 p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 text-sm font-bold shadow-md shadow-yellow-500/5">
@@ -433,22 +461,24 @@ export function DailyTaskForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Field>
             <FieldLabel htmlFor="ss-before-url-input">Link SS Before (Image URL)</FieldLabel>
-            <Input
+            <Textarea
               id="ss-before-url-input"
+              rows={2}
               value={ssBeforeUrl}
               onChange={(e) => setSsBeforeUrl(e.target.value)}
-              placeholder="contoh: https://imgur.com/... atau https://imgpile.com/..."
+              placeholder="contoh: https://imgur.com/... (Bisa masukkan lebih dari 1 link, pisahkan dengan Enter/Spasi)"
               disabled={isLocked || isPending}
             />
           </Field>
 
           <Field>
             <FieldLabel htmlFor="ss-after-url-input">Link SS After (Image URL)</FieldLabel>
-            <Input
+            <Textarea
               id="ss-after-url-input"
+              rows={2}
               value={ssAfterUrl}
               onChange={(e) => setSsAfterUrl(e.target.value)}
-              placeholder="contoh: https://imgur.com/... atau https://imgpile.com/..."
+              placeholder="contoh: https://imgur.com/... (Bisa masukkan lebih dari 1 link, pisahkan dengan Enter/Spasi)"
               disabled={isLocked || isPending}
             />
           </Field>
@@ -498,11 +528,12 @@ export function DailyTaskForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Field>
             <FieldLabel htmlFor="stream-input">Link Streaming</FieldLabel>
-            <Input
+            <Textarea
               id="stream-input"
+              rows={2}
               value={streamName}
               onChange={(e) => setStreamName(e.target.value)}
-              placeholder="contoh: Link stream YouTube / Twitch"
+              placeholder="contoh: Link stream YouTube / Twitch (Bisa masukkan lebih dari 1 link, pisahkan dengan Enter/Spasi)"
               disabled={isLocked || isPending}
             />
           </Field>

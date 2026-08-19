@@ -138,21 +138,38 @@ export function DailyTaskReviewTable({
   function renderProofText(proof: string | null | undefined) {
     if (!proof || !proof.trim()) return <span className="text-muted-foreground/45 italic">-</span>;
 
-    const trimmed = proof.trim();
-    if (/^https?:\/\/\S+/i.test(trimmed)) {
-      return (
-        <a
-          href={trimmed}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline break-all font-medium inline-flex items-center gap-1.5"
-        >
-          <span>{trimmed}</span>
-          <ExternalLink className="size-3 shrink-0" />
-        </a>
-      );
-    }
-    return <span className="text-foreground/90 whitespace-pre-wrap">{proof}</span>;
+    const tokens = proof.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return <span className="text-muted-foreground/45 italic">-</span>;
+
+    return (
+      <div className="flex flex-col gap-1">
+        {tokens.map((token, idx) => {
+          const isUrl = /^https?:\/\/\S+/i.test(token) || (token.includes(".") && !token.includes(" "));
+          const href = /^https?:\/\//i.test(token) ? token : `https://${token}`;
+
+          if (isUrl) {
+            return (
+              <a
+                key={idx}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline break-all font-medium inline-flex items-center gap-1.5"
+              >
+                <span>{token}</span>
+                <ExternalLink className="size-3 shrink-0" />
+              </a>
+            );
+          }
+
+          return (
+            <span key={idx} className="text-foreground/90 break-all">
+              {token}
+            </span>
+          );
+        })}
+      </div>
+    );
   }
 
   function formatTime(isoString: string | null) {
