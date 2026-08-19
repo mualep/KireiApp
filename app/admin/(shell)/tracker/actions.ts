@@ -140,11 +140,11 @@ export type ApplyTrackerAbsenceMaterializationResult =
     };
 
 const RESULT_MESSAGES = {
-  absence_close_not_expired: "This tracker status can still be canceled before expiry.",
-  alpha_rejected: "Manual tracker actions are not allowed after ALPHA is set.",
-  attendance_conflict: "Attendance already exists for this worker and date.",
-  attendance_missing: "Attendance could not be found for this action.",
-  correction_expired: "This tracker correction is no longer available after shift end.",
+  absence_close_not_expired: "Status tracker ini masih dapat dibatalkan sebelum masa berlaku berakhir.",
+  alpha_rejected: "Aksi tracker manual tidak diizinkan setelah status ALPHA ditetapkan.",
+  attendance_conflict: "Data absensi sudah ada untuk pekerja dan tanggal ini.",
+  attendance_missing: "Data absensi tidak ditemukan untuk koreksi ini.",
+  correction_expired: "Waktu shift telah berakhir. Silakan gunakan menu kalender Absensi untuk merevisi data masa lalu.",
   cuti_stock_exhausted: "This worker has no remaining CUTI stock.",
   cuti_stock_insufficient_for_range: "CUTI stock is insufficient to cover all missing absence days.",
   generic_error: "We could not apply that tracker action. Please try again.",

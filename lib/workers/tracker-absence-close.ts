@@ -102,17 +102,14 @@ export function getTrackerCorrectionWindowState({
     return "unavailable";
   }
 
-  if (isFlexible) {
-    return getCurrentWibDate(now) === attendanceDate ? "open" : "expired";
-  }
-
   if (
+    isFlexible ||
     shiftStartHour === null ||
     shiftStartMinute === null ||
     shiftEndHour === null ||
     shiftEndMinute === null
   ) {
-    return "unavailable";
+    return getCurrentWibDate(now) === attendanceDate ? "open" : "expired";
   }
 
   let endDayOffset = 0;
