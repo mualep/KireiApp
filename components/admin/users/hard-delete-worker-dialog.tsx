@@ -92,17 +92,14 @@ export function HardDeleteWorkerDialog({
         <DialogHeader className="gap-1.5">
           <DialogTitle className="flex items-center gap-2 text-lg font-bold text-red-500">
             <AlertTriangle className="size-5 text-red-500 shrink-0 animate-pulse" />
-            Hapus Pekerja Secara Permanen
+            Pecat Pekerja
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Aksi destruktif tingkat Owner. Mengapus kredensial dan seluruh rekaman database.
-          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleDelete} className="flex flex-col gap-4 py-2 text-xs">
           {/* Warning Banner */}
           <div className="p-3.5 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 flex flex-col gap-1.5">
-            <span className="font-extrabold uppercase tracking-wide text-red-300">PERINGATAN FATAL:</span>
+            <span className="font-extrabold uppercase tracking-wide text-red-300">PERINGATAN:</span>
             <p className="text-[11px] leading-relaxed">
               Aksi ini akan menghapus pekerja <strong className="text-foreground text-xs font-bold">{row.name}</strong> ({row.email}) dan SELURUH data historisnya secara permanen. Data yang terhapus <strong className="text-red-300 font-extrabold">TIDAK DAPAT DIKEMBALIKAN!</strong>
             </p>
@@ -140,7 +137,7 @@ export function HardDeleteWorkerDialog({
               className="h-9 px-4 font-bold text-xs flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
             >
               {isDeleting ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-              Hapus Permanen
+              Pecat
             </Button>
           </DialogFooter>
         </form>

@@ -224,7 +224,7 @@ export function UsersTable({ initialData, currentTier }: UsersTableProps) {
                 {currentTier === "owner" && (
                   <>
                     <th className="px-4 py-3 text-center font-medium">Nonaktif</th>
-                    <th className="px-4 py-3 text-center font-medium text-red-400">Hapus Permanen</th>
+                    <th className="px-4 py-3 text-center font-medium text-red-400">Pecat</th>
                   </>
                 )}
               </tr>
@@ -302,7 +302,7 @@ export function UsersTable({ initialData, currentTier }: UsersTableProps) {
                     </Button>
                   </td>
 
-                  {/* Owner-only actions: Nonaktifkan & Hard Delete */}
+                  {/* Owner-only actions: Nonaktifkan & Pecat */}
                   {currentTier === "owner" && (
                     <>
                       <td className="px-4 py-3 text-center">
@@ -323,8 +323,8 @@ export function UsersTable({ initialData, currentTier }: UsersTableProps) {
                           size="icon-sm"
                           className="hover:text-red-500 hover:bg-red-500/10"
                           onClick={() => setHardDeleteRow(row)}
-                          title={`Hapus Permanen ${row.name}`}
-                          aria-label={`Hapus Permanen ${row.name}`}
+                          title={`Pecat ${row.name}`}
+                          aria-label={`Pecat ${row.name}`}
                         >
                           <Trash2 className="size-4 text-red-500" />
                         </Button>
