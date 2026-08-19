@@ -92,6 +92,7 @@ export type TrackerCardDTO = {
   pendingDays: number;
   sakitDays: number;
   shift: WorkerShift;
+  isTemporaryShift?: boolean;
   shiftStartedAt: string | null;
   showCard: boolean;
   statusUpdatedAt: string;

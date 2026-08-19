@@ -14,6 +14,7 @@ import {
   isWorkerShift,
   isWorkerStoredStatus,
   type TrackerCardDTO,
+  type WorkerShift,
   type WorkerStoredStatus,
 } from "@/lib/workers";
 import { scopeTrackerCards } from "@/lib/tracker/helpers";
@@ -40,6 +41,8 @@ type WorkerProfileRow = {
   employee_role: string;
   is_flexible: boolean;
   shift: string;
+  temp_shift?: string | null;
+  temp_shift_until?: string | null;
   shift_end_hour: number | null;
   shift_end_min: number | null;
   shift_start_hour: number | null;
@@ -117,7 +120,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   const { data: profiles, error: profilesError } = await supabase
     .from("worker_profiles")
     .select(
-      "user_id,employee_role,shift,is_flexible,shift_start_hour,shift_start_min,shift_end_hour,shift_end_min,show_card,cuti_stock",
+      "user_id,employee_role,shift,temp_shift,temp_shift_until,is_flexible,shift_start_hour,shift_start_min,shift_end_hour,shift_end_min,show_card,cuti_stock",
     )
     .eq("show_card", true)
     .returns<WorkerProfileRow[]>();
@@ -280,7 +283,16 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
       return [];
     }
 
-    const shift = getShiftDefinition(profile.shift);
+    const isTempActive =
+      Boolean(profile.temp_shift) &&
+      Boolean(profile.temp_shift_until) &&
+      new Date(profile.temp_shift_until!).getTime() > now.getTime();
+
+    const effectiveShiftLabel = isTempActive
+      ? (profile.temp_shift as WorkerShift)
+      : (profile.shift as WorkerShift);
+
+    const shift = getShiftDefinition(effectiveShiftLabel);
     const activeTrackerAttendance = getMatchingTrackerAttendance(
       activeTrackerAttendancesByUserId.get(profile.user_id),
       status.current_status,
@@ -369,7 +381,8 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
           0,
           (record?.sakit_days ?? 0) + (record?.sakit_delta ?? 0),
         ),
-        shift: profile.shift,
+        shift: effectiveShiftLabel,
+        isTemporaryShift: isTempActive,
         shiftStartedAt: status.shift_active_started_at,
         showCard: profile.show_card,
         statusUpdatedAt: status.updated_at,

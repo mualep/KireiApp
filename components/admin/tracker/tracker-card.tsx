@@ -88,7 +88,10 @@ export const TrackerCard = memo(function TrackerCard({
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="tracker-role-shift-badge h-6 max-w-[14rem] rounded-sm border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground"
+                className={cn(
+                  "tracker-role-shift-badge h-6 max-w-[14rem] rounded-sm border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground",
+                  card.isTemporaryShift && "border-amber-500/50 bg-amber-500/15 text-amber-300 font-bold",
+                )}
                 translate="no"
               >
                 <span className="hidden truncate @[14rem]:inline">
@@ -260,7 +263,7 @@ function getFullRoleShiftLabel(card: TrackerCardDTO): string {
     return `${role} • Flexible`;
   }
 
-  return `${role}-${card.shift}`;
+  return card.isTemporaryShift ? `${role}-${card.shift} (Temp)` : `${role}-${card.shift}`;
 }
 
 function getCompactRoleShiftLabel(card: TrackerCardDTO): string {
@@ -270,7 +273,7 @@ function getCompactRoleShiftLabel(card: TrackerCardDTO): string {
     return `${role} • Flexible`;
   }
 
-  return `${role}-${card.shift}`;
+  return card.isTemporaryShift ? `${role}-${card.shift} (Temp)` : `${role}-${card.shift}`;
 }
 
 function getShiftTimeLabel(card: TrackerCardDTO): string | null {
