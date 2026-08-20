@@ -4,6 +4,8 @@ import {
   ClockPlusIcon,
   HeartOffIcon,
   MessageCircleWarningIcon,
+  Scale,
+  ShieldAlert,
   UserPenIcon,
   UtensilsIcon,
 } from "lucide-react";
@@ -46,18 +48,22 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
       alphaDays: summary.alphaDays + row.alphaCount.value,
       breakLateSeconds: summary.breakLateSeconds + row.breakLateSeconds.value,
       cutiDays: summary.cutiDays + (row.cutiStockSnapshot.value || 0),
+      kompensasiMins: summary.kompensasiMins + (row.kompensasiDurationMins.value || 0),
       lembur: summary.lembur + row.lemburUnits.value,
       pending: summary.pending + row.pendingDays.value,
       sakit: summary.sakit + row.sakitDays.value,
+      telatIzin: summary.telatIzin + (row.telatIzinCount.value || 0),
       workLateSeconds: summary.workLateSeconds + row.workLateSeconds.value,
     }),
     {
       alphaDays: 0,
       breakLateSeconds: 0,
       cutiDays: 0,
+      kompensasiMins: 0,
       lembur: 0,
       pending: 0,
       sakit: 0,
+      telatIzin: 0,
       workLateSeconds: 0,
     },
   );
@@ -105,12 +111,24 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
       toneClass: "border-status-break/35 bg-status-break/10 text-status-break",
       value: formatLemburMinutes(totals.lembur),
     },
+    {
+      icon: Scale,
+      label: "Total Kompensasi",
+      toneClass: "border-amber-500/35 bg-amber-500/10 text-amber-500",
+      value: `${Math.round(totals.kompensasiMins / 60)} Jam`,
+    },
+    {
+      icon: ShieldAlert,
+      label: "Total Telat Izin",
+      toneClass: "border-rose-500/35 bg-rose-500/10 text-rose-500",
+      value: `${numberFormatter.format(totals.telatIzin)} Kali`,
+    },
   ];
 
   return (
     <section
       aria-label="Records monthly summary"
-      className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7"
+      className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-9"
     >
       {cards.map((card) => {
         const Icon = card.icon;

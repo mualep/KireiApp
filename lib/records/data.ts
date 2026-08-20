@@ -28,6 +28,7 @@ export type RecordsRowDTO = {
   compactRoleShiftLabel: string;
   cutiStockSnapshot: EffectiveRecordMetric<number | null>;
   employeeRole: WorkerRole;
+  kompensasiDurationMins: EffectiveRecordMetric;
   lastSource: WorkerAttendanceSource | null;
   lastSourceAction: string | null;
   lemburUnits: EffectiveRecordMetric;
@@ -38,6 +39,7 @@ export type RecordsRowDTO = {
   sakitDays: EffectiveRecordMetric;
   shift: WorkerShift;
   shiftTimeLabel: string | null;
+  telatIzinCount: EffectiveRecordMetric;
   updatedAt: string | null;
   userId: string;
   workLateSeconds: EffectiveRecordMetric;
@@ -70,6 +72,8 @@ type WorkerRecordRow = {
   break_late_seconds: number;
   cuti_stock_delta: number;
   cuti_stock_snapshot: number | null;
+  kompensasi_delta_mins: number;
+  kompensasi_duration_mins: number;
   last_source: string | null;
   last_source_action: string | null;
   lembur_delta: number;
@@ -79,6 +83,8 @@ type WorkerRecordRow = {
   period_month: string;
   sakit_days: number;
   sakit_delta: number;
+  telat_izin_count: number;
+  telat_izin_delta: number;
   updated_at: string | null;
   user_id: string;
   work_late_delta: number;
@@ -159,6 +165,8 @@ export async function getRecordsData({
           "pending_days",
           "lembur_units",
           "cuti_stock_snapshot",
+          "kompensasi_duration_mins",
+          "telat_izin_count",
           "work_late_delta",
           "break_late_delta",
           "alpha_delta",
@@ -166,6 +174,8 @@ export async function getRecordsData({
           "pending_delta",
           "lembur_delta",
           "cuti_stock_delta",
+          "kompensasi_delta_mins",
+          "telat_izin_delta",
           "last_source",
           "last_source_action",
           "updated_at",
@@ -264,6 +274,10 @@ export async function getRecordsData({
           workerRecord.cuti_stock_delta,
         ),
         employeeRole: profile.employee_role,
+        kompensasiDurationMins: getEffectiveRecordMetric(
+          workerRecord.kompensasi_duration_mins ?? 0,
+          workerRecord.kompensasi_delta_mins ?? 0,
+        ),
         lastSource: parseRecordSource(workerRecord.last_source),
         lastSourceAction: workerRecord.last_source_action,
         lemburUnits: getEffectiveRecordMetric(
@@ -283,6 +297,10 @@ export async function getRecordsData({
         ),
         shift: profile.shift,
         shiftTimeLabel,
+        telatIzinCount: getEffectiveRecordMetric(
+          workerRecord.telat_izin_count ?? 0,
+          workerRecord.telat_izin_delta ?? 0,
+        ),
         updatedAt: workerRecord.updated_at,
         userId: profile.user_id,
         workLateSeconds: getEffectiveRecordMetric(
@@ -308,6 +326,8 @@ function createEmptyRecordRow(
     break_late_seconds: 0,
     cuti_stock_delta: 0,
     cuti_stock_snapshot: cutiStockSnapshot,
+    kompensasi_delta_mins: 0,
+    kompensasi_duration_mins: 0,
     last_source: null,
     last_source_action: null,
     lembur_delta: 0,
@@ -317,6 +337,8 @@ function createEmptyRecordRow(
     period_month: periodMonth,
     sakit_days: 0,
     sakit_delta: 0,
+    telat_izin_count: 0,
+    telat_izin_delta: 0,
     updated_at: null,
     user_id: userId,
     work_late_delta: 0,

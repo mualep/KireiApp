@@ -35,6 +35,8 @@ const overrideFieldOptions = [
   { value: "pending_override_days", label: "Pending Days", isDuration: false },
   { value: "lembur_override_units", label: "Lembur Units", isDuration: false },
   { value: "cuti_stock_override_snapshot", label: "Cuti Stock", isDuration: false },
+  { value: "kompensasi_override_duration_mins", label: "Kompensasi (Menit)", isDuration: false },
+  { value: "telat_izin_override_count", label: "Telat Izin (Kali)", isDuration: false },
 ] as const;
 
 type OverrideFieldName = typeof overrideFieldOptions[number]["value"];
@@ -63,6 +65,10 @@ function getMetricForField(row: RecordsRowDTO, field: OverrideFieldName) {
       return row.lemburUnits;
     case "cuti_stock_override_snapshot":
       return row.cutiStockSnapshot;
+    case "kompensasi_override_duration_mins":
+      return row.kompensasiDurationMins;
+    case "telat_izin_override_count":
+      return row.telatIzinCount;
   }
 }
 
@@ -73,6 +79,12 @@ function isDurationField(field: OverrideFieldName): boolean {
 function formatCurrentValue(field: OverrideFieldName, value: number | null): string {
   if (value === null) return "-";
   if (isDurationField(field)) return formatRecordsDuration(value);
+  if (field === "kompensasi_override_duration_mins") {
+    return `${value} menit (${Math.round(value / 60)} jam)`;
+  }
+  if (field === "telat_izin_override_count") {
+    return `${value}x`;
+  }
   return formatRecordsNumber(value);
 }
 

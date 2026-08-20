@@ -37,9 +37,11 @@ const recordsMetricToneClasses = {
   alpha: "text-status-alpha",
   breakLate: "text-status-sakit",
   cuti: "text-status-cuti",
+  kompensasi: "text-amber-500",
   lembur: "text-status-break",
   pending: "text-status-pending",
   sakit: "text-status-sakit",
+  telatIzin: "text-rose-500",
   workLate: "text-status-break",
 } as const;
 
@@ -89,7 +91,7 @@ export function RecordsTable({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[64rem] border-collapse text-left text-xs">
+          <table className="w-full min-w-[70rem] border-collapse text-left text-xs">
             <thead>
               <tr className="border-b border-border/75 bg-background/35 text-muted-foreground">
                 <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 font-semibold backdrop-blur">
@@ -102,6 +104,8 @@ export function RecordsTable({
                 <th className="px-3 py-2 text-center font-semibold">Pending</th>
                 <th className="px-3 py-2 text-center font-semibold">Lembur</th>
                 <th className="px-3 py-2 text-center font-semibold">Cuti</th>
+                <th className="px-3 py-2 text-center font-semibold">Kompensasi</th>
+                <th className="px-3 py-2 text-center font-semibold">Telat Izin</th>
                 <th className="px-3 py-2 text-center font-semibold">Updated</th>
                 {canCorrectRecords ? (
                   <th className="px-3 py-2 text-right font-semibold">Action</th>
@@ -184,6 +188,20 @@ export function RecordsTable({
                   <td className="px-3 py-2 text-center">
                     <MetricValue metric={row.cutiStockSnapshot} tone="cuti" />
                   </td>
+                  <td className="px-3 py-2 text-center">
+                    <MetricValue
+                      metric={row.kompensasiDurationMins}
+                      tone="kompensasi"
+                      type="kompensasi"
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <MetricValue
+                      metric={row.telatIzinCount}
+                      tone="telatIzin"
+                      type="times"
+                    />
+                  </td>
                   <td className="px-3 py-2 text-center font-sans text-[0.7rem] tabular-nums text-muted-foreground">
                     {row.updatedAt
                       ? updatedAtFormatter.format(new Date(row.updatedAt))
@@ -232,6 +250,17 @@ function formatLemburMinutes(minutes: number): string {
   return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
 }
 
+function formatKompensasiHours(minutes: number | null): string {
+  if (!minutes || minutes <= 0) return "0 jam";
+  const hours = Math.round(minutes / 60);
+  return `${hours} jam`;
+}
+
+function formatTimes(count: number | null): string {
+  if (!count || count <= 0) return "0x";
+  return `${count}x`;
+}
+
 function MetricValue({
   metric,
   tone,
@@ -239,11 +268,15 @@ function MetricValue({
 }: {
   metric: EffectiveRecordMetric<number | null>;
   tone: RecordsMetricTone;
-  type?: "duration" | "number" | "lembur";
+  type?: "duration" | "number" | "lembur" | "kompensasi" | "times";
 }) {
   const value =
     type === "lembur" && metric.value !== null
       ? formatLemburMinutes(metric.value)
+      : type === "kompensasi" && metric.value !== null
+      ? formatKompensasiHours(metric.value)
+      : type === "times" && metric.value !== null
+      ? formatTimes(metric.value)
       : type === "duration" && metric.value !== null
       ? formatRecordsDuration(metric.value)
       : formatRecordsNumber(metric.value);
