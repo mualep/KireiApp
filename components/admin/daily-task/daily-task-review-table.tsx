@@ -6,6 +6,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -88,6 +98,7 @@ export function DailyTaskReviewTable({
   const [showDurationError, setShowDurationError] = useState(false);
   const [isSubmittingKompen, setIsSubmittingKompen] = useState(false);
   const [isDeletingKompenId, setIsDeletingKompenId] = useState<string | null>(null);
+  const [kompenToDelete, setKompenToDelete] = useState<KompensasiItem | null>(null);
 
   const handleOpenCreateKompen = () => {
     setEditingKompenId(null);
@@ -111,13 +122,9 @@ export function DailyTaskReviewTable({
     setShowKompenForm(true);
   };
 
-  const handleDeleteKompensasi = async (k: KompensasiItem) => {
-    if (!selectedTask) return;
-    const confirmed = window.confirm(
-      `Apakah Anda yakin ingin menghapus kompensasi (${Math.floor(k.duration_minutes / 60)}h ${k.duration_minutes % 60}m) ini?`
-    );
-    if (!confirmed) return;
-
+  const confirmDeleteKompensasi = async () => {
+    if (!kompenToDelete || !selectedTask) return;
+    const k = kompenToDelete;
     setIsDeletingKompenId(k.id);
     try {
       const res = await deleteKompensasiAction(k.id, selectedTask.user_id);
@@ -141,6 +148,7 @@ export function DailyTaskReviewTable({
       }
     } finally {
       setIsDeletingKompenId(null);
+      setKompenToDelete(null);
     }
   };
 
@@ -731,7 +739,7 @@ export function DailyTaskReviewTable({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteKompensasi(k)}
+                            onClick={() => setKompenToDelete(k)}
                             disabled={isDeletingKompenId === k.id}
                             className="h-8 text-xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1"
                           >
@@ -921,6 +929,59 @@ export function DailyTaskReviewTable({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Kompensasi Delete Confirmation AlertDialog */}
+      <AlertDialog
+        open={!!kompenToDelete}
+        onOpenChange={(open) => {
+          if (!open && isDeletingKompenId === null) {
+            setKompenToDelete(null);
+          }
+        }}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="size-5" />
+              <span>Hapus Catatan Kompensasi?</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs leading-relaxed text-muted-foreground pt-1">
+              Apakah Anda yakin ingin menghapus kompensasi sebesar{" "}
+              <span className="font-bold text-foreground">
+                {kompenToDelete
+                  ? `${Math.floor(kompenToDelete.duration_minutes / 60)}h ${kompenToDelete.duration_minutes % 60}m`
+                  : ""}
+              </span>{" "}
+              untuk <span className="font-bold text-foreground">{selectedTask?.worker_name}</span>?
+              <br /><br />
+              Tindakan ini akan secara otomatis memotong akumulasi kompensasi pekerja pada Records bulan berjalan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel
+              disabled={isDeletingKompenId !== null}
+              onClick={() => setKompenToDelete(null)}
+              className="h-9 text-xs font-bold"
+            >
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeletingKompenId !== null}
+              onClick={confirmDeleteKompensasi}
+              className="h-9 text-xs font-bold bg-destructive hover:bg-destructive/90 text-white min-w-[120px]"
+            >
+              {isDeletingKompenId !== null ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                  Menghapus...
+                </>
+              ) : (
+                "Hapus Kompensasi"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
