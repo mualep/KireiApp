@@ -11,8 +11,20 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { submitKompensasiAction } from "@/app/admin/(shell)/daily-task-review/actions";
-import { Check, X, RefreshCw, Eye, Calendar, UserCheck, ChevronDown, ExternalLink, ListTodo, FileSpreadsheet, Scale, Loader2, AlertCircle } from "lucide-react";
+import { Check, X, RefreshCw, Eye, Calendar, UserCheck, ChevronDown, ExternalLink, ListTodo, FileSpreadsheet, Scale, Loader2, AlertCircle, Edit3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+export interface KompensasiItem {
+  id: string;
+  user_id: string;
+  daily_task_id?: string | null;
+  date: string;
+  duration_minutes: number;
+  reason: string;
+  proof_url: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface TaskRecord {
   id: string;
@@ -43,6 +55,7 @@ export interface TaskRecord {
   problem_notes?: string | null;
   ss_before_url?: string | null;
   ss_after_url?: string | null;
+  kompensasi?: KompensasiItem[];
 }
 
 interface DailyTaskReviewTableProps {
@@ -67,15 +80,50 @@ export function DailyTaskReviewTable({
 
   // Kompensasi Form State
   const [showKompenForm, setShowKompenForm] = useState(false);
+  const [editingKompenId, setEditingKompenId] = useState<string | null>(null);
   const [kompenHours, setKompenHours] = useState<number | "">("");
   const [kompenMinutes, setKompenMinutes] = useState<number | "">("");
   const [kompenReason, setKompenReason] = useState("");
   const [kompenProofUrl, setKompenProofUrl] = useState("");
+  const [showDurationError, setShowDurationError] = useState(false);
   const [isSubmittingKompen, setIsSubmittingKompen] = useState(false);
+
+  const handleOpenCreateKompen = () => {
+    setEditingKompenId(null);
+    setKompenHours("");
+    setKompenMinutes("");
+    setKompenReason("");
+    setKompenProofUrl("");
+    setShowDurationError(false);
+    setShowKompenForm(true);
+  };
+
+  const handleOpenEditKompen = (k: KompensasiItem) => {
+    setEditingKompenId(k.id);
+    const h = Math.floor(k.duration_minutes / 60);
+    const m = k.duration_minutes % 60;
+    setKompenHours(h > 0 ? h : "");
+    setKompenMinutes(m > 0 ? m : "");
+    setKompenReason(k.reason);
+    setKompenProofUrl(k.proof_url || "");
+    setShowDurationError(false);
+    setShowKompenForm(true);
+  };
 
   const handleKompensasiSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTask) return;
+
+    const h = Number(kompenHours) || 0;
+    const m = Number(kompenMinutes) || 0;
+    const totalMins = h * 60 + m;
+
+    if (totalMins <= 0) {
+      setShowDurationError(true);
+      return;
+    }
+    setShowDurationError(false);
+
     if (!kompenReason.trim()) {
       toast({
         variant: "destructive",
@@ -85,22 +133,12 @@ export function DailyTaskReviewTable({
       return;
     }
 
-    const h = Number(kompenHours) || 0;
-    const m = Number(kompenMinutes) || 0;
-    if (h === 0 && m === 0) {
-      toast({
-        variant: "destructive",
-        title: "Durasi Wajib Diisi",
-        description: "Masukkan durasi kompensasi (minimal 1 menit).",
-      });
-      return;
-    }
-
     setIsSubmittingKompen(true);
     try {
       const res = await submitKompensasiAction({
+        id: editingKompenId,
         userId: selectedTask.user_id,
-        dailyTaskId: selectedTask.id === "dummy" ? null : selectedTask.id,
+        dailyTaskId: selectedTask.id.startsWith("placeholder-") ? null : selectedTask.id,
         taskDate: selectedTask.task_date,
         hours: h,
         minutes: m,
@@ -108,13 +146,18 @@ export function DailyTaskReviewTable({
         proofUrl: kompenProofUrl,
       });
 
-      if (res.ok) {
+      if (res.ok && typeof res.durationMinutes === "number") {
+        const hFormatted = Math.floor(res.durationMinutes / 60);
+        const mFormatted = res.durationMinutes % 60;
+        const formattedDuration = `${hFormatted}h ${mFormatted}m`;
+
         toast({
-          title: "Kompensasi Berhasil Diberikan",
-          description: `Kompensasi ${res.durationMinutes} menit berhasil dicatat & disinkronkan ke Records.`,
+          title: editingKompenId ? "Kompensasi Diperbarui" : "Kompensasi Berhasil Diberikan",
+          description: `Kompensasi ${formattedDuration} berhasil disimpan & disinkronkan ke Records.`,
           className: "border-green-500/30 bg-green-500/10 text-green-500 backdrop-blur-md",
         });
         setShowKompenForm(false);
+        setEditingKompenId(null);
         setKompenHours("");
         setKompenMinutes("");
         setKompenReason("");
@@ -123,7 +166,7 @@ export function DailyTaskReviewTable({
       } else {
         toast({
           variant: "destructive",
-          title: "Gagal Memberikan Kompensasi",
+          title: "Gagal Menyimpan Kompensasi",
           description: res.error || "Terjadi kesalahan pada server.",
         });
       }
@@ -605,35 +648,78 @@ export function DailyTaskReviewTable({
               })}
             </div>
 
-            {/* Kompensasi Section */}
-            {!showKompenForm ? (
-              <div className="flex items-center justify-between p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 mt-4">
-                <div className="flex items-center gap-2.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
-                  <Scale className="size-4 shrink-0" />
-                  <span>Perlu memberikan penalti kompensasi kelalaian kerja pada tugas ini?</span>
+            {/* Existing Kompensasi List */}
+            {selectedTask.kompensasi && selectedTask.kompensasi.length > 0 && (
+              <div className="flex flex-col gap-3 py-3 border-t border-border/20 mt-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <Scale className="size-4" />
+                  <span>Daftar Kompensasi Kelalaian Kerja ({selectedTask.kompensasi.length})</span>
+                </h4>
+                <div className="flex flex-col gap-2.5">
+                  {selectedTask.kompensasi.map((k) => {
+                    const h = Math.floor(k.duration_minutes / 60);
+                    const m = k.duration_minutes % 60;
+                    return (
+                      <div
+                        key={k.id}
+                        className="p-3.5 rounded-xl border border-border/60 bg-card/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+                      >
+                        <div className="flex flex-col gap-1 flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge className="font-mono bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-xs font-bold">
+                              {h}h {m}m
+                            </Badge>
+                            <span className="text-xs font-bold text-foreground">
+                              {k.reason}
+                            </span>
+                          </div>
+                          {k.proof_url ? (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              <span className="text-[10px] font-bold uppercase text-muted-foreground/70 mr-1.5">Bukti:</span>
+                              {renderProofText(k.proof_url)}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenEditKompen(k)}
+                          className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0 self-end sm:self-auto gap-1"
+                        >
+                          <Edit3 className="size-3.5" />
+                          <span>Edit</span>
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowKompenForm(true)}
-                  className="border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 font-bold text-xs h-8"
-                >
-                  Beri Kompensasi
-                </Button>
               </div>
-            ) : (
-              <form onSubmit={handleKompensasiSubmit} className="p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 mt-4 flex flex-col gap-3.5 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                    <Scale className="size-4" />
-                    <span>Form Penalti Kompensasi ({selectedTask.worker_name})</span>
+            )}
+
+            {/* Kompensasi Form (Create / Edit) */}
+            {showKompenForm && (
+              <form
+                onSubmit={handleKompensasiSubmit}
+                className="p-4 md:p-5 rounded-xl border border-border/70 bg-card/80 mt-4 flex flex-col gap-4 shadow-md"
+              >
+                <div className="flex items-center justify-between border-b border-border/30 pb-3">
+                  <div className="flex items-center gap-2 text-xs font-black text-foreground uppercase tracking-wide">
+                    <Scale className="size-4 text-amber-500" />
+                    <span>
+                      {editingKompenId ? "EDIT KOMPENSASI UNTUK" : "BERI KOMPENSASI UNTUK"}{" "}
+                      {selectedTask.worker_name.toUpperCase()}
+                    </span>
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowKompenForm(false)}
+                    onClick={() => {
+                      setShowKompenForm(false);
+                      setEditingKompenId(null);
+                    }}
                     className="h-7 text-xs text-muted-foreground hover:text-foreground"
                   >
                     Tutup
@@ -648,7 +734,10 @@ export function DailyTaskReviewTable({
                       min={0}
                       placeholder="0"
                       value={kompenHours}
-                      onChange={(e) => setKompenHours(e.target.value === "" ? "" : Number(e.target.value))}
+                      onChange={(e) => {
+                        setKompenHours(e.target.value === "" ? "" : Number(e.target.value));
+                        setShowDurationError(false);
+                      }}
                       className="h-9 text-xs bg-background/80"
                     />
                   </div>
@@ -660,14 +749,19 @@ export function DailyTaskReviewTable({
                       max={59}
                       placeholder="0"
                       value={kompenMinutes}
-                      onChange={(e) => setKompenMinutes(e.target.value === "" ? "" : Number(e.target.value))}
+                      onChange={(e) => {
+                        setKompenMinutes(e.target.value === "" ? "" : Number(e.target.value));
+                        setShowDurationError(false);
+                      }}
                       className="h-9 text-xs bg-background/80"
                     />
                   </div>
                   <div className="col-span-2 flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-muted-foreground">Link Bukti Foto (Imgpile/Imgbox)</label>
+                    <label className="text-[11px] font-bold text-muted-foreground">
+                      Link Bukti Foto (opsional)
+                    </label>
                     <Input
-                      placeholder="https://imgpile.com/p/..."
+                      placeholder="https://imgpile.com/p/... (opsional)"
                       value={kompenProofUrl}
                       onChange={(e) => setKompenProofUrl(e.target.value)}
                       className="h-9 text-xs bg-background/80"
@@ -675,8 +769,16 @@ export function DailyTaskReviewTable({
                   </div>
                 </div>
 
+                {showDurationError && (
+                  <span className="text-red-500 text-[11px] font-bold">
+                    *Durasi wajib diisi (minimal 1 menit)
+                  </span>
+                )}
+
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-muted-foreground">Alasan / Kesalahan Kompensasi *</label>
+                  <label className="text-[11px] font-bold text-muted-foreground">
+                    Alasan / Kesalahan Kompensasi *
+                  </label>
                   <Textarea
                     rows={2}
                     placeholder="contoh: Grinding salah spot / Kelalaian crystal pecah / Salah map"
@@ -687,70 +789,82 @@ export function DailyTaskReviewTable({
                   />
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
-                  <span className="text-[11px] text-muted-foreground italic">
-                    * Potongan Rp 8.000 / Jam dihitung otomatis pada Payroll. Data tersimpan 60 hari.
-                  </span>
-                  <div className="flex items-center gap-2 self-end sm:self-auto">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowKompenForm(false)}
-                      disabled={isSubmittingKompen}
-                      className="h-8 text-xs font-bold"
-                    >
-                      Batal
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="default"
-                      size="sm"
-                      disabled={isSubmittingKompen}
-                      className="h-8 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white min-w-[120px]"
-                    >
-                      {isSubmittingKompen ? (
-                        <>
-                          <Loader2 className="size-3.5 animate-spin mr-1" />
-                          Menyimpan...
-                        </>
-                      ) : (
-                        "Kirim Kompensasi"
-                      )}
-                    </Button>
-                  </div>
+                <div className="flex items-center justify-end gap-2 pt-1 border-t border-border/20">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowKompenForm(false);
+                      setEditingKompenId(null);
+                    }}
+                    disabled={isSubmittingKompen}
+                    className="h-9 text-xs font-bold px-4"
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={isSubmittingKompen}
+                    className="h-9 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white min-w-[130px]"
+                  >
+                    {isSubmittingKompen ? (
+                      <>
+                        <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                        Menyimpan...
+                      </>
+                    ) : (
+                      editingKompenId ? "Simpan Perubahan" : "Kirim Kompensasi"
+                    )}
+                  </Button>
                 </div>
               </form>
             )}
 
             {/* Dialog Footer Actions */}
-            <DialogFooter className="mt-6 pt-4 border-t border-border/20 gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setSelectedTask(null)}
-                disabled={isPending}
-                className="font-bold h-10"
-              >
-                Batal
-              </Button>
-              
-              <Button
-                onClick={() => handleReviewStatus(selectedTask.id, "rejected")}
-                disabled={isPending}
-                className="bg-red-600 text-white hover:bg-red-700 font-bold h-10 gap-1.5"
-              >
-                {isPending ? <RefreshCw className="size-4 animate-spin" /> : <X className="size-4" />}
-                Reject
-              </Button>
+            <DialogFooter className="mt-6 pt-4 border-t border-border/20 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {!showKompenForm && (
+                  <Button
+                    type="button"
+                    onClick={handleOpenCreateKompen}
+                    className="bg-amber-600 text-white hover:bg-amber-700 font-bold h-10 gap-1.5 px-4 shadow-sm"
+                  >
+                    <Scale className="size-4" />
+                    <span>Beri Kompensasi</span>
+                  </Button>
+                )}
+              </div>
 
-              <Button
-                onClick={() => handleReviewStatus(selectedTask.id, "approved")}
-                disabled={isPending}
-                className="bg-green-600 text-white hover:bg-green-700 font-bold h-10 gap-1.5"
-              >
-                {isPending ? <RefreshCw className="size-4 animate-spin" /> : <Check className="size-4" />}
-                Approve
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedTask(null)}
+                  disabled={isPending}
+                  className="font-bold h-10"
+                >
+                  Batal
+                </Button>
+                
+                <Button
+                  onClick={() => handleReviewStatus(selectedTask.id, "rejected")}
+                  disabled={isPending}
+                  className="bg-red-600 text-white hover:bg-red-700 font-bold h-10 gap-1.5"
+                >
+                  {isPending ? <RefreshCw className="size-4 animate-spin" /> : <X className="size-4" />}
+                  Reject
+                </Button>
+
+                <Button
+                  onClick={() => handleReviewStatus(selectedTask.id, "approved")}
+                  disabled={isPending}
+                  className="bg-green-600 text-white hover:bg-green-700 font-bold h-10 gap-1.5"
+                >
+                  {isPending ? <RefreshCw className="size-4 animate-spin" /> : <Check className="size-4" />}
+                  Approve
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>

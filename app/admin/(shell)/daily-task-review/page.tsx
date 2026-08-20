@@ -81,6 +81,19 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
     .select("*")
     .eq("task_date", dateParam);
 
+  // Fetch worker kompensasi for the selected date
+  const { data: kompensasiRows } = await supabase
+    .from("worker_kompensasi")
+    .select("id, user_id, daily_task_id, date, duration_minutes, reason, proof_url, created_at, updated_at")
+    .eq("date", dateParam);
+
+  const kompenByUserId = new Map<string, NonNullable<typeof kompensasiRows>>();
+  for (const k of kompensasiRows || []) {
+    const list = kompenByUserId.get(k.user_id) || [];
+    list.push(k);
+    kompenByUserId.set(k.user_id, list);
+  }
+
   // Fetch all users to map reviewer names
   const { data: allUsers } = await supabase
     .from("users")
@@ -97,6 +110,7 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
   const mappedTasks = (members || []).flatMap((member) => {
     const userTasks = tasksByUserId.get(member.id);
     const shift = shiftMap.get(member.id) || "flexible";
+    const userKompen = kompenByUserId.get(member.id) || [];
 
     if (userTasks && userTasks.length > 0) {
       return userTasks.map((task) => ({
@@ -104,6 +118,7 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
         worker_name: member.name,
         shift_label: task.shift_label || shift,
         reviewer_name: task.reviewed_by ? userMap.get(task.reviewed_by) || "System" : null,
+        kompensasi: userKompen,
       }));
     } else {
       return [
@@ -131,6 +146,7 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
           ss_before_time: null,
           ss_after_time: null,
           process_duration_minutes: null,
+          kompensasi: userKompen,
         },
       ];
     }

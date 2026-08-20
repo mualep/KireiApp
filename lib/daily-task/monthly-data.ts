@@ -16,6 +16,12 @@ export interface MonthlyTaskDTO {
   problem_notes: string | null;
   ss_before_url: string | null;
   ss_after_url: string | null;
+  kompensasi?: Array<{
+    id: string;
+    duration_minutes: number;
+    reason: string;
+    proof_url: string | null;
+  }>;
 }
 
 export interface MonthlyReportRowDTO {
@@ -24,6 +30,15 @@ export interface MonthlyReportRowDTO {
   shift: string;
   days: Record<number, MonthlyTaskDTO[]>;
   attendance: Record<number, string | null>;
+  kompensasi?: Record<
+    number,
+    Array<{
+      id: string;
+      duration_minutes: number;
+      reason: string;
+      proof_url: string | null;
+    }>
+  >;
 }
 
 export interface MonthlyReportData {
@@ -127,6 +142,43 @@ export async function getDailyTaskMonthlyReport(options: {
           .eq("is_canceled", false)
       : { data: [] };
 
+  // 5. Fetch worker kompensasi for the month
+  const { data: kompensasiRows } =
+    userIds.length > 0
+      ? await supabase
+          .from("worker_kompensasi")
+          .select("id, user_id, daily_task_id, date, duration_minutes, reason, proof_url")
+          .in("user_id", userIds)
+          .gte("date", monthStartStr)
+          .lte("date", monthEndStr)
+      : { data: [] };
+
+  const kompensasiGroupMap = new Map<
+    string,
+    Map<
+      number,
+      Array<{
+        id: string;
+        duration_minutes: number;
+        reason: string;
+        proof_url: string | null;
+      }>
+    >
+  >();
+
+  (kompensasiRows || []).forEach((k: any) => {
+    if (!k.date) return;
+    const dayNum = Number(k.date.slice(8, 10));
+    if (!kompensasiGroupMap.has(k.user_id)) {
+      kompensasiGroupMap.set(k.user_id, new Map());
+    }
+    const dayMap = kompensasiGroupMap.get(k.user_id)!;
+    if (!dayMap.has(dayNum)) {
+      dayMap.set(dayNum, []);
+    }
+    dayMap.get(dayNum)!.push(k);
+  });
+
   // Group tasks by user_id -> dayNumber -> MonthlyTaskDTO[]
   const taskGroupMap = new Map<string, Map<number, MonthlyTaskDTO[]>>();
   (tasks || []).forEach((t) => {
@@ -139,7 +191,11 @@ export async function getDailyTaskMonthlyReport(options: {
     if (!dayMap.has(dayNum)) {
       dayMap.set(dayNum, []);
     }
-    dayMap.get(dayNum)!.push(t as MonthlyTaskDTO);
+    const dayKompen = kompensasiGroupMap.get(t.user_id)?.get(dayNum) || [];
+    dayMap.get(dayNum)!.push({
+      ...(t as MonthlyTaskDTO),
+      kompensasi: dayKompen,
+    });
   });
 
   // Group attendance by user_id -> dayNumber
@@ -157,13 +213,24 @@ export async function getDailyTaskMonthlyReport(options: {
   const rows: MonthlyReportRowDTO[] = (users || []).map((u) => {
     const userTaskMap = taskGroupMap.get(u.id);
     const userAttMap = attendanceGroupMap.get(u.id);
+    const userKompenMap = kompensasiGroupMap.get(u.id);
 
     const daysRecord: Record<number, MonthlyTaskDTO[]> = {};
     const attRecord: Record<number, string | null> = {};
+    const kompenRecord: Record<
+      number,
+      Array<{
+        id: string;
+        duration_minutes: number;
+        reason: string;
+        proof_url: string | null;
+      }>
+    > = {};
 
     for (let day = 1; day <= totalDaysInMonth; day++) {
       daysRecord[day] = userTaskMap?.get(day) || [];
       attRecord[day] = userAttMap?.get(day) || null;
+      kompenRecord[day] = userKompenMap?.get(day) || [];
     }
 
     return {
@@ -172,6 +239,7 @@ export async function getDailyTaskMonthlyReport(options: {
       shift: shiftMap.get(u.id) || "flexible",
       days: daysRecord,
       attendance: attRecord,
+      kompensasi: kompenRecord,
     };
   });
 

@@ -23,6 +23,7 @@ import {
   Search,
   FileSpreadsheet,
   ListTodo,
+  Scale,
 } from "lucide-react";
 import type { MonthlyReportData, MonthlyTaskDTO } from "@/lib/daily-task/monthly-data";
 import { cn } from "@/lib/utils";
@@ -672,6 +673,41 @@ export function DailyTaskMonthlyClientShell({
                 </div>
               </div>
             </div>
+
+            {/* Kompensasi List (if any) */}
+            {selectedTaskData.task.kompensasi && selectedTaskData.task.kompensasi.length > 0 && (
+              <div className="flex flex-col gap-2.5 py-3 border-t border-border/20 mt-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                  <Scale className="size-4" />
+                  <span>Kompensasi Kelalaian Kerja ({selectedTaskData.task.kompensasi.length})</span>
+                </h4>
+                <div className="flex flex-col gap-2">
+                  {selectedTaskData.task.kompensasi.map((k) => {
+                    const h = Math.floor(k.duration_minutes / 60);
+                    const m = k.duration_minutes % 60;
+                    return (
+                      <div
+                        key={k.id}
+                        className="p-3 rounded-xl border border-border/50 bg-card/60 flex flex-col gap-1 text-xs"
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className="font-mono bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[11px] font-bold">
+                            {h}h {m}m
+                          </Badge>
+                          <span className="font-bold text-foreground">{k.reason}</span>
+                        </div>
+                        {k.proof_url ? (
+                          <div className="text-muted-foreground mt-0.5">
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground/70 mr-1.5">Bukti:</span>
+                            {renderUrlLink(k.proof_url)}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Dialog Footer Actions */}
             <DialogFooter className="mt-4 pt-4 border-t border-border/20">
