@@ -34,21 +34,10 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
     });
 
     return (
-      <div className="w-full max-w-7xl mx-auto px-4 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <CalendarCheck className="size-8 text-primary shrink-0" />
-            <div className="flex flex-col gap-0.5">
-              <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl" translate="no">
-                Daily Task Review
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Tampilan rekapitulasi bulanan Employee Report seluruh pemain.
-              </p>
-            </div>
-          </div>
+      <div className="w-full max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-end gap-4 mb-6">
           <Link href="/admin/daily-task-config">
-            <Button variant="default" className="h-10 px-4 font-bold flex items-center gap-2">
+            <Button variant="default" className="h-9 px-4 font-bold flex items-center gap-2 text-xs">
               <Settings className="size-4" />
               Konfigurasi Task
             </Button>
@@ -150,21 +139,10 @@ export default async function DailyTaskReviewPage({ searchParams }: PageProps) {
   mappedTasks.sort((a, b) => a.worker_name.localeCompare(b.worker_name));
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
-          <CalendarCheck className="size-8 text-primary shrink-0" />
-          <div className="flex flex-col gap-0.5">
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl" translate="no">
-              Daily Task Review
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Periksa dan setujui laporan tugas harian dari pemain.
-            </p>
-          </div>
-        </div>
+    <div className="w-full max-w-7xl mx-auto px-4 py-6">
+      <div className="flex items-center justify-end gap-4 mb-6">
         <Link href="/admin/daily-task-config">
-          <Button variant="default" className="h-10 px-4 font-bold flex items-center gap-2">
+          <Button variant="default" className="h-9 px-4 font-bold flex items-center gap-2 text-xs">
             <Settings className="size-4" />
             Konfigurasi Task
           </Button>

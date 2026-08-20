@@ -35,18 +35,23 @@ export default async function DailyTaskPage({ searchParams }: PageProps) {
     });
 
     return (
-      <div className="w-full max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <CalendarCheck className="size-8 text-primary shrink-0" />
-            <div className="flex flex-col gap-0.5">
-              <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl" translate="no">
-                Daily Checklist Player
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                Rekapitulasi bulanan laporan tugas harian Anda.
-              </p>
-            </div>
+      <div className="w-full max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-end gap-4 mb-6">
+          <div className="inline-flex items-center p-1 rounded-xl bg-muted/50 border border-border/50 shrink-0">
+            <Link
+              href="/admin/daily-task?view=daily"
+              className="h-8 px-4 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+            >
+              <ListTodo className="size-3.5" />
+              Formulir Hari Ini
+            </Link>
+            <Link
+              href="/admin/daily-task?view=monthly"
+              className="h-8 px-4 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-primary text-primary-foreground shadow-sm"
+            >
+              <FileSpreadsheet className="size-3.5" />
+              Laporan Bulanan
+            </Link>
           </div>
         </div>
 
@@ -86,22 +91,9 @@ export default async function DailyTaskPage({ searchParams }: PageProps) {
   );
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-8">
-      {/* Visual Header & View Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
-          <CalendarCheck className="size-8 text-primary shrink-0" />
-          <div className="flex flex-col gap-0.5">
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl" translate="no">
-              Daily Checklist Player
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Lengkapi tugas harian Anda sebelum, selama, dan sesudah jam kerja.
-            </p>
-          </div>
-        </div>
-
-        {/* Member View Switcher Tabs */}
+    <div className="w-full max-w-5xl mx-auto px-4 py-6">
+      {/* View Switcher Tabs */}
+      <div className="flex items-center justify-end gap-4 mb-6">
         <div className="inline-flex items-center p-1 rounded-xl bg-muted/50 border border-border/50 shrink-0">
           <Link
             href="/admin/daily-task?view=daily"
