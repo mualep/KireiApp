@@ -115,7 +115,7 @@ export function RecordsSummaryCards({ rows }: RecordsSummaryCardsProps) {
       icon: Scale,
       label: "Total Kompensasi",
       toneClass: "border-amber-500/35 bg-amber-500/10 text-amber-500",
-      value: `${Math.round(totals.kompensasiMins / 60)} Jam`,
+      value: formatLemburMinutes(totals.kompensasiMins),
     },
     {
       icon: ShieldAlert,

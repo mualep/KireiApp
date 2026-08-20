@@ -75,3 +75,41 @@ export async function submitKompensasiAction(input: SubmitKompensasiInput) {
     };
   }
 }
+
+export async function deleteKompensasiAction(id: string, userId: string) {
+  try {
+    const staff = await getCurrentStaffUser();
+    if (!staff || (staff.profile.tier !== "owner" && staff.profile.tier !== "admin")) {
+      return { ok: false, error: "Hanya Admin atau Owner yang dapat menghapus kompensasi." };
+    }
+
+    if (!id || !userId) {
+      return { ok: false, error: "ID Kompensasi dan User ID wajib disertakan." };
+    }
+
+    const supabase = await createClient();
+    const { data: rpcResult, error: rpcError } = await supabase.rpc("delete_kompensasi", {
+      p_id: id,
+      p_user_id: userId,
+    });
+
+    if (rpcError) {
+      return { ok: false, error: `Gagal menghapus kompensasi: ${rpcError.message}` };
+    }
+
+    revalidatePath("/admin/daily-task-review");
+    revalidatePath("/admin/records");
+    revalidatePath("/admin/performance");
+
+    return {
+      ok: true,
+      id,
+      deletedDurationMinutes: rpcResult?.deleted_duration_minutes ?? 0,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan saat menghapus kompensasi.",
+    };
+  }
+}

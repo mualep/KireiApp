@@ -250,10 +250,11 @@ function formatLemburMinutes(minutes: number): string {
   return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
 }
 
-function formatKompensasiHours(minutes: number | null): string {
-  if (!minutes || minutes <= 0) return "0 jam";
-  const hours = Math.round(minutes / 60);
-  return `${hours} jam`;
+function formatKompensasiMinutes(minutes: number | null): string {
+  if (!minutes || minutes <= 0) return "0h 0m";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours}h ${mins}m`;
 }
 
 function formatTimes(count: number | null): string {
@@ -274,7 +275,7 @@ function MetricValue({
     type === "lembur" && metric.value !== null
       ? formatLemburMinutes(metric.value)
       : type === "kompensasi" && metric.value !== null
-      ? formatKompensasiHours(metric.value)
+      ? formatKompensasiMinutes(metric.value)
       : type === "times" && metric.value !== null
       ? formatTimes(metric.value)
       : type === "duration" && metric.value !== null

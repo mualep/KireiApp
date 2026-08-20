@@ -10,8 +10,8 @@ import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { submitKompensasiAction } from "@/app/admin/(shell)/daily-task-review/actions";
-import { Check, X, RefreshCw, Eye, Calendar, UserCheck, ChevronDown, ExternalLink, ListTodo, FileSpreadsheet, Scale, Loader2, AlertCircle, Edit3 } from "lucide-react";
+import { submitKompensasiAction, deleteKompensasiAction } from "@/app/admin/(shell)/daily-task-review/actions";
+import { Check, X, RefreshCw, Eye, Calendar, UserCheck, ChevronDown, ExternalLink, ListTodo, FileSpreadsheet, Scale, Loader2, AlertCircle, Edit3, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface KompensasiItem {
@@ -87,6 +87,7 @@ export function DailyTaskReviewTable({
   const [kompenProofUrl, setKompenProofUrl] = useState("");
   const [showDurationError, setShowDurationError] = useState(false);
   const [isSubmittingKompen, setIsSubmittingKompen] = useState(false);
+  const [isDeletingKompenId, setIsDeletingKompenId] = useState<string | null>(null);
 
   const handleOpenCreateKompen = () => {
     setEditingKompenId(null);
@@ -108,6 +109,39 @@ export function DailyTaskReviewTable({
     setKompenProofUrl(k.proof_url || "");
     setShowDurationError(false);
     setShowKompenForm(true);
+  };
+
+  const handleDeleteKompensasi = async (k: KompensasiItem) => {
+    if (!selectedTask) return;
+    const confirmed = window.confirm(
+      `Apakah Anda yakin ingin menghapus kompensasi (${Math.floor(k.duration_minutes / 60)}h ${k.duration_minutes % 60}m) ini?`
+    );
+    if (!confirmed) return;
+
+    setIsDeletingKompenId(k.id);
+    try {
+      const res = await deleteKompensasiAction(k.id, selectedTask.user_id);
+      if (res.ok) {
+        toast({
+          title: "Kompensasi Dihapus",
+          description: "Data kompensasi berhasil dihapus dan dipotong dari Records.",
+          className: "border-green-500/30 bg-green-500/10 text-green-500 backdrop-blur-md",
+        });
+        if (editingKompenId === k.id) {
+          setShowKompenForm(false);
+          setEditingKompenId(null);
+        }
+        router.refresh();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Gagal Menghapus Kompensasi",
+          description: res.error || "Terjadi kesalahan pada server.",
+        });
+      }
+    } finally {
+      setIsDeletingKompenId(null);
+    }
   };
 
   const handleKompensasiSubmit = async (e: React.FormEvent) => {
@@ -681,16 +715,34 @@ export function DailyTaskReviewTable({
                           ) : null}
                         </div>
 
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenEditKompen(k)}
-                          className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0 self-end sm:self-auto gap-1"
-                        >
-                          <Edit3 className="size-3.5" />
-                          <span>Edit</span>
-                        </Button>
+                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenEditKompen(k)}
+                            disabled={isDeletingKompenId === k.id}
+                            className="h-8 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/10 gap-1"
+                          >
+                            <Edit3 className="size-3.5" />
+                            <span>Edit</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteKompensasi(k)}
+                            disabled={isDeletingKompenId === k.id}
+                            className="h-8 text-xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1"
+                          >
+                            {isDeletingKompenId === k.id ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-3.5" />
+                            )}
+                            <span>Hapus</span>
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -825,7 +877,7 @@ export function DailyTaskReviewTable({
             {/* Dialog Footer Actions */}
             <DialogFooter className="mt-6 pt-4 border-t border-border/20 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                {!showKompenForm && (
+                {!showKompenForm && (!selectedTask.kompensasi || selectedTask.kompensasi.length === 0) && (
                   <Button
                     type="button"
                     onClick={handleOpenCreateKompen}

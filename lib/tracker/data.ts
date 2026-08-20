@@ -207,7 +207,7 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
   const statusesByUserId = new Map(
     (statuses ?? []).map((status) => [status.user_id, status]),
   );
-  const activeTrackerAttendancesByUserId = new Map<string, ActiveTrackerAttendanceRow>();
+  const activeTrackerAttendancesByUserId = new Map<string, ActiveTrackerAttendanceRow[]>();
   const trackerAttendanceDatesByUserId = new Map<string, Set<string>>();
   const hasWorkedDatesByUserId = new Map<string, Set<string>>();
   const recordsByUserId = new Map((records ?? []).map((record) => [record.user_id, record]));
@@ -231,10 +231,11 @@ export async function getTrackerData(staff: TrackerDataStaff): Promise<TrackerDa
 
     if (
       (attendance.source === "tracker" || attendance.source === "absensi") &&
-      !attendance.is_canceled &&
-      !activeTrackerAttendancesByUserId.has(attendance.user_id)
+      !attendance.is_canceled
     ) {
-      activeTrackerAttendancesByUserId.set(attendance.user_id, attendance);
+      const list = activeTrackerAttendancesByUserId.get(attendance.user_id) ?? [];
+      list.push(attendance);
+      activeTrackerAttendancesByUserId.set(attendance.user_id, list);
     }
   }
   const issues: TrackerDataIssue[] = [];
@@ -449,10 +450,10 @@ function isIsoDate(value: string | null): value is string {
 }
 
 function getMatchingTrackerAttendance(
-  attendance: ActiveTrackerAttendanceRow | undefined,
+  attendances: ActiveTrackerAttendanceRow[] | undefined,
   storedStatus: string,
 ): ActiveTrackerAttendanceRow | null {
-  if (!attendance) {
+  if (!attendances || attendances.length === 0) {
     return null;
   }
 
@@ -466,7 +467,9 @@ function getMatchingTrackerAttendance(
     return null;
   }
 
-  return attendance.status === storedStatus && expectedSourceActions.includes(attendance.source_action)
-    ? attendance
-    : null;
+  const matched = attendances.find(
+    (a) => a.status === storedStatus && (expectedSourceActions.includes(a.source_action) || a.source === "absensi" || a.source === "tracker")
+  );
+
+  return matched || null;
 }
