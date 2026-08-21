@@ -7,6 +7,7 @@ import {
   AdminTopbarClock,
   AdminTopbarLiveStatus,
 } from "@/components/admin/admin-topbar-live-status";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -25,7 +26,7 @@ export function AdminTopbar({
 }: AdminTopbarProps) {
   return (
     <header className="sticky top-4 z-30 w-full">
-      <Card className="flex flex-row items-center justify-between gap-4 rounded-xl border-border/80 bg-card/75 px-4 py-3 shadow-xl backdrop-blur-xl sm:px-5">
+      <Card className="flex flex-row items-center justify-between gap-4 rounded-xl border-border/80 bg-card/90 px-4 py-2.5 shadow-sm backdrop-blur-md sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             type="button"
@@ -49,6 +50,7 @@ export function AdminTopbar({
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <AdminTopbarLiveStatus />
+          <ThemeToggle />
           <AdminTopbarClock initialText={dateText} />
         </div>
       </Card>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import { Wifi, WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LIVE_STATUS_PROBE_PATH = "/brand/kireiapp-mark.svg";
@@ -120,28 +120,29 @@ export function AdminTopbarLiveStatus() {
 
   const label = isOffline ? "Offline" : pingMs === null ? "-- ms" : `${pingMs} ms`;
 
+  // Color coding based on latency
+  const pingColorClass = isOffline
+    ? "text-rose-500 dark:text-rose-400"
+    : pingMs === null
+      ? "text-muted-foreground"
+      : pingMs < 100
+        ? "text-emerald-500 dark:text-emerald-400"
+        : pingMs < 200
+          ? "text-amber-500 dark:text-amber-400"
+          : "text-rose-500 dark:text-rose-400";
+
   return (
     <div
       aria-label={`Network latency: ${label}`}
-      className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+      className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
       role="status"
     >
-      <span className="relative flex size-3" aria-hidden="true">
-        {!isOffline ? (
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-status-on opacity-45 motion-reduce:animate-none" />
-        ) : null}
-        <span
-          className={cn(
-            "relative inline-flex size-3 rounded-full shadow-lg",
-            isOffline
-              ? "bg-destructive shadow-destructive/40"
-              : pingMs === null
-                ? "bg-muted-foreground shadow-muted-foreground/30"
-                : "bg-status-on shadow-status-on/40",
-          )}
-        />
-      </span>
-      <span className="font-mono tabular-nums" translate="no">
+      {isOffline ? (
+        <WifiOff className={cn("size-3.5 shrink-0", pingColorClass)} aria-hidden="true" />
+      ) : (
+        <Wifi className={cn("size-3.5 shrink-0", pingColorClass)} aria-hidden="true" />
+      )}
+      <span className={cn("font-mono text-[11px] tabular-nums font-bold", pingColorClass)} translate="no">
         {label}
       </span>
     </div>
@@ -172,7 +173,7 @@ export function AdminTopbarClock({ initialText }: { initialText: string }) {
   }, []);
 
   return (
-    <time className="hidden text-sm tabular-nums text-muted-foreground sm:block" translate="no">
+    <time className="hidden text-xs font-medium tabular-nums text-muted-foreground sm:block" translate="no">
       {mounted ? timeText : initialText}
     </time>
   );

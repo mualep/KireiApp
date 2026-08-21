@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getShiftDefinition, isWorkerRole, isWorkerShift, type WorkerRole, type WorkerShift } from "@/lib/workers";
 
 export interface MonthlyKompensasiItem {
   id: string;
@@ -47,7 +48,12 @@ export interface MonthlyTaskDTO {
 export interface MonthlyReportRowDTO {
   user_id: string;
   worker_name: string;
+  employeeRole: string;
   shift: string;
+  roleShiftLabel: string;
+  compactRoleShiftLabel: string;
+  shiftTimeLabel: string | null;
+  activeSpCount: number;
   days: Record<number, MonthlyTaskDTO[]>;
   attendance: Record<number, string | null>;
   kompensasi?: Record<number, MonthlyKompensasiItem[]>;
@@ -76,6 +82,52 @@ const INDONESIAN_MONTHS = [
   "November",
   "Desember",
 ];
+
+const compactRoleLabels: Record<string, string> = {
+  "Cleaning Service": "CL",
+  "Customer Service": "CS",
+  "Expert Player": "EP",
+  Explorer: "EX",
+  Internship: "IN",
+  "Professional Player": "PP",
+  Security: "SC",
+};
+
+function getRoleShiftLabel(role: string, shift: string): string {
+  const shiftDef = isWorkerShift(shift) ? getShiftDefinition(shift) : null;
+  const shiftLabel = shiftDef ? shiftDef.label : shift;
+  return `${role} - ${shiftLabel}`;
+}
+
+function getCompactRoleShiftLabel(role: string, shift: string): string {
+  const compactRole = compactRoleLabels[role] ?? role;
+  const shiftDef = isWorkerShift(shift) ? getShiftDefinition(shift) : null;
+  const shiftLabel = shiftDef ? shiftDef.label : shift;
+  return `${compactRole}/${shiftLabel}`;
+}
+
+function getShiftTimeLabel(shift: string): string | null {
+  if (!isWorkerShift(shift)) return null;
+  const shiftDef = getShiftDefinition(shift);
+
+  if (shiftDef.isFlexible) {
+    return "Flexible";
+  }
+
+  if (
+    shiftDef.startHour === null ||
+    shiftDef.startMinute === null ||
+    shiftDef.endHour === null ||
+    shiftDef.endMinute === null
+  ) {
+    return null;
+  }
+
+  const startStr = `${String(shiftDef.startHour).padStart(2, "0")}:${String(shiftDef.startMinute).padStart(2, "0")}`;
+  const endStr = `${String(shiftDef.endHour).padStart(2, "0")}:${String(shiftDef.endMinute).padStart(2, "0")}`;
+
+  return `${startStr}-${endStr}`;
+}
 
 export async function getDailyTaskMonthlyReport(options: {
   monthParam?: string; // YYYY-MM
@@ -120,20 +172,36 @@ export async function getDailyTaskMonthlyReport(options: {
   const { data: usersData } = await userQuery;
   const users: Array<{ id: string; name: string }> = usersData || [];
 
-  // 2. Fetch worker profiles for shift info
+  // 2. Fetch worker profiles for shift & role info
   const userIds = users.map((u) => u.id);
   const { data: profilesData } =
     userIds.length > 0
       ? await supabase
           .from("worker_profiles")
-          .select("user_id, shift")
+          .select("user_id, employee_role, shift")
           .in("user_id", userIds)
       : { data: [] };
 
-  const profiles: Array<{ user_id: string; shift: string }> = profilesData || [];
-  const shiftMap = new Map<string, string>(profiles.map((p) => [p.user_id, p.shift]));
+  const profiles: Array<{ user_id: string; employee_role: string; shift: string }> = profilesData || [];
+  const profileMap = new Map(profiles.map((p) => [p.user_id, p]));
 
-  // 3. Fetch daily tasks for the month
+  // 3. Fetch active SP logs
+  const { data: spsData } =
+    userIds.length > 0
+      ? await supabase
+          .from("worker_sp_logs")
+          .select("user_id, sp_level")
+          .in("user_id", userIds)
+          .gt("expires_at", new Date().toISOString())
+          .is("revoked_at", null)
+      : { data: [] };
+
+  const spsCountMap = new Map<string, number>();
+  for (const sp of spsData || []) {
+    spsCountMap.set(sp.user_id, (spsCountMap.get(sp.user_id) ?? 0) + 1);
+  }
+
+  // 4. Fetch daily tasks for the month
   const { data: tasksData } =
     userIds.length > 0
       ? await supabase
@@ -146,7 +214,7 @@ export async function getDailyTaskMonthlyReport(options: {
 
   const tasks: any[] = tasksData || [];
 
-  // 4. Fetch worker attendance for the month
+  // 5. Fetch worker attendance for the month
   const { data: attendanceRowsData } =
     userIds.length > 0
       ? await supabase
@@ -160,7 +228,7 @@ export async function getDailyTaskMonthlyReport(options: {
 
   const attendanceRows: any[] = attendanceRowsData || [];
 
-  // 5. Fetch worker kompensasi for the month
+  // 6. Fetch worker kompensasi for the month
   const { data: kompensasiRowsData } =
     userIds.length > 0
       ? await supabase
@@ -188,7 +256,7 @@ export async function getDailyTaskMonthlyReport(options: {
     dayMap.get(dayNum)!.push(k);
   });
 
-  // 6. Fetch all users to map reviewer names
+  // 7. Fetch all users to map reviewer names
   const { data: allUsersData } = await supabase
     .from("users")
     .select("id, name");
@@ -230,6 +298,14 @@ export async function getDailyTaskMonthlyReport(options: {
 
   // Build rows
   const rows: MonthlyReportRowDTO[] = users.map((u) => {
+    const prof = profileMap.get(u.id);
+    const employeeRole = prof?.employee_role || "Explorer";
+    const shift = prof?.shift || "flexible";
+    const roleShiftLabel = getRoleShiftLabel(employeeRole, shift);
+    const compactRoleShiftLabel = getCompactRoleShiftLabel(employeeRole, shift);
+    const shiftTimeLabel = getShiftTimeLabel(shift);
+    const activeSpCount = spsCountMap.get(u.id) ?? 0;
+
     const userTaskMap = taskGroupMap.get(u.id);
     const userAttMap = attendanceGroupMap.get(u.id);
     const userKompenMap = kompensasiGroupMap.get(u.id);
@@ -247,7 +323,12 @@ export async function getDailyTaskMonthlyReport(options: {
     return {
       user_id: u.id,
       worker_name: u.name,
-      shift: shiftMap.get(u.id) || "flexible",
+      employeeRole,
+      shift,
+      roleShiftLabel,
+      compactRoleShiftLabel,
+      shiftTimeLabel,
+      activeSpCount,
       days: daysRecord,
       attendance: attRecord,
       kompensasi: kompenRecord,

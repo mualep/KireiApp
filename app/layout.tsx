@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import "./globals.css";
-import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/theme-provider";
 import { OfflineBanner } from "@/components/brand/offline-banner";
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={cn("dark", "font-sans")}
+      suppressHydrationWarning
       style={
         {
           "--font-sans": "Arial, Helvetica, sans-serif",
@@ -27,8 +27,15 @@ export default function RootLayout({
       }
     >
       <body className="min-h-screen antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary">
-        <OfflineBanner />
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <OfflineBanner />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

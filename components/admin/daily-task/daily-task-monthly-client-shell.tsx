@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,7 @@ import {
   Loader2,
   Edit3,
   Trash2,
+  OctagonX,
 } from "lucide-react";
 import type {
   MonthlyKompensasiItem,
@@ -60,6 +61,22 @@ interface DailyTaskMonthlyClientShellProps {
 }
 
 const DAY_NAMES_IND = ["Ming", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+
+const statusCellClasses: Record<string, string> = {
+  alpha: "border-status-alpha/35 bg-status-alpha/10 text-status-alpha",
+  cuti: "border-status-cuti/35 bg-status-cuti/10 text-status-cuti",
+  hadir: "border-status-on/35 bg-status-on/10 text-status-on",
+  pending: "border-status-pending/35 bg-status-pending/10 text-status-pending",
+  sakit: "border-status-sakit/35 bg-status-sakit/10 text-status-sakit",
+};
+
+const absensiAttendanceInitials: Record<string, string> = {
+  alpha: "A",
+  cuti: "C",
+  hadir: "H",
+  pending: "P",
+  sakit: "S",
+};
 
 export function DailyTaskMonthlyClientShell({
   data,
@@ -356,6 +373,7 @@ export function DailyTaskMonthlyClientShell({
 
   const renderCellContent = (
     tasks: MonthlyTaskDTO[] | undefined,
+    attStatus: string | null | undefined,
     workerName: string
   ) => {
     if (tasks && tasks.length > 0) {
@@ -399,8 +417,29 @@ export function DailyTaskMonthlyClientShell({
       );
     }
 
-    // Always show '-' if no daily task is submitted (do NOT fallback to attendance H/C/S/P/A)
-    return <span className="text-muted-foreground/30 font-semibold text-xs">-</span>;
+    // Fallback to full attendance status styling (A, C, S, P, H) matching Absensi table
+    if (attStatus && statusCellClasses[attStatus]) {
+      return (
+        <span
+          className={cn(
+            "flex h-7 w-full items-center justify-center rounded-md border px-1 font-mono font-black tabular-nums text-[0.75rem]",
+            statusCellClasses[attStatus]
+          )}
+          translate="no"
+        >
+          {absensiAttendanceInitials[attStatus] || attStatus.toUpperCase()[0]}
+        </span>
+      );
+    }
+
+    return (
+      <span
+        className="flex h-7 w-full items-center justify-center rounded-md border border-border/60 bg-background/30 text-muted-foreground/60 text-xs font-mono font-black"
+        translate="no"
+      >
+        -
+      </span>
+    );
   };
 
   const memberRow = rows[0] || null;
@@ -465,9 +504,15 @@ export function DailyTaskMonthlyClientShell({
                   className="w-full appearance-none rounded-lg border border-input px-3 py-1.5 pr-9 text-xs h-9 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3"
                 >
                   <option value="all">Semua Shift</option>
-                  <option value="A">Shift A</option>
-                  <option value="B">Shift B</option>
-                  <option value="C">Shift C</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                  <option value="E">E</option>
+                  <option value="F">F</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
                   <option value="flexible">Flexible</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
@@ -532,6 +577,7 @@ export function DailyTaskMonthlyClientShell({
 
               {calendarDays.map((dayNum) => {
                 const tasks = memberRow?.days[dayNum] || [];
+                const attStatus = memberRow?.attendance[dayNum] || null;
                 const isToday = dayNum === todayDayNum;
 
                 return (
@@ -543,8 +589,8 @@ export function DailyTaskMonthlyClientShell({
                     )}
                   >
                     <span className="text-xs font-bold leading-none">{dayNum}</span>
-                    <div className="flex items-center justify-center">
-                      {renderCellContent(tasks, memberRow?.worker_name || "Pemain")}
+                    <div className="flex items-center justify-center w-full">
+                      {renderCellContent(tasks, attStatus, memberRow?.worker_name || "Pemain")}
                     </div>
                   </div>
                 );
@@ -599,9 +645,9 @@ export function DailyTaskMonthlyClientShell({
           <div className="overflow-x-auto max-w-full">
             <table className="w-full text-left border-collapse text-xs border-spacing-0">
               <thead>
-                <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground font-bold">
-                  {/* Sticky Left Column: Worker Header */}
-                  <th className="sticky left-0 z-30 bg-muted/90 backdrop-blur-md p-3 w-48 min-w-[190px] border-r border-border/60 shadow-xs">
+                <tr className="border-b border-border/75 bg-background/35 text-muted-foreground">
+                  {/* Sticky Left Column: Worker Header matching Absensi */}
+                  <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 font-semibold backdrop-blur border-r border-border/60">
                     Worker
                   </th>
 
@@ -628,31 +674,60 @@ export function DailyTaskMonthlyClientShell({
                   </tr>
                 ) : (
                   filteredRows.map((row) => (
-                    <tr key={row.user_id} className="hover:bg-muted/10 transition-colors">
-                      {/* Sticky Left Cell: Worker Name */}
-                      <td className="sticky left-0 z-20 bg-card/95 backdrop-blur-md p-3 w-48 min-w-[190px] border-r border-border/60 shadow-xs align-middle">
-                        <div className="flex flex-col gap-1 min-w-0">
-                          <span className="font-extrabold text-foreground text-xs truncate" translate="no">
-                            {row.worker_name}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="w-fit text-[9px] font-bold border-border bg-muted/30 h-4 px-1.5"
+                    <tr key={row.user_id} className="hover:bg-muted/10 transition-colors border-b border-border/55 last:border-b-0">
+                      {/* Sticky Left Cell: Worker Name matching Absensi Table 1:1 */}
+                      <th className="sticky left-0 z-10 w-[14rem] min-w-[12rem] max-w-[16rem] bg-card/95 px-3 py-2 backdrop-blur border-r border-border/60 text-left font-normal">
+                        <div className="min-w-0">
+                          <CardTitle
+                            className={cn(
+                              "tracker-worker-name min-w-0 truncate font-bold leading-tight flex items-center gap-1.5",
+                              row.activeSpCount === 1 && "text-status-break",
+                              row.activeSpCount === 2 && "text-status-sakit",
+                              row.activeSpCount >= 3 && "text-status-alpha",
+                              row.activeSpCount === 0 && "text-foreground",
+                            )}
+                            translate="no"
                           >
-                            Shift {row.shift.toUpperCase()}
-                          </Badge>
+                            <span>{row.worker_name}</span>
+                            {row.activeSpCount > 0 && (
+                              <OctagonX className="size-3.5 shrink-0" aria-hidden="true" />
+                            )}
+                          </CardTitle>
+                          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+                            <Badge
+                              variant="outline"
+                              className="tracker-role-shift-badge h-6 max-w-[14rem] rounded-sm border-border/80 bg-background/45 px-2.5 py-1 text-[0.68rem] text-muted-foreground"
+                              translate="no"
+                            >
+                              <span className="hidden truncate @[14rem]:inline">
+                                {row.roleShiftLabel}
+                              </span>
+                              <span className="truncate @[14rem]:hidden">
+                                {row.compactRoleShiftLabel}
+                              </span>
+                            </Badge>
+                            {row.shiftTimeLabel ? (
+                              <span
+                                className="text-[0.6rem] font-medium text-muted-foreground/70"
+                                translate="no"
+                              >
+                                {row.shiftTimeLabel}
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
-                      </td>
+                      </th>
 
                       {/* 31 Compact Day Cells */}
                       {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((dayNum) => {
                         const tasks = row.days[dayNum] || [];
+                        const attStatus = row.attendance[dayNum];
                         return (
                           <td
                             key={`cell-${row.user_id}-${dayNum}`}
-                            className="w-12 min-w-[48px] p-2 text-center align-middle border-r border-border/25 bg-card/30 hover:bg-card/75 transition-colors"
+                            className="w-12 min-w-[48px] p-1 text-center align-middle border-r border-border/25 bg-card/30 hover:bg-card/75 transition-colors"
                           >
-                            {renderCellContent(tasks, row.worker_name)}
+                            {renderCellContent(tasks, attStatus, row.worker_name)}
                           </td>
                         );
                       })}

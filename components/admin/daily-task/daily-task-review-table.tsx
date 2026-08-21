@@ -85,6 +85,7 @@ export function DailyTaskReviewTable({
   const [selectedTask, setSelectedTask] = useState<TaskRecord | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [shiftFilter, setShiftFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name_asc");
 
@@ -233,6 +234,11 @@ export function DailyTaskReviewTable({
           return false;
         }
       }
+      if (shiftFilter !== "all") {
+        if (task.shift_label.toLowerCase() !== shiftFilter.toLowerCase()) {
+          return false;
+        }
+      }
       if (statusFilter !== "all") {
         if (task.status !== statusFilter) {
           return false;
@@ -339,7 +345,7 @@ export function DailyTaskReviewTable({
   return (
     <div className="flex flex-col gap-6">
       {/* Toolbar / Filters */}
-      <Card className="tracker-glass-panel rounded-xl border p-4 shadow-md shadow-primary/2">
+      <Card className="tracker-glass-panel rounded-xl border p-4 shadow-xs">
         <CardContent className="p-0 flex flex-col gap-4">
           {/* View Switcher Tabs */}
           <div className="flex items-center justify-between border-b border-border/30 pb-3">
@@ -365,7 +371,7 @@ export function DailyTaskReviewTable({
           </div>
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="grid flex-1 gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+            <div className="grid flex-1 gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-5">
               {/* Search */}
               <div role="group" className="flex flex-col">
                 <label htmlFor="review-search" className="sr-only">
@@ -380,6 +386,32 @@ export function DailyTaskReviewTable({
                   autoComplete="off"
                   className="w-full min-w-0 rounded-lg border border-input px-3 py-1.5 text-sm h-10 bg-background/55 outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 />
+              </div>
+
+              {/* Shift Filter */}
+              <div role="group" className="relative flex flex-col">
+                <label htmlFor="review-shift" className="sr-only">
+                  Filter Shift
+                </label>
+                <select
+                  id="review-shift"
+                  value={shiftFilter}
+                  onChange={(e) => setShiftFilter(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-input px-3 py-1.5 pr-9 text-sm h-10 bg-background/55 outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="all">Semua Shift</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                  <option value="E">E</option>
+                  <option value="F">F</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="flexible">Flexible</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
               </div>
 
               {/* Status Filter */}
