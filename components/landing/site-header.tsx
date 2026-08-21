@@ -24,7 +24,7 @@ export function SiteHeader({ orderHref, orderLabel }: SiteHeaderProps) {
 
   return (
     <header className="fixed inset-x-0 top-4 z-40 px-4 pt-[env(safe-area-inset-top)] sm:top-6 sm:px-6 lg:px-8">
-      <div className="mx-auto flex h-12 max-w-5xl items-center justify-between gap-4 rounded-full border border-border/70 bg-card/70 px-4 shadow-2xl shadow-primary/10 backdrop-blur-xl sm:h-14 sm:px-5">
+      <div className="mx-auto flex h-12 max-w-5xl items-center justify-between gap-4 rounded-full border border-border/70 bg-card/85 px-4 shadow-sm backdrop-blur-md sm:h-14 sm:px-5">
         <Link
           href="/"
           className="group flex items-center gap-2 rounded-full text-sm font-extrabold tracking-tight text-foreground outline-none transition-colors hover:text-primary focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -59,7 +59,7 @@ export function SiteHeader({ orderHref, orderLabel }: SiteHeaderProps) {
         <Button
           asChild
           size="sm"
-          className="rounded-full px-4 shadow-lg shadow-primary/20"
+          className="rounded-full px-4 shadow-xs"
         >
           <a
             href={orderHref}

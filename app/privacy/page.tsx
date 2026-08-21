@@ -4,8 +4,8 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Kebijakan Privasi (Privacy Policy) | KireiApp",
-  description: "Kebijakan Privasi dan Perlindungan Data Platform Kireiku.",
+  title: "Privacy Policy | KireiApp",
+  description: "Privacy Policy and Data Protection practices of Kireiku.",
 };
 
 export default function PrivacyPage() {
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
           <Button asChild variant="ghost" size="sm" className="text-xs">
             <Link href="/" className="flex items-center gap-1.5">
               <ChevronLeft className="size-4" />
-              Kembali ke Beranda
+              Back to Home
             </Link>
           </Button>
         </div>
@@ -31,61 +31,61 @@ export default function PrivacyPage() {
         <article className="prose prose-neutral dark:prose-invert max-w-none flex flex-col gap-6 text-foreground/90">
           <header className="flex flex-col gap-2">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground font-heading">
-              Kebijakan Privasi
+              Privacy Policy
             </h1>
             <p className="text-xs text-muted-foreground">
-              Terakhir diperbarui: 21 Agustus 2026
+              Last Updated: August 21, 2026
             </p>
           </header>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              1. Pengumpulan Data
+              1. Information We Collect
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Kami mengumpulkan informasi yang Anda berikan secara langsung saat berinteraksi dengan platform kami, seperti nama profil, email akun resmi, riwayat pesanan, serta data kehadiran dan produktivitas internal bagi staf dan pekerja.
+              We collect information provided directly when you interact with our platform, such as profile names, verified email addresses, service order logs, and internal work performance metrics (such as attendance and task submissions for staff and workers).
             </p>
           </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              2. Penggunaan Data
+              2. How We Use Information
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Data yang dikumpulkan hanya digunakan untuk:
+              The information we collect is utilized strictly to:
             </p>
             <ul className="list-disc pl-5 text-sm leading-relaxed text-muted-foreground space-y-1.5">
-              <li>Memproses dan menyelesaikan pesanan layanan secara efisien dan tepat waktu.</li>
-              <li>Mengelola otentikasi akun, peran wewenang (RBAC), dan operasional shift internal.</li>
-              <li>Meningkatkan kualitas antarmuka dan kestabilan performa sistem secara berkelanjutan.</li>
-              <li>Keperluan audit keamanan dan pencatatan kepatuhan operasional internal.</li>
+              <li>Process and fulfill gaming service orders with precision and punctuality.</li>
+              <li>Manage user authentication, Role-Based Access Control (RBAC), and internal work shifts.</li>
+              <li>Maintain platform integrity, prevent unauthorized access, and perform operational audits.</li>
+              <li>Enhance user interface responsiveness and maintain high platform stability.</li>
             </ul>
           </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              3. Perlindungan & Keamanan Data
+              3. Data Security & Protection Standards
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Kami menerapkan standar enkripsi TLS terkini, Row-Level Security (RLS) pada basis data PostgreSQL Supabase, dan kebijakan sandi terenkripsi (Argon2id/Bcrypt) untuk memastikan informasi Anda selalu terlindungi dari akses tanpa izin.
+              We enforce modern industry security standards, including Transport Layer Security (TLS/HTTPS) encryption, Row-Level Security (RLS) policies on our PostgreSQL Supabase databases, and robust password hashing (Argon2id/Bcrypt) to ensure that your data is safe against unauthorized disclosure.
             </p>
           </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              4. Berbagi Data dengan Pihak Ketiga
+              4. Third-Party Disclosures
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Kireiku tidak menjual, menyewakan, atau memperdagangkan data pribadi pengguna kepada pihak ketiga mana pun. Data hanya dibagikan kepada penyedia infrastruktur terpercaya (seperti Supabase dan Upstash) untuk keperluan pemrosesan fungsional sistem semata.
+              Kireiku does not sell, rent, trade, or monetize personal information. Data is only processed through verified enterprise cloud infrastructure providers (such as Supabase and Upstash) strictly for application runtime requirements.
             </p>
           </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              5. Hak Akses dan Pembaruan Data
+              5. Data Subject Rights & Contact
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Pengguna dan anggota tim berhak untuk meminta peninjauan, pembaruan, atau penghapusan data pribadi mereka sesuai dengan regulasi perlindungan data yang berlaku, dengan menghubungi pihak pengelola Kireiku.
+              Users and internal team members possess the right to access, rectify, or request deletion of their personal records in accordance with applicable data privacy laws by contacting the Kireiku administrative team.
             </p>
           </section>
         </article>

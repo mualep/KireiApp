@@ -86,7 +86,7 @@ function ServiceVisual({
   return (
     <div className="relative min-h-56 overflow-hidden rounded-t-xl border-b border-border/70 bg-background">
       <div
-        className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/60 to-background"
+        className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/30 to-background"
         aria-hidden="true"
       />
       {mediaUrl ? (
@@ -97,7 +97,7 @@ function ServiceVisual({
           height={420}
           loading="lazy"
           decoding="async"
-          className="absolute inset-0 size-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105"
+          className="absolute inset-0 size-full object-cover opacity-80 transition-opacity duration-300"
         />
       ) : (
         <>
@@ -106,7 +106,7 @@ function ServiceVisual({
             aria-hidden="true"
           />
           <div
-            className="absolute right-8 bottom-10 size-32 rounded-full bg-primary/15 blur-2xl"
+            className="absolute right-8 bottom-10 size-32 rounded-full bg-primary/10 blur-xl"
             aria-hidden="true"
           />
           <div
@@ -129,7 +129,7 @@ function ServiceVisual({
           </span>
         </div>
         <div className="flex justify-end">
-          <span className="rounded-full border border-border/70 bg-card/70 px-3 py-1 text-xs font-semibold text-muted-foreground shadow-lg backdrop-blur-sm">
+          <span className="rounded-full border border-border/70 bg-card/90 px-3 py-1 text-xs font-semibold text-muted-foreground shadow-xs">
             Boost Ready
           </span>
         </div>
@@ -171,10 +171,10 @@ export function LandingPage({ data }: LandingPageProps) {
 
       <div className="relative" id="main-content">
         <div className="pointer-events-none absolute inset-0 -z-0 overflow-hidden">
-          <div className="absolute top-[-18rem] left-1/2 size-[44rem] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
-          <div className="absolute top-[18rem] left-[-16rem] size-[34rem] rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute right-[-14rem] bottom-[30rem] size-[36rem] rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute inset-x-0 top-0 h-[42rem] bg-gradient-to-b from-primary/10 via-background to-background" />
+          <div className="absolute top-[-18rem] left-1/2 size-[44rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute top-[18rem] left-[-16rem] size-[34rem] rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute right-[-14rem] bottom-[30rem] size-[36rem] rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute inset-x-0 top-0 h-[42rem] bg-gradient-to-b from-primary/5 via-background to-background" />
         </div>
 
         <section className="relative px-4 pt-36 pb-24 text-center sm:px-6 sm:pt-40 lg:px-8 lg:pt-48 lg:pb-32">
@@ -182,7 +182,7 @@ export function LandingPage({ data }: LandingPageProps) {
             className="absolute top-1/2 left-0 hidden -translate-y-1/2 lg:block"
             aria-hidden="true"
           >
-            <div className="relative flex size-56 items-center justify-center overflow-hidden rounded-[2rem] border border-border/70 bg-card/35 opacity-60 shadow-2xl shadow-primary/10 backdrop-blur-sm">
+            <div className="relative flex size-56 items-center justify-center overflow-hidden rounded-2xl border border-border/70 bg-card/60 opacity-60 shadow-xs">
               <div className="absolute inset-0 bg-primary/5" />
               <HeadphonesIcon
                 className="relative text-muted-foreground/50"
@@ -194,7 +194,7 @@ export function LandingPage({ data }: LandingPageProps) {
             className="absolute top-1/2 right-0 hidden -translate-y-1/2 lg:block"
             aria-hidden="true"
           >
-            <div className="relative flex size-56 items-center justify-center overflow-hidden rounded-[2rem] border border-border/70 bg-card/35 opacity-60 shadow-2xl shadow-primary/10 backdrop-blur-sm">
+            <div className="relative flex size-56 items-center justify-center overflow-hidden rounded-2xl border border-border/70 bg-card/60 opacity-60 shadow-xs">
               <div className="absolute inset-0 bg-primary/5" />
               <KeyboardIcon
                 className="relative text-muted-foreground/50"
@@ -206,7 +206,7 @@ export function LandingPage({ data }: LandingPageProps) {
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-8">
             <Badge
               variant="outline"
-              className="border-border/80 bg-card/70 px-2.5 py-1 shadow-lg shadow-primary/5 backdrop-blur-sm"
+              className="border-border/80 bg-card/90 px-2.5 py-1 shadow-xs"
             >
               <span className="flex items-center -space-x-1" aria-hidden="true">
                 <span className="flex size-5 items-center justify-center rounded-full border border-background bg-primary text-[0.6rem] text-primary-foreground">
@@ -245,7 +245,7 @@ export function LandingPage({ data }: LandingPageProps) {
               <Button
                 asChild
                 size="lg"
-                className="h-12 rounded-full px-8 shadow-xl shadow-primary/20"
+                className="h-12 rounded-full px-8 shadow-xs"
               >
                 <a
                   href={data.hero.primaryCtaHref}
@@ -260,7 +260,7 @@ export function LandingPage({ data }: LandingPageProps) {
                 asChild
                 variant="outline"
                 size="lg"
-                className="h-12 rounded-full border-border/80 bg-card/40 px-8 backdrop-blur-sm"
+                className="h-12 rounded-full border-border/80 bg-card/70 px-8"
               >
                 <a
                   href={data.hero.secondaryCtaHref}
@@ -289,7 +289,7 @@ export function LandingPage({ data }: LandingPageProps) {
               {displayServices.map((service, index) => (
                 <Card
                   key={service.id}
-                  className="group bg-card/70 py-0 shadow-xl shadow-primary/5 transition-transform duration-300 hover:-translate-y-1"
+                  className="group bg-card/90 py-0 shadow-xs transition-colors duration-150"
                 >
                   <ServiceVisual index={index} service={service} />
                   <CardHeader className="gap-3 px-6 pt-6">
@@ -326,7 +326,7 @@ export function LandingPage({ data }: LandingPageProps) {
             <Button
               asChild
               size="lg"
-              className="h-12 rounded-full px-8 shadow-xl shadow-primary/20"
+              className="h-12 rounded-full px-8 shadow-xs"
             >
               <a
                 href={data.hero.primaryCtaHref}
@@ -386,7 +386,7 @@ export function LandingPage({ data }: LandingPageProps) {
                 return (
                   <Card
                     key={`${item.title}-${index}`}
-                    className="bg-card/70 shadow-xl shadow-primary/5 transition-transform duration-300 hover:-translate-y-1"
+                    className="bg-card/90 shadow-xs transition-colors duration-150"
                   >
                     <CardHeader className="gap-4">
                       <span className="flex size-11 items-center justify-center rounded-full border border-border/70 bg-background/70 text-primary">
@@ -426,7 +426,7 @@ export function LandingPage({ data }: LandingPageProps) {
               {data.testimonials.map((testimonial) => (
                 <Card
                   key={testimonial.id}
-                  className="relative bg-card/70 shadow-xl shadow-primary/5"
+                  className="relative bg-card/90 shadow-xs"
                 >
                   <CardHeader className="gap-4">
                     <div
@@ -465,7 +465,7 @@ export function LandingPage({ data }: LandingPageProps) {
               ))}
             </div>
           ) : (
-            <Card className="mx-auto max-w-2xl bg-card/70 shadow-xl shadow-primary/5">
+            <Card className="mx-auto max-w-2xl bg-card/90 shadow-xs">
               <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
                 <span
                   className="flex size-12 items-center justify-center rounded-full border border-border/70 bg-background/70 text-primary"
@@ -503,7 +503,7 @@ export function LandingPage({ data }: LandingPageProps) {
 
           <div className="grid gap-4 md:grid-cols-3">
             {data.howItWorks.map((step, index) => (
-              <Card key={step.title} className="bg-card/70 shadow-xl shadow-primary/5">
+              <Card key={step.title} className="bg-card/90 shadow-xs">
                 <CardHeader className="gap-4">
                   <Badge variant="secondary" className="w-fit font-mono">
                     {String(index + 1).padStart(2, "0")}
@@ -525,7 +525,7 @@ export function LandingPage({ data }: LandingPageProps) {
           className="relative py-24 lg:py-32"
         >
           <div
-            className="pointer-events-none absolute right-0 bottom-0 size-80 rounded-full bg-primary/10 blur-3xl"
+            className="pointer-events-none absolute right-0 bottom-0 size-80 rounded-full bg-primary/5 blur-3xl"
             aria-hidden="true"
           />
           <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-8">
@@ -538,7 +538,7 @@ export function LandingPage({ data }: LandingPageProps) {
               </p>
             </div>
 
-            <Card className="w-full bg-card/70 shadow-xl shadow-primary/5">
+            <Card className="w-full bg-card/90 shadow-xs">
               <CardContent className="p-2 sm:p-3">
                 <Accordion type="single" collapsible>
                   {data.faqs.map((faq) => (

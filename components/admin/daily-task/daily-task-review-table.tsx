@@ -343,21 +343,24 @@ export function DailyTaskReviewTable({
         <CardContent className="p-0 flex flex-col gap-4">
           {/* View Switcher Tabs */}
           <div className="flex items-center justify-between border-b border-border/30 pb-3">
-            <div className="inline-flex items-center p-1 rounded-xl bg-muted/50 border border-border/50">
-              <Link
-                href="/admin/daily-task-review?view=daily"
-                className="h-8 px-4 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-primary text-primary-foreground shadow-sm"
-              >
-                <ListTodo className="size-3.5" />
-                Tampilan Harian (Review)
-              </Link>
-              <Link
-                href="/admin/daily-task-review?view=monthly"
-                className="h-8 px-4 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
-              >
-                <FileSpreadsheet className="size-3.5" />
-                Tampilan Bulanan (Report Grid)
-              </Link>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-muted-foreground">Tampilan:</span>
+              <div className="inline-flex items-center p-1 rounded-xl bg-muted/50 border border-border/50">
+                <Link
+                  href="/admin/daily-task-review?view=daily"
+                  className="h-8 px-4 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-primary text-primary-foreground shadow-xs"
+                >
+                  <ListTodo className="size-3.5" />
+                  Harian
+                </Link>
+                <Link
+                  href="/admin/daily-task-review?view=monthly"
+                  className="h-8 px-4 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                >
+                  <FileSpreadsheet className="size-3.5" />
+                  Bulanan
+                </Link>
+              </div>
             </div>
           </div>
 

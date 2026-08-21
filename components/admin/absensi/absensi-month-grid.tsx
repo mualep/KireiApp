@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, OctagonX } from "lucide-react";
+import { useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, Loader2, OctagonX } from "lucide-react";
 
 import {
   AbsensiCorrectionDialog,
@@ -63,12 +62,20 @@ export function AbsensiMonthGrid({
   onOpenScheduleModal,
   onOpenScheduledDetail,
 }: AbsensiMonthGridProps) {
+  const router = useRouter();
   const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
   const [selectedCorrection, setSelectedCorrection] =
     useState<AbsensiCorrectionDraft | null>(null);
 
   const previousMonthHref = `${pathname}?month=${month.previousMonthParam}`;
   const nextMonthHref = `${pathname}?month=${month.nextMonthParam}`;
+
+  const handleNavigateMonth = (href: string) => {
+    startTransition(() => {
+      router.push(href);
+    });
+  };
 
   if (rows.length === 0) {
     return (
@@ -87,31 +94,41 @@ export function AbsensiMonthGrid({
     <>
       <section
         aria-label="Read-only attendance month grid"
-        className="tracker-glass-panel overflow-hidden rounded-2xl border"
+        className={cn(
+          "tracker-glass-panel overflow-hidden rounded-2xl border transition-opacity duration-200",
+          isPending && "opacity-60 pointer-events-none"
+        )}
       >
         <div className="flex items-center justify-between gap-3 border-b border-border/75 px-3 py-2">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <Button asChild variant="outline" size="icon-sm" className="size-7 rounded-lg">
-              <Link href={previousMonthHref} aria-label="Previous Month">
-                <ChevronLeftIcon aria-hidden="true" className="size-4" />
-              </Link>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              onClick={() => handleNavigateMonth(previousMonthHref)}
+              disabled={isPending}
+              aria-label="Previous Month"
+              className="size-7 rounded-lg cursor-pointer"
+            >
+              <ChevronLeftIcon aria-hidden="true" className="size-4" />
             </Button>
             <div className="flex items-center gap-2 px-1">
               <CalendarDaysIcon aria-hidden="true" className="size-4 text-primary" />
               <h2 className="truncate text-sm font-bold">{month.monthLabel}</h2>
+              {isPending && <Loader2 className="size-3.5 animate-spin text-primary ml-1" />}
             </div>
-            <Button asChild variant="outline" size="icon-sm" className="size-7 rounded-lg">
-              <Link href={nextMonthHref} aria-label="Next Month">
-                <ChevronRightIcon aria-hidden="true" className="size-4" />
-              </Link>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              onClick={() => handleNavigateMonth(nextMonthHref)}
+              disabled={isPending}
+              aria-label="Next Month"
+              className="size-7 rounded-lg cursor-pointer"
+            >
+              <ChevronRightIcon aria-hidden="true" className="size-4" />
             </Button>
           </div>
-          <Badge
-            variant="outline"
-            className="h-6 border-border bg-background/35 px-2 text-[0.65rem] text-muted-foreground"
-          >
-            {rows.length} workers
-          </Badge>
         </div>
 
         <div className="overflow-x-auto">

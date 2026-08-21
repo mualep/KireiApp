@@ -4,8 +4,8 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Syarat dan Ketentuan (Terms of Service) | KireiApp",
-  description: "Syarat dan Ketentuan Penggunaan Layanan dan Platform Kireiku.",
+  title: "Terms of Service | KireiApp",
+  description: "Terms and Conditions governing the use of Kireiku services and platform.",
 };
 
 export default function TermsPage() {
@@ -23,7 +23,7 @@ export default function TermsPage() {
           <Button asChild variant="ghost" size="sm" className="text-xs">
             <Link href="/" className="flex items-center gap-1.5">
               <ChevronLeft className="size-4" />
-              Kembali ke Beranda
+              Back to Home
             </Link>
           </Button>
         </div>
@@ -31,66 +31,66 @@ export default function TermsPage() {
         <article className="prose prose-neutral dark:prose-invert max-w-none flex flex-col gap-6 text-foreground/90">
           <header className="flex flex-col gap-2">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground font-heading">
-              Syarat dan Ketentuan Layanan
+              Terms of Service
             </h1>
             <p className="text-xs text-muted-foreground">
-              Terakhir diperbarui: 21 Agustus 2026
+              Last Updated: August 21, 2026
             </p>
           </header>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              1. Ketentuan Umum
+              1. Acceptance of Terms
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Selamat datang di Kireiku. Dengan mengakses atau menggunakan platform kami, Anda menyetujui untuk terikat dengan Syarat dan Ketentuan ini. Jika Anda tidak menyetujui salah satu bagian dari ketentuan ini, Anda dipersilakan untuk tidak menggunakan layanan kami.
+              Welcome to Kireiku (&quot;Company,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;). By accessing or utilizing our digital platform, ordering gaming services, or participating as an internal team member, you acknowledge that you have read, understood, and agreed to be bound by these Terms of Service. If you do not agree to these terms, please do not access or use our services.
             </p>
           </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              2. Layanan Gaming & Booster
+              2. Gaming & Booster Services
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Kireiku menyediakan jasa bantuan game (gaming booster, leveling, dan pendampingan) profesional secara legal dan terpercaya. Seluruh transaksi resmi diproses melalui kanal resmi dan platform pihak ketiga terpercaya (seperti G2G).
+              Kireiku delivers premium, legitimate gaming assistance, professional boosting, leveling, and coaching services. All commercial orders and transactions are conducted through verified official channels and certified third-party merchant platforms (including G2G Marketplace) adhering to high transaction standards.
             </p>
           </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              3. Hak dan Kewajiban Pengguna
+              3. User Obligations & Conduct
             </h2>
             <ul className="list-disc pl-5 text-sm leading-relaxed text-muted-foreground space-y-1.5">
-              <li>Pengguna wajib memberikan informasi yang akurat dan dapat dipertanggungjawabkan saat melakukan pemesanan.</li>
-              <li>Pengguna dilarang menyalahgunakan akun, melakukan tindakan curang, atau merusak integritas sistem Kireiku.</li>
-              <li>Pengguna bertanggung jawab penuh atas keamanan kredensial akun pihak ketiga milik pengguna sendiri.</li>
+              <li>Users agree to provide accurate, current, and complete information during order placement.</li>
+              <li>Users shall not engage in fraudulent activities, exploit bugs, or disrupt system operations.</li>
+              <li>Users are solely responsible for maintaining the confidentiality of their third-party credentials and access codes.</li>
             </ul>
           </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              4. Tata Tertib Operasional & Tim Internal
+              4. Enterprise Operating Standards & Internal Compliance
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Seluruh pekerja, pemain, dan staf internal Kireiku terikat oleh Peraturan Perusahaan (Enterprise Rules) yang berlaku, mencakup tata tertib shift kerja, standar performa, dan kerahasiaan data operasional.
+              All registered players, specialists, and administrative personnel operating within the Kireiku platform are bound by internal Enterprise Rules, which mandate strict shift scheduling, performance tracking, daily task reporting, quality assurance, and non-disclosure of proprietary workflow data.
             </p>
           </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              5. Batasan Tanggung Jawab
+              5. Limitation of Liability
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Kireiku berupaya semaksimal mungkin memberikan layanan dengan uptime tinggi dan kualitas terbaik. Namun, kami tidak bertanggung jawab atas kerugian tidak langsung atau gangguan teknis yang disebabkan oleh pihak ketiga di luar kendali wajar kami.
+              Kireiku makes every reasonable effort to maintain uninterrupted platform availability and high service execution. However, Kireiku shall not be held liable for indirect, incidental, or consequential damages resulting from third-party server downtimes, game patch disruptions, or network failures beyond our reasonable control.
             </p>
           </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-foreground font-heading">
-              6. Hubungi Kami
+              6. Contact & Support
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Untuk pertanyaan atau klarifikasi lebih lanjut mengenai syarat dan ketentuan ini, silakan hubungi tim administrasi Kireiku melalui kontak resmi yang tersedia di platform.
+              For any questions, operational inquiries, or legal clarifications regarding these Terms of Service, please contact our support desk via our official platform channels.
             </p>
           </section>
         </article>

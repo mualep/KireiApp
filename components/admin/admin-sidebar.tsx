@@ -66,7 +66,7 @@ export function AdminSidebar({
     >
       <Card
         className={cn(
-          "flex h-full min-h-0 flex-col gap-5 rounded-xl border-border/80 bg-card/75 p-4 shadow-2xl shadow-primary/5 backdrop-blur-xl",
+          "flex h-full min-h-0 flex-col gap-5 rounded-xl border-border/80 bg-card/90 p-4 shadow-sm backdrop-blur-md",
           collapsed && "items-center px-3",
         )}
       >
