@@ -1,18 +1,19 @@
+import React from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  CalendarCheckIcon,
-  ChartNoAxesCombinedIcon,
-  ClipboardClockIcon,
-  LayoutDashboardIcon,
+  Book02Icon,
+  ChartIncreaseIcon,
+  Clock01Icon,
+  DashboardSquare01Icon,
   IdCardIcon,
-  NewspaperIcon,
-  ScrollTextIcon,
-  SidebarCloseIcon,
-  SidebarOpenIcon,
-  UserRoundIcon,
-  UserRoundCheckIcon,
-  UserCogIcon,
-  type LucideIcon,
-} from "lucide-react";
+  NewsIcon,
+  SidebarLeft01Icon,
+  SidebarRight01Icon,
+  Task01Icon,
+  UserCheck01Icon,
+  UserIcon,
+  UserSettings01Icon,
+} from "@hugeicons/core-free-icons";
 
 export type AdminNavIconKey =
   | "absensi"
@@ -27,32 +28,72 @@ export type AdminNavIconKey =
   | "rules";
 
 type AdminNavIconProps = {
-  "aria-hidden"?: true;
+  "aria-hidden"?: true | "true" | "false";
   className?: string;
   iconKey: AdminNavIconKey;
+  "data-icon"?: string;
 };
 
-const adminNavIcons: Record<AdminNavIconKey, LucideIcon> = {
-  absensi: UserRoundCheckIcon,
-  content: NewspaperIcon,
-  dashboard: LayoutDashboardIcon,
-  performance: ChartNoAxesCombinedIcon,
-  profile: UserRoundIcon,
-  records: ClipboardClockIcon,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const adminNavIcons: Record<AdminNavIconKey, any> = {
+  absensi: UserCheck01Icon,
+  content: NewsIcon,
+  dashboard: DashboardSquare01Icon,
+  performance: ChartIncreaseIcon,
+  profile: UserIcon,
+  records: Clock01Icon,
   tracker: IdCardIcon,
-  users: UserCogIcon,
-  dailyTask: CalendarCheckIcon,
-  rules: ScrollTextIcon,
+  users: UserSettings01Icon,
+  dailyTask: Task01Icon,
+  rules: Book02Icon,
 };
 
 export function AdminNavIcon({
   "aria-hidden": ariaHidden = true,
   className,
   iconKey,
+  ...rest
 }: AdminNavIconProps) {
-  const Icon = adminNavIcons[iconKey];
+  const iconData = adminNavIcons[iconKey];
 
-  return <Icon aria-hidden={ariaHidden} className={className} />;
+  if (!iconData) return null;
+
+  return (
+    <HugeiconsIcon
+      icon={iconData}
+      aria-hidden={ariaHidden}
+      className={className}
+      {...(rest as any)}
+    />
+  );
 }
 
-export { SidebarCloseIcon, SidebarOpenIcon };
+export function SidebarCloseIcon({
+  className,
+  "aria-hidden": ariaHidden = true,
+  ...props
+}: React.SVGProps<SVGSVGElement> & { "data-icon"?: string; "aria-hidden"?: true | "true" | "false" }) {
+  return (
+    <HugeiconsIcon
+      icon={SidebarLeft01Icon}
+      aria-hidden={ariaHidden}
+      className={className}
+      {...(props as any)}
+    />
+  );
+}
+
+export function SidebarOpenIcon({
+  className,
+  "aria-hidden": ariaHidden = true,
+  ...props
+}: React.SVGProps<SVGSVGElement> & { "data-icon"?: string; "aria-hidden"?: true | "true" | "false" }) {
+  return (
+    <HugeiconsIcon
+      icon={SidebarRight01Icon}
+      aria-hidden={ariaHidden}
+      className={className}
+      {...(props as any)}
+    />
+  );
+}

@@ -24,6 +24,7 @@ type TrackerClientShellProps = {
   canApplyTrackerActions: boolean;
   initialCards: TrackerCardDTO[];
   roleTabs: TrackerRoleTab[];
+  initialStatus?: string;
 };
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
@@ -32,11 +33,12 @@ export function TrackerClientShell({
   canApplyTrackerActions,
   initialCards,
   roleTabs,
+  initialStatus = "",
 }: TrackerClientShellProps) {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<TrackerFilters["role"]>(null);
   const [shift, setShift] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState<string>(initialStatus);
   const [sort, setSort] = useState<TrackerSortOption>("name-asc");
 
   const localFilters: TrackerFilters = useMemo(

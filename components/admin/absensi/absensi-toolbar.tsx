@@ -146,43 +146,16 @@ export function AbsensiToolbar({
             </div>
           </div>
 
-          {/* Month Selector */}
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <Button asChild variant="outline" size="icon-sm">
-              <Link href={previousMonthHref} aria-label="Previous Month">
-                <ChevronLeftIcon aria-hidden="true" />
-              </Link>
-            </Button>
-            <Badge
-              variant="outline"
-              className="h-9 min-w-32 justify-center border-border bg-background/35 px-3 text-sm font-black text-foreground"
-              translate="no"
-            >
-              {month.monthLabel}
-            </Badge>
-            <Button asChild variant="outline" size="icon-sm">
-              <Link href={nextMonthHref} aria-label="Next Month">
-                <ChevronRightIcon aria-hidden="true" />
-              </Link>
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-2 lg:ml-auto">
-            {scopeLabel ? (
+          {scopeLabel ? (
+            <div className="flex items-center gap-2 lg:ml-auto">
               <Badge
                 variant="outline"
                 className="h-6 border-border bg-background/40 px-2 text-[0.65rem] text-muted-foreground"
               >
                 {scopeLabel}
               </Badge>
-            ) : null}
-            <div className="flex h-9 items-center justify-end gap-2 rounded-lg border border-border/75 bg-background/35 px-3 text-xs text-muted-foreground">
-              <span className="font-mono tabular-nums" translate="no">
-                {visibleCount}/{readableCount}
-              </span>
-              <span className="hidden sm:inline">pekerja</span>
             </div>
-          </div>
+          ) : null}
         </div>
 
         <nav aria-label="Absensi role groups" className="absensi-toolbar-tabs w-full">

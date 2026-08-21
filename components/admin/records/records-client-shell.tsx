@@ -99,6 +99,7 @@ export function RecordsClientShell({
         canCorrectRecords={canCorrectRecords}
         emptyDescription={emptyDescription}
         emptyTitle={emptyTitle}
+        month={month}
         monthParam={month.monthParam}
         monthLabel={month.monthLabel}
         rows={filteredRows}

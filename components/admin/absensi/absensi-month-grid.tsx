@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDaysIcon, OctagonX } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, OctagonX } from "lucide-react";
 
 import {
   AbsensiCorrectionDialog,
   type AbsensiCorrectionDraft,
 } from "@/components/admin/absensi/absensi-correction-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { AbsensiCellDTO, AbsensiWorkerRowDTO, ScheduledCellDTO } from "@/lib/absensi/data";
@@ -60,8 +63,12 @@ export function AbsensiMonthGrid({
   onOpenScheduleModal,
   onOpenScheduledDetail,
 }: AbsensiMonthGridProps) {
+  const pathname = usePathname();
   const [selectedCorrection, setSelectedCorrection] =
     useState<AbsensiCorrectionDraft | null>(null);
+
+  const previousMonthHref = `${pathname}?month=${month.previousMonthParam}`;
+  const nextMonthHref = `${pathname}?month=${month.nextMonthParam}`;
 
   if (rows.length === 0) {
     return (
@@ -83,9 +90,21 @@ export function AbsensiMonthGrid({
         className="tracker-glass-panel overflow-hidden rounded-2xl border"
       >
         <div className="flex items-center justify-between gap-3 border-b border-border/75 px-3 py-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <CalendarDaysIcon aria-hidden="true" className="size-4 text-primary" />
-            <h2 className="truncate text-sm font-bold">{month.monthLabel}</h2>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Button asChild variant="outline" size="icon-sm" className="size-7 rounded-lg">
+              <Link href={previousMonthHref} aria-label="Previous Month">
+                <ChevronLeftIcon aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
+            <div className="flex items-center gap-2 px-1">
+              <CalendarDaysIcon aria-hidden="true" className="size-4 text-primary" />
+              <h2 className="truncate text-sm font-bold">{month.monthLabel}</h2>
+            </div>
+            <Button asChild variant="outline" size="icon-sm" className="size-7 rounded-lg">
+              <Link href={nextMonthHref} aria-label="Next Month">
+                <ChevronRightIcon aria-hidden="true" className="size-4" />
+              </Link>
+            </Button>
           </div>
           <Badge
             variant="outline"

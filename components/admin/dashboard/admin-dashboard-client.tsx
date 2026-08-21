@@ -402,7 +402,10 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
       {/* 3. Top Worker Counter Grid */}
       <div className="flex flex-col lg:flex-row gap-6 w-full">
         {/* Left Side (1/4 width) */}
-        <Card className="w-full lg:w-1/4 bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-6 flex flex-col justify-between min-h-[160px] hover:bg-white/5 hover:brightness-125 transition-all duration-300 group">
+        <Link 
+          href="/admin/tracker"
+          className="w-full lg:w-1/4 bg-card/60 backdrop-blur-md border border-border shadow-sm rounded-2xl p-6 flex flex-col justify-between min-h-[160px] hover:bg-white/5 hover:brightness-125 transition-all duration-300 cursor-pointer group"
+        >
           <span className="text-sm font-bold uppercase tracking-wider text-white">TOTAL PEKERJA</span>
           <div className="flex flex-col">
             <span className="text-5xl font-black text-white tabular-nums">
@@ -410,7 +413,7 @@ export function AdminDashboardClient({ staffName, initialData }: AdminDashboardC
             </span>
             <span className="text-xs text-zinc-300 mt-1">Pemain terdaftar aktif</span>
           </div>
-        </Card>
+        </Link>
 
         {/* Right Side (3/4 width): Grid 2x5 */}
         <div className="w-full lg:w-3/4 grid grid-cols-2 sm:grid-cols-5 gap-4">

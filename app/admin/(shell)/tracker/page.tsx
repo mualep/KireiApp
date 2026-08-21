@@ -15,12 +15,22 @@ export const metadata: Metadata = {
   description: "Read-only worker tracker overview.",
 };
 
-export default async function AdminTrackerPage() {
+export default async function AdminTrackerPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = (await searchParams) || {};
   const staff = await getCurrentStaffUser();
 
   if (!staff) {
     redirect("/admin/login");
   }
+
+  const rawStatus = Array.isArray(resolvedSearchParams.status)
+    ? resolvedSearchParams.status[0]
+    : resolvedSearchParams.status;
+  const initialStatus = rawStatus ? rawStatus.toUpperCase() : "";
 
   const data = await getTrackerData(staff);
   const roleTabs = getTrackerRoleTabs(data.cards);
@@ -37,6 +47,7 @@ export default async function AdminTrackerPage() {
         canApplyTrackerActions={canApplyTrackerActions}
         initialCards={data.cards}
         roleTabs={roleTabs}
+        initialStatus={initialStatus}
       />
     </div>
   );

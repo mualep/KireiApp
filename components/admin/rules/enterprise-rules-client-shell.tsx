@@ -165,9 +165,9 @@ export function EnterpriseRulesClientShell({
                     value={rule.id}
                     className="rounded-xl border border-border/70 bg-card/40 px-4 md:px-5 transition-all data-[state=open]:border-primary/40 data-[state=open]:bg-card/70 data-[state=open]:shadow-md shadow-xs"
                   >
-                    <div className="flex items-center justify-between gap-3 w-full">
-                      <AccordionTrigger className="hover:no-underline py-4 flex-1 text-left">
-                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                    <div className="flex items-center gap-2 w-full">
+                      <AccordionTrigger className="hover:no-underline py-4 flex-1 w-full text-left">
+                        <div className="flex items-center gap-3 min-w-0 pr-4">
                           <div className="size-7 rounded-lg bg-primary/10 border border-primary/20 text-primary font-black text-xs flex items-center justify-center shrink-0">
                             {idx + 1}
                           </div>
@@ -177,7 +177,7 @@ export function EnterpriseRulesClientShell({
                           {displayCategory ? (
                             <Badge
                               variant="outline"
-                              className="text-[10px] font-bold border-border bg-muted/40 hidden sm:inline-flex"
+                              className="text-[10px] font-bold border-border bg-muted/40 hidden sm:inline-flex shrink-0"
                             >
                               {displayCategory}
                             </Badge>
@@ -195,7 +195,7 @@ export function EnterpriseRulesClientShell({
                             handleOpenEdit(rule);
                           }}
                           title="Edit Pasal"
-                          className="shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          className="shrink-0 size-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                         >
                           <Edit3 className="size-4" />
                         </Button>

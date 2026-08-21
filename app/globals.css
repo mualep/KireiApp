@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: "Inter", sans-serif;
+    --font-heading: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-sans: Arial, Helvetica, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -54,23 +54,23 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
-    --font-mono: "JetBrains Mono", monospace;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --font-serif: "Georgia", serif;
     --radius: 0.75rem;
-    --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
-    --tracking-tight: calc(var(--tracking-normal) - 0.025em);
-    --tracking-wide: calc(var(--tracking-normal) + 0.025em);
-    --tracking-wider: calc(var(--tracking-normal) + 0.05em);
-    --tracking-widest: calc(var(--tracking-normal) + 0.1em);
-    --tracking-normal: var(--tracking-normal);
-    --shadow-2xl: var(--shadow-2xl);
-    --shadow-xl: var(--shadow-xl);
-    --shadow-lg: var(--shadow-lg);
-    --shadow-md: var(--shadow-md);
-    --shadow: var(--shadow);
-    --shadow-sm: var(--shadow-sm);
-    --shadow-xs: var(--shadow-xs);
-    --shadow-2xs: var(--shadow-2xs);
+    --tracking-tighter: -0.03em;
+    --tracking-tight: -0.015em;
+    --tracking-wide: 0.015em;
+    --tracking-wider: 0.03em;
+    --tracking-widest: 0.06em;
+    --tracking-normal: 0em;
+    --shadow-2xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 12px 20px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 8px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+    --shadow-md: 0 4px 10px -2px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.03);
+    --shadow: 0 2px 6px -1px rgb(0 0 0 / 0.05), 0 1px 3px -1px rgb(0 0 0 / 0.03);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.03);
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow-2xs: 0 1px 1px 0 rgb(0 0 0 / 0.03);
     --spacing: var(--spacing);
     --letter-spacing: var(--letter-spacing);
     --shadow-offset-y: var(--shadow-offset-y);
@@ -125,16 +125,15 @@
     --sidebar-border: oklch(0.9674 0.0013 286.3752);
     --sidebar-ring: oklch(0.5882 0.2309 28.2936);
     --destructive-foreground: oklch(1 0 0);
-    --font-sans: "Inter", sans-serif;
+    --font-sans: Arial, Helvetica, sans-serif;
     --font-serif: "Georgia", serif;
-    --font-mono: "JetBrains Mono", monospace;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --shadow-color: hsl(0 0% 0%);
-    --shadow-opacity: 0.1;
+    --shadow-opacity: 0.08;
     --shadow-blur: 10px;
     --shadow-spread: -2px;
     --shadow-offset-x: 0px;
     --shadow-offset-y: 4px;
-    --letter-spacing: -0.02em;
     --spacing: 0.25rem;
     --shadow-2xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.05);
@@ -250,28 +249,15 @@
 
 @layer components {
     .tracker-glass-panel {
-        background: linear-gradient(
-            135deg,
-            color-mix(in oklch, var(--card) 88%, transparent),
-            color-mix(in oklch, var(--muted) 36%, transparent)
-        );
-        border-color: color-mix(in oklch, var(--border) 82%, transparent);
-        box-shadow:
-            0 18px 60px color-mix(in oklch, var(--background) 72%, black 28%),
-            inset 0 1px 0
-                color-mix(in oklch, var(--foreground) 10%, transparent);
-        backdrop-filter: blur(18px);
+        background: var(--card);
+        border-color: var(--border);
+        box-shadow: var(--shadow-sm);
     }
 
     .dark .tracker-glass-panel {
-        background: linear-gradient(
-            135deg,
-            color-mix(in oklch, var(--card) 72%, transparent),
-            color-mix(in oklch, var(--background) 58%, transparent)
-        );
-        box-shadow:
-            0 22px 70px color-mix(in oklch, var(--background) 38%, black 62%),
-            inset 0 1px 0 color-mix(in oklch, var(--foreground) 8%, transparent);
+        background: color-mix(in oklch, var(--card) 94%, var(--background) 6%);
+        border-color: var(--border);
+        box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.2);
     }
 
     .tracker-card-contrast {

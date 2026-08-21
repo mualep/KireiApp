@@ -1,23 +1,12 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import "./globals.css";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { OfflineBanner } from "@/components/brand/offline-banner";
 
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "KireiApp",
-  description: "KireiApp foundation shell",
+  description: "KireiApp Enterprise Portal",
 };
 
 export default function RootLayout({
@@ -27,16 +16,17 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="id"
       className={cn("dark", "font-sans")}
       style={
         {
-          "--font-sans": inter.style.fontFamily,
-          "--font-mono": jetbrainsMono.style.fontFamily,
+          "--font-sans": "Arial, Helvetica, sans-serif",
+          "--font-heading": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+          "--font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
         } as CSSProperties
       }
     >
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary">
         <OfflineBanner />
         {children}
       </body>

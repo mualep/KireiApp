@@ -1,15 +1,18 @@
 import type { LandingData } from "@/lib/db/landing";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 type SiteFooterProps = {
   footer: LandingData["footer"];
 };
 
 const footerLinks = [
-  { label: "Services", href: "#services" },
-  { label: "Why Us", href: "#why-kireiku" },
-  { label: "Testimonials", href: "#testimonials" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Services", href: "#services", isInternal: false },
+  { label: "Why Us", href: "#why-kireiku", isInternal: false },
+  { label: "Testimonials", href: "#testimonials", isInternal: false },
+  { label: "FAQ", href: "#faq", isInternal: false },
+  { label: "Terms of Service", href: "/terms", isInternal: true },
+  { label: "Privacy Policy", href: "/privacy", isInternal: true },
 ];
 
 export function SiteFooter({ footer }: SiteFooterProps) {
@@ -26,15 +29,25 @@ export function SiteFooter({ footer }: SiteFooterProps) {
         </div>
 
         <nav className="flex flex-wrap justify-center gap-2" aria-label="Footer navigation">
-          {footerLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            >
-              {link.label}
-            </a>
-          ))}
+          {footerLinks.map((link) =>
+            link.isInternal ? (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <a
+                key={link.href}
+                href={link.href}
+                className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                {link.label}
+              </a>
+            )
+          )}
         </nav>
 
         <div className="flex flex-wrap justify-center gap-2">

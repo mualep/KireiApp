@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,13 +13,15 @@ import {
   formatRecordsNumber,
   type EffectiveRecordMetric,
 } from "@/lib/records/helpers";
+import type { RecordsMonthRange } from "@/lib/records/helpers";
 import { cn } from "@/lib/utils";
-import { OctagonX } from "lucide-react";
+import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, OctagonX } from "lucide-react";
 
 type RecordsTableProps = {
   canCorrectRecords?: boolean;
   emptyDescription?: string;
   emptyTitle?: string;
+  month?: RecordsMonthRange;
   monthParam?: string;
   monthLabel: string;
   rows: RecordsRowDTO[];
@@ -51,12 +54,21 @@ export function RecordsTable({
   canCorrectRecords = false,
   emptyDescription = "Read-only monthly records appear after worker records are available.",
   emptyTitle = "No records available.",
+  month,
   monthParam = "",
   monthLabel,
   rows,
 }: RecordsTableProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [overrideTarget, setOverrideTarget] = useState<RecordsRowDTO | null>(null);
+
+  const previousMonthHref = month?.previousMonthParam
+    ? `${pathname}?month=${month.previousMonthParam}`
+    : null;
+  const nextMonthHref = month?.nextMonthParam
+    ? `${pathname}?month=${month.nextMonthParam}`
+    : null;
 
   if (rows.length === 0) {
     return (
@@ -78,9 +90,25 @@ export function RecordsTable({
         className="tracker-glass-panel overflow-hidden rounded-2xl border"
       >
         <div className="flex items-center justify-between gap-3 border-b border-border/75 px-3 py-2">
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-bold">Records</h2>
-            <p className="text-xs text-muted-foreground">{monthLabel}</p>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {previousMonthHref ? (
+              <Button asChild variant="outline" size="icon-sm" className="size-7 rounded-lg">
+                <Link href={previousMonthHref} aria-label="Previous Month">
+                  <ChevronLeftIcon aria-hidden="true" className="size-4" />
+                </Link>
+              </Button>
+            ) : null}
+            <div className="flex items-center gap-2 px-1">
+              <CalendarDaysIcon aria-hidden="true" className="size-4 text-primary" />
+              <h2 className="truncate text-sm font-bold">{monthLabel}</h2>
+            </div>
+            {nextMonthHref ? (
+              <Button asChild variant="outline" size="icon-sm" className="size-7 rounded-lg">
+                <Link href={nextMonthHref} aria-label="Next Month">
+                  <ChevronRightIcon aria-hidden="true" className="size-4" />
+                </Link>
+              </Button>
+            ) : null}
           </div>
           <Badge
             variant="outline"

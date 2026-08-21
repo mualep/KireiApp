@@ -53,7 +53,7 @@ export function TrackerFilterForm({
     >
       <CardContent className="flex flex-col gap-2 p-0">
         <div className="flex flex-col gap-2">
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.3fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_auto_auto]">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(13rem,1.3fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_minmax(9rem,0.62fr)_auto]">
             {/* Search */}
             <div role="group">
               <label htmlFor="tracker-search" className="sr-only">
@@ -156,15 +156,6 @@ export function TrackerFilterForm({
               <XIcon className="size-4" aria-hidden="true" />
               Bersihkan
             </Button>
-
-            {/* Counter */}
-            <div className="flex h-9 items-center justify-end gap-2 rounded-lg border border-border/75 bg-background/35 px-3 text-xs text-muted-foreground">
-              <ArrowDownAZIcon aria-hidden="true" />
-              <span className="font-mono tabular-nums" translate="no">
-                {visibleCount}/{readableCount}
-              </span>
-              <span className="hidden sm:inline">pekerja</span>
-            </div>
           </div>
         </div>
 
